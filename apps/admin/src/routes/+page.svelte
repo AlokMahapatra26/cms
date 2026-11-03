@@ -14,7 +14,7 @@
     try {
       posts = await fetchAdminPosts();
     } catch (e: any) {
-      error = e.message || 'Error loading posts';
+      error = e.message || 'Error loading articles';
     } finally {
       loading = false;
     }
@@ -52,32 +52,33 @@
   });
 </script>
 
-<div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+<!-- Header & Controls -->
+<div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
   <div>
-    <h1 style="font-size: 36px; font-weight: 700; color: #141414; margin: 0 0 6px 0; letter-spacing: -0.02em;">
-      Articles.
+    <h1 style="font-size: 32px; font-weight: 400; color: #000000; margin: 0 0 6px 0; letter-spacing: -0.01em;">
+      Articles
     </h1>
-    <p style="font-size: 16px; color: #707070; margin: 0; font-weight: 400;">
-      Publish and manage content distributed globally on Cloudflare edge.
+    <p style="font-size: 14px; color: #71717a; margin: 0; font-weight: 400;">
+      Manage blog posts, announcements, and content distributed globally.
     </p>
   </div>
 
-  <!-- Segmented Control for filtering -->
-  <div class="segmented-control">
+  <!-- Shopify Segmented Filter -->
+  <div class="shopify-segmented">
     <button
-      class="segment-item {filter === 'all' ? 'active' : ''}"
+      class="shopify-segment-btn {filter === 'all' ? 'active' : ''}"
       onclick={() => (filter = 'all')}
     >
       All ({posts.length})
     </button>
     <button
-      class="segment-item {filter === 'published' ? 'active' : ''}"
+      class="shopify-segment-btn {filter === 'published' ? 'active' : ''}"
       onclick={() => (filter = 'published')}
     >
       Published ({posts.filter(p => p.status === 'published').length})
     </button>
     <button
-      class="segment-item {filter === 'draft' ? 'active' : ''}"
+      class="shopify-segment-btn {filter === 'draft' ? 'active' : ''}"
       onclick={() => (filter = 'draft')}
     >
       Drafts ({posts.filter(p => p.status === 'draft').length})
@@ -86,37 +87,37 @@
 </div>
 
 {#if loading}
-  <div style="background-color: #f3f3f3; border-radius: 24px; padding: 48px; text-align: center; color: #707070;">
-    <p style="margin: 0; font-size: 15px;">Loading articles from D1 edge database...</p>
+  <div class="shopify-card" style="padding: 48px; text-align: center; color: #71717a;">
+    <p style="margin: 0; font-size: 14px;">Loading articles from D1 edge database...</p>
   </div>
 {:else if error}
-  <div style="background-color: #fff0f0; border: 1px solid #ffcdd2; border-radius: 16px; padding: 20px; color: #d32f2f; margin-bottom: 24px;">
+  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 20px; color: #b91c1c; margin-bottom: 24px;">
     <strong>Error loading posts:</strong> {error}
     <div style="margin-top: 10px;">
-      <button class="btn-primary" onclick={loadPosts}>Retry</button>
+      <button class="btn-primary-pill" onclick={loadPosts}>Retry</button>
     </div>
   </div>
 {:else if filteredPosts.length === 0}
-  <div style="background-color: #f3f3f3; border-radius: 24px; padding: 64px 24px; text-align: center;">
-    <div style="width: 48px; height: 48px; background: #e0e0e0; border-radius: 30%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-      ✍️
+  <div class="shopify-card" style="padding: 64px 24px; text-align: center;">
+    <div style="width: 48px; height: 48px; background: #c1fbd4; border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+      🛍️
     </div>
-    <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 700;">No articles found</h3>
-    <p style="color: #707070; margin: 0 0 20px 0; font-size: 14px;">
-      {filter === 'all' ? 'Get started by creating your first article.' : `No articles in ${filter} status.`}
+    <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600;">No articles found</h3>
+    <p style="color: #71717a; margin: 0 0 20px 0; font-size: 14px;">
+      {filter === 'all' ? 'Create your first article to publish to your storefront.' : `No articles in ${filter} status.`}
     </p>
-    <a href="/new" class="btn-primary">+ Create New Article</a>
+    <a href="/new" class="btn-primary-pill">+ Create New Article</a>
   </div>
 {:else}
-  <div class="table-card">
-    <table class="data-table">
+  <div class="shopify-card">
+    <table class="shopify-table">
       <thead>
         <tr>
           <th style="width: 60px;">Cover</th>
           <th>Title & Excerpt</th>
           <th>Slug</th>
           <th>Status</th>
-          <th>Published</th>
+          <th>Date</th>
           <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
@@ -131,39 +132,39 @@
                   class="squircle-thumb"
                 />
               {:else}
-                <div class="squircle-thumb" style="display: flex; align-items: center; justify-content: center; color: #adadad; font-size: 12px; font-weight: 600;">
-                  TXT
+                <div class="squircle-thumb" style="display: flex; align-items: center; justify-content: center; color: #a1a1aa; font-size: 11px; font-weight: 600;">
+                  POST
                 </div>
               {/if}
             </td>
             <td>
-              <div style="font-weight: 600; color: #141414; font-size: 15px; margin-bottom: 2px;">
+              <div style="font-weight: 600; color: #000000; font-size: 15px; margin-bottom: 2px;">
                 {post.title}
               </div>
               {#if post.excerpt}
-                <div style="font-size: 13px; color: #707070; max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <div style="font-size: 13px; color: #71717a; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   {post.excerpt}
                 </div>
               {/if}
             </td>
             <td>
-              <code style="background-color: #f0f0f0; padding: 3px 8px; border-radius: 6px; font-size: 12px; color: #262626; font-family: monospace;">
+              <code style="background-color: #f4f4f5; padding: 3px 8px; border-radius: 6px; font-size: 12px; color: #3f3f46; font-family: monospace;">
                 /{post.slug}
               </code>
             </td>
             <td>
               {#if post.status === 'published'}
-                <span class="badge-popular">
-                  PUBLISHED
+                <span class="pill-tag-mint">
+                  Published
                 </span>
               {:else}
-                <span class="badge-draft">
-                  DRAFT
+                <span class="pill-tag-shade">
+                  Draft
                 </span>
               {/if}
             </td>
             <td>
-              <span style="font-size: 13px; color: #707070;">
+              <span style="font-size: 13px; color: #71717a;">
                 {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </td>
@@ -172,8 +173,7 @@
                 {#if post.status === 'draft'}
                   <button
                     onclick={() => handleTogglePublish(post)}
-                    class="btn-primary"
-                    style="font-size: 12px; padding: 6px 14px; background-color: #0066ff;"
+                    class="btn-sm-pill btn-aloe-sm"
                     title="Publish immediately to public blog"
                   >
                     Publish
@@ -183,28 +183,25 @@
                     href="http://localhost:4321/posts/{post.slug}"
                     target="_blank"
                     rel="noopener"
-                    class="btn-pill-soft"
-                    style="font-size: 12px; padding: 6px 12px;"
+                    class="btn-sm-pill btn-gray-sm"
                     title="View live static site"
                   >
                     Live ↗
                   </a>
                   <button
                     onclick={() => handleTogglePublish(post)}
-                    class="btn-pill-soft"
-                    style="font-size: 12px; padding: 6px 12px; color: #707070;"
+                    class="btn-sm-pill btn-gray-sm"
                     title="Revert article to draft"
                   >
                     Unpublish
                   </button>
                 {/if}
-                <a href="/edit/{post.id}" class="btn-pill-soft" style="font-size: 12px; padding: 6px 12px;">
+                <a href="/edit/{post.id}" class="btn-sm-pill btn-gray-sm">
                   Edit
                 </a>
                 <button
                   onclick={() => handleDelete(post.id, post.title)}
-                  class="btn-danger-soft"
-                  style="font-size: 12px; padding: 6px 12px;"
+                  class="btn-sm-pill btn-danger-sm"
                   title="Delete post"
                 >
                   Delete

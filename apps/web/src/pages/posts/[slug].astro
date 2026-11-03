@@ -34,35 +34,34 @@ try {
 const htmlContent = post ? await marked.parse(post.content || '') : '';
 ---
 
-<Layout title={post ? `${post.title} — EdgeBlog` : 'Post Not Found'}>
+<Layout title={post ? `${post.title} — EdgeStorefront` : 'Article Not Found'}>
   <div style="margin-bottom: 24px;">
-    <a href="/" class="btn-outline" style="font-size: 13px; padding: 6px 14px;">
+    <a href="/" class="btn-outline-pill" style="font-size: 13px; padding: 6px 16px;">
       &larr; Back to articles
     </a>
   </div>
 
   {!post ? (
-    <div style="background-color: #f3f3f3; border-radius: 24px; padding: 64px 24px; text-align: center;">
-      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Post Not Found</h2>
-      <p style="color: #707070; margin: 0;">The post "<code>{slug}</code>" could not be found or is not published yet.</p>
+    <div style="background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 64px 24px; text-align: center;">
+      <h2 style="font-size: 22px; font-weight: 600; margin: 0 0 8px 0;">Article Not Found</h2>
+      <p style="color: #71717a; margin: 0;">The article "<code>{slug}</code>" could not be found or is not published yet.</p>
     </div>
   ) : (
-    <article>
-      <header style="margin-bottom: 32px;">
-        <h1 style="font-size: 40px; font-weight: 700; color: #141414; margin: 0 0 12px 0; line-height: 1.15; letter-spacing: -0.02em;">
-          {post.title}
-        </h1>
-        <div style="display: flex; gap: 12px; align-items: center; color: #707070; font-size: 14px;">
-          <span>{new Date(post.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-          <span>•</span>
-          <span style="background-color: #f3f3f3; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; color: #141414;">
-            Cloudflare D1
+    <article style="background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);">
+      <header style="margin-bottom: 28px;">
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+          <span class="pill-tag-mint">Published</span>
+          <span style="font-size: 13px; color: #71717a;">
+            {new Date(post.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
           </span>
         </div>
+        <h1 style="font-size: 36px; font-weight: 500; color: #000000; margin: 0; line-height: 1.2; letter-spacing: -0.01em;">
+          {post.title}
+        </h1>
       </header>
 
       {post.cover_image && (
-        <div style="margin: 32px 0; border-radius: 24px; overflow: hidden; border: 1px solid #e0e0e0; background-color: #f3f3f3;">
+        <div style="margin: 28px 0; border-radius: 12px; overflow: hidden; border: 1px solid #e4e4e7; background-color: #f4f4f5;">
           <img
             src={post.cover_image}
             alt={post.title}
@@ -72,14 +71,14 @@ const htmlContent = post ? await marked.parse(post.content || '') : '';
       )}
 
       {post.excerpt && (
-        <div style="margin: 24px 0 32px 0; padding: 18px 24px; background-color: #f3f3f3; border-radius: 16px; font-size: 17px; color: #262626; line-height: 1.5; font-weight: 300;">
+        <div style="margin: 20px 0 28px 0; padding: 18px 24px; background-color: #fbfbf5; border: 1px solid #e4e4e7; border-radius: 12px; font-size: 16px; color: #3f3f46; line-height: 1.5;">
           {post.excerpt}
         </div>
       )}
 
       <div
         class="prose-content"
-        style="line-height: 1.7; font-size: 16px; color: #141414;"
+        style="line-height: 1.7; font-size: 16px; color: #000000;"
         set:html={htmlContent}
       />
     </article>
@@ -90,9 +89,9 @@ const htmlContent = post ? await marked.parse(post.content || '') : '';
   .prose-content h1,
   .prose-content h2,
   .prose-content h3 {
-    font-weight: 700;
-    color: #141414;
-    letter-spacing: -0.02em;
+    font-weight: 600;
+    color: #000000;
+    letter-spacing: -0.01em;
     margin-top: 36px;
     margin-bottom: 14px;
   }
@@ -100,17 +99,17 @@ const htmlContent = post ? await marked.parse(post.content || '') : '';
     margin: 16px 0;
   }
   .prose-content code {
-    background-color: #f0f0f0;
+    background-color: #f4f4f5;
     padding: 3px 7px;
     border-radius: 6px;
     font-size: 14px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
   .prose-content pre {
-    background-color: #141414;
-    color: #f3f3f3;
+    background-color: #000000;
+    color: #f4f4f5;
     padding: 20px;
-    border-radius: 16px;
+    border-radius: 12px;
     overflow-x: auto;
   }
   .prose-content pre code {

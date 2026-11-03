@@ -9,22 +9,27 @@
 		%sveltekit.head%
 		<style>
 			:root {
-				--color-primary: #141414;
+				--color-primary: #000000;
+				--color-ink: #000000;
 				--color-on-primary: #ffffff;
-				--color-ink: #141414;
-				--color-ink-soft: #262626;
-				--color-text-muted: #707070;
-				--color-text-faint: #adadad;
-				--color-canvas: #ffffff;
-				--color-canvas-soft: #f3f3f3;
-				--color-field: #f0f0f0;
-				--color-hairline-soft: #f0f0f0;
-				--color-hairline: #e0e0e0;
-				--color-accent: #0066ff;
+				--color-canvas-light: #ffffff;
+				--color-canvas-cream: #fbfbf5;
+				--color-aloe: #c1fbd4;
+				--color-pistachio: #d4f9e0;
+				--color-shade-30: #d4d4d8;
+				--color-shade-40: #a1a1aa;
+				--color-shade-50: #71717a;
+				--color-shade-60: #52525b;
+				--color-shade-70: #3f3f46;
+				--color-hairline: #e4e4e7;
 
-				--radius-sm: 16px;
-				--radius-md: 24px;
-				--radius-full: 9999px;
+				--radius-xs: 4px;
+				--radius-md: 8px;
+				--radius-lg: 12px;
+				--radius-xl: 20px;
+				--radius-pill: 9999px;
+
+				--shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 0, 0, 0.05);
 			}
 
 			*, *::before, *::after {
@@ -34,9 +39,10 @@
 			body {
 				margin: 0;
 				padding: 0;
-				background-color: #ffffff;
-				color: #141414;
+				background-color: var(--color-canvas-cream);
+				color: var(--color-ink);
 				font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+				font-feature-settings: "ss03";
 				-webkit-font-smoothing: antialiased;
 				-moz-osx-font-smoothing: grayscale;
 			}
@@ -50,251 +56,290 @@
 				font-family: inherit;
 			}
 
-			/* Floating Nav Pill */
-			.nav-pill {
-				background-color: var(--color-canvas-soft);
-				border-radius: var(--radius-full);
-				padding: 8px 12px 8px 24px;
+			/* Shopify Header */
+			.shopify-header {
+				background-color: #ffffff;
+				border-bottom: 1px solid var(--color-hairline);
+				padding: 14px 24px;
+				position: sticky;
+				top: 0;
+				z-index: 50;
+			}
+
+			.shopify-nav-inner {
+				max-width: 1040px;
+				margin: 0 auto;
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				max-width: 960px;
-				margin: 24px auto 40px auto;
 			}
 
-			.nav-links {
+			.shopify-brand {
 				display: flex;
 				align-items: center;
-				gap: 12px;
+				gap: 10px;
+				font-weight: 600;
+				font-size: 17px;
+				color: #000000;
+				text-decoration: none;
+				letter-spacing: -0.02em;
 			}
 
-			.nav-link {
+			.shopify-nav-links {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+			}
+
+			.shopify-nav-link {
 				font-size: 14px;
 				font-weight: 500;
-				color: var(--color-ink-soft);
-				padding: 8px 14px;
-				border-radius: var(--radius-full);
-				transition: background-color 0.15s ease, color 0.15s ease;
+				color: var(--color-shade-60);
+				padding: 7px 16px;
+				border-radius: var(--radius-pill);
+				text-decoration: none;
+				transition: all 0.15s ease;
 			}
 
-			.nav-link:hover, .nav-link.active {
-				background-color: var(--color-canvas);
-				color: var(--color-ink);
+			.shopify-nav-link:hover {
+				color: #000000;
+				background-color: #f4f4f5;
 			}
 
-			/* Buttons */
-			.btn-primary {
-				background-color: var(--color-primary);
-				color: var(--color-on-primary);
-				font-size: 14px;
+			.shopify-nav-link.active {
+				color: #000000;
+				background-color: #f4f4f5;
 				font-weight: 600;
-				border-radius: var(--radius-full);
-				padding: 10px 20px;
-				border: none;
+			}
+
+			/* Shopify Pill Buttons */
+			.btn-primary-pill {
+				background-color: #000000;
+				color: #ffffff;
+				font-size: 14px;
+				font-weight: 500;
+				border-radius: var(--radius-pill);
+				padding: 9px 22px;
+				border: 1px solid #000000;
 				cursor: pointer;
 				display: inline-flex;
 				align-items: center;
 				gap: 8px;
 				text-decoration: none;
-				transition: opacity 0.15s ease, transform 0.05s ease;
+				transition: all 0.15s ease;
 			}
-			.btn-primary:hover {
-				opacity: 0.9;
-			}
-			.btn-primary:active {
-				transform: scale(0.98);
-			}
-			.btn-primary:disabled {
-				opacity: 0.5;
-				cursor: not-allowed;
+			.btn-primary-pill:hover {
+				background-color: #27272a;
 			}
 
-			.btn-outline {
-				background-color: var(--color-canvas);
-				color: var(--color-ink);
+			.btn-aloe-pill {
+				background-color: var(--color-aloe);
+				color: #000000;
 				font-size: 14px;
 				font-weight: 600;
-				border: 1px solid var(--color-hairline);
-				border-radius: var(--radius-full);
-				padding: 9px 18px;
+				border-radius: var(--radius-pill);
+				padding: 9px 22px;
+				border: 1px solid rgba(0, 0, 0, 0.1);
+				cursor: pointer;
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				text-decoration: none;
+				transition: all 0.15s ease;
+			}
+			.btn-aloe-pill:hover {
+				background-color: #a7f3c1;
+			}
+
+			.btn-outline-pill {
+				background-color: #ffffff;
+				color: #000000;
+				font-size: 14px;
+				font-weight: 500;
+				border: 1px solid #d4d4d8;
+				border-radius: var(--radius-pill);
+				padding: 8px 20px;
 				cursor: pointer;
 				display: inline-flex;
 				align-items: center;
 				gap: 6px;
 				text-decoration: none;
-				transition: background-color 0.15s ease, border-color 0.15s ease;
+				transition: all 0.15s ease;
 			}
-			.btn-outline:hover {
-				background-color: var(--color-canvas-soft);
-				border-color: #d0d0d0;
-			}
-
-			.btn-pill-soft {
-				background-color: var(--color-canvas-soft);
-				color: var(--color-ink);
-				font-size: 13px;
-				font-weight: 600;
-				border-radius: var(--radius-full);
-				padding: 6px 14px;
-				border: none;
-				cursor: pointer;
-				display: inline-flex;
-				align-items: center;
-				gap: 4px;
-				text-decoration: none;
-				transition: background-color 0.15s ease;
-			}
-			.btn-pill-soft:hover {
-				background-color: #eaeaea;
+			.btn-outline-pill:hover {
+				background-color: #f4f4f5;
+				border-color: #a1a1aa;
 			}
 
-			.btn-danger-soft {
-				background-color: #fff0f0;
-				color: #d32f2f;
-				font-size: 13px;
-				font-weight: 600;
-				border-radius: var(--radius-full);
-				padding: 6px 14px;
-				border: none;
-				cursor: pointer;
-				display: inline-flex;
-				align-items: center;
-				transition: background-color 0.15s ease;
-			}
-			.btn-danger-soft:hover {
-				background-color: #ffe0e0;
-			}
-
-			/* Badges */
-			.badge-popular {
-				background-color: var(--color-accent);
-				color: var(--color-on-primary);
-				font-size: 11px;
-				font-weight: 600;
-				letter-spacing: 0.02em;
-				padding: 4px 10px;
-				border-radius: var(--radius-full);
-				display: inline-flex;
-				align-items: center;
-			}
-
-			.badge-draft {
-				background-color: var(--color-field);
-				color: var(--color-text-muted);
-				font-size: 11px;
-				font-weight: 600;
-				letter-spacing: 0.02em;
-				padding: 4px 10px;
-				border-radius: var(--radius-full);
-				display: inline-flex;
-				align-items: center;
-			}
-
-			/* Form Controls */
-			.form-card {
-				background-color: var(--color-canvas);
-				border: 1px solid var(--color-hairline);
-				border-radius: var(--radius-md);
-				padding: 32px;
-				box-sizing: border-box;
-				width: 100%;
-			}
-
-			.input-field {
-				background-color: var(--color-field);
-				border: 2px solid transparent;
-				border-radius: var(--radius-sm);
-				padding: 12px 16px;
-				font-size: 15px;
-				color: var(--color-ink);
-				outline: none;
-				width: 100% !important;
-				box-sizing: border-box;
-				font-family: inherit;
-				transition: border-color 0.15s ease, background-color 0.15s ease;
-			}
-			.input-field:focus {
-				border-color: var(--color-ink);
-				background-color: var(--color-canvas);
-			}
-			.input-field::placeholder {
-				color: var(--color-text-faint);
-			}
-
-			/* Segmented Control */
-			.segmented-control {
-				background-color: var(--color-canvas-soft);
-				border-radius: var(--radius-full);
-				padding: 4px;
-				display: inline-flex;
-				gap: 4px;
-			}
-
-			.segment-item {
-				padding: 6px 16px;
-				font-size: 13px;
+			.btn-sm-pill {
+				font-size: 12px;
+				padding: 5px 12px;
+				border-radius: var(--radius-pill);
 				font-weight: 500;
-				border-radius: var(--radius-full);
-				border: none;
-				background: transparent;
-				color: var(--color-text-muted);
 				cursor: pointer;
-				transition: background-color 0.15s ease, color 0.15s ease;
+				border: none;
+				display: inline-flex;
+				align-items: center;
+				text-decoration: none;
+				transition: all 0.15s ease;
 			}
-			.segment-item.active {
-				background-color: var(--color-canvas);
-				color: var(--color-ink);
+
+			.btn-aloe-sm {
+				background-color: var(--color-aloe);
+				color: #000000;
 				font-weight: 600;
+				border: 1px solid rgba(0, 0, 0, 0.08);
+			}
+			.btn-aloe-sm:hover {
+				background-color: #a7f3c1;
 			}
 
-			/* Table Card */
-			.table-card {
-				background-color: var(--color-canvas);
+			.btn-gray-sm {
+				background-color: #f4f4f5;
+				color: var(--color-shade-60);
+				border: 1px solid #e4e4e7;
+			}
+			.btn-gray-sm:hover {
+				background-color: #e4e4e7;
+				color: #000000;
+			}
+
+			.btn-danger-sm {
+				background-color: #fef2f2;
+				color: #b91c1c;
+				border: 1px solid #fee2e2;
+			}
+			.btn-danger-sm:hover {
+				background-color: #fee2e2;
+			}
+
+			/* Shopify Tags */
+			.pill-tag-mint {
+				background-color: var(--color-aloe);
+				color: #000000;
+				font-size: 11px;
+				font-weight: 600;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				padding: 3px 9px;
+				border-radius: var(--radius-pill);
+				display: inline-flex;
+				align-items: center;
+				border: 1px solid rgba(0, 0, 0, 0.08);
+			}
+
+			.pill-tag-shade {
+				background-color: #f4f4f5;
+				color: var(--color-shade-60);
+				font-size: 11px;
+				font-weight: 600;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				padding: 3px 9px;
+				border-radius: var(--radius-pill);
+				display: inline-flex;
+				align-items: center;
+				border: 1px solid #e4e4e7;
+			}
+
+			/* Cards & Tables */
+			.shopify-card {
+				background-color: #ffffff;
 				border: 1px solid var(--color-hairline);
-				border-radius: var(--radius-md);
+				border-radius: var(--radius-lg);
+				box-shadow: var(--shadow-card);
 				overflow: hidden;
-				width: 100%;
 			}
 
-			.data-table {
+			.shopify-table {
 				width: 100%;
 				border-collapse: collapse;
 				text-align: left;
 			}
 
-			.data-table th {
-				background-color: var(--color-canvas-soft);
-				color: var(--color-text-muted);
+			.shopify-table th {
+				background-color: #fafafa;
+				color: var(--color-shade-50);
 				font-size: 12px;
-				font-weight: 600;
+				font-weight: 500;
 				text-transform: uppercase;
-				letter-spacing: 0.04em;
+				letter-spacing: 0.05em;
 				padding: 14px 20px;
-				border-bottom: 1px solid var(--color-hairline-soft);
+				border-bottom: 1px solid var(--color-hairline);
 			}
 
-			.data-table td {
+			.shopify-table td {
 				padding: 16px 20px;
-				border-bottom: 1px solid var(--color-hairline-soft);
+				border-bottom: 1px solid var(--color-hairline);
 				font-size: 14px;
 				vertical-align: middle;
 			}
 
-			.data-table tr:last-child td {
+			.shopify-table tr:last-child td {
 				border-bottom: none;
 			}
 
-			.data-table tr:hover td {
-				background-color: #fafafa;
+			.shopify-table tr:hover td {
+				background-color: #fafaf8;
 			}
 
-			/* Squircle thumbnail */
+			/* Inputs */
+			.shopify-input {
+				background-color: #ffffff;
+				border: 1px solid #d4d4d8;
+				border-radius: var(--radius-md);
+				padding: 11px 14px;
+				font-size: 14px;
+				color: #000000;
+				outline: none;
+				width: 100% !important;
+				box-sizing: border-box;
+				font-family: inherit;
+				transition: border-color 0.15s ease, box-shadow 0.15s ease;
+			}
+			.shopify-input:focus {
+				border-color: #000000;
+				box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+			}
+			.shopify-input::placeholder {
+				color: var(--color-shade-40);
+			}
+
+			/* Segmented */
+			.shopify-segmented {
+				background-color: #f4f4f5;
+				border-radius: var(--radius-pill);
+				padding: 3px;
+				display: inline-flex;
+				gap: 2px;
+				border: 1px solid var(--color-hairline);
+			}
+
+			.shopify-segment-btn {
+				padding: 6px 16px;
+				font-size: 13px;
+				font-weight: 500;
+				border-radius: var(--radius-pill);
+				border: none;
+				background: transparent;
+				color: var(--color-shade-60);
+				cursor: pointer;
+				transition: all 0.15s ease;
+			}
+
+			.shopify-segment-btn.active {
+				background-color: #ffffff;
+				color: #000000;
+				font-weight: 600;
+				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+			}
+
 			.squircle-thumb {
 				width: 44px;
 				height: 44px;
-				border-radius: 30%;
+				border-radius: 8px;
 				object-fit: cover;
-				background-color: var(--color-canvas-soft);
+				background-color: #f4f4f5;
 				border: 1px solid var(--color-hairline);
 				display: inline-block;
 			}
