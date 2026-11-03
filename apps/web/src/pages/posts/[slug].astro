@@ -28,46 +28,94 @@ try {
     post = await res.json();
   }
 } catch (e) {
-  // handled in UI
+  // handled in template
 }
 
 const htmlContent = post ? await marked.parse(post.content || '') : '';
 ---
 
-<Layout title={post ? post.title : 'Post Not Found'}>
-  <p><a href="/">&larr; Back to all articles</a></p>
+<Layout title={post ? `${post.title} — EdgeBlog` : 'Post Not Found'}>
+  <div style="margin-bottom: 24px;">
+    <a href="/" class="btn-outline" style="font-size: 13px; padding: 6px 14px;">
+      &larr; Back to articles
+    </a>
+  </div>
 
   {!post ? (
-    <div>
-      <h2>404 - Post Not Found</h2>
-      <p>The post "<code>{slug}</code>" could not be found or is not published yet.</p>
+    <div style="background-color: #f3f3f3; border-radius: 24px; padding: 64px 24px; text-align: center;">
+      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0;">Post Not Found</h2>
+      <p style="color: #707070; margin: 0;">The post "<code>{slug}</code>" could not be found or is not published yet.</p>
     </div>
   ) : (
     <article>
-      <h2>{post.title}</h2>
-      <p style="color: #666; font-size: 13px;">
-        Published on: {new Date(post.created_at).toLocaleDateString()}
-      </p>
+      <header style="margin-bottom: 32px;">
+        <h1 style="font-size: 40px; font-weight: 700; color: #141414; margin: 0 0 12px 0; line-height: 1.15; letter-spacing: -0.02em;">
+          {post.title}
+        </h1>
+        <div style="display: flex; gap: 12px; align-items: center; color: #707070; font-size: 14px;">
+          <span>{new Date(post.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+          <span>•</span>
+          <span style="background-color: #f3f3f3; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; color: #141414;">
+            Cloudflare D1
+          </span>
+        </div>
+      </header>
 
       {post.cover_image && (
-        <div style="margin: 20px 0;">
+        <div style="margin: 32px 0; border-radius: 24px; overflow: hidden; border: 1px solid #e0e0e0; background-color: #f3f3f3;">
           <img
             src={post.cover_image}
             alt={post.title}
-            style="max-width: 100%; height: auto; border: 1px solid #ccc;"
+            style="width: 100%; max-height: 480px; object-fit: cover; display: block;"
           />
         </div>
       )}
 
       {post.excerpt && (
-        <blockquote style="margin: 16px 0; padding-left: 12px; border-left: 3px solid #666; color: #444; font-style: italic;">
+        <div style="margin: 24px 0 32px 0; padding: 18px 24px; background-color: #f3f3f3; border-radius: 16px; font-size: 17px; color: #262626; line-height: 1.5; font-weight: 300;">
           {post.excerpt}
-        </blockquote>
+        </div>
       )}
 
-      <hr style="border: none; border-top: 1px dashed #ccc; margin: 20px 0;" />
-
-      <div style="font-family: sans-serif; line-height: 1.7;" set:html={htmlContent} />
+      <div
+        class="prose-content"
+        style="line-height: 1.7; font-size: 16px; color: #141414;"
+        set:html={htmlContent}
+      />
     </article>
   )}
 </Layout>
+
+<style is:global>
+  .prose-content h1,
+  .prose-content h2,
+  .prose-content h3 {
+    font-weight: 700;
+    color: #141414;
+    letter-spacing: -0.02em;
+    margin-top: 36px;
+    margin-bottom: 14px;
+  }
+  .prose-content p {
+    margin: 16px 0;
+  }
+  .prose-content code {
+    background-color: #f0f0f0;
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  .prose-content pre {
+    background-color: #141414;
+    color: #f3f3f3;
+    padding: 20px;
+    border-radius: 16px;
+    overflow-x: auto;
+  }
+  .prose-content pre code {
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+  }
+</style>

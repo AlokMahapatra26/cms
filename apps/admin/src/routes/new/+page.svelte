@@ -33,7 +33,7 @@
       const res = await uploadMedia(target.files[0]);
       cover_image = res.url;
     } catch (err: any) {
-      error = `Image upload to R2 failed: ${err.message}`;
+      error = `R2 asset upload failed: ${err.message}`;
     } finally {
       uploading = false;
     }
@@ -59,98 +59,166 @@
       });
       goto('/');
     } catch (err: any) {
-      error = err.message || 'Failed to save post';
+      error = err.message || 'Failed to create article';
     } finally {
       submitting = false;
     }
   }
 </script>
 
-<h3>Create New Post</h3>
+<div style="margin-bottom: 24px;">
+  <div style="margin-bottom: 8px;">
+    <a href="/" style="font-size: 13px; color: #707070; text-decoration: none;">&larr; Back to articles</a>
+  </div>
+  <h1 style="font-size: 32px; font-weight: 700; color: #141414; margin: 0; letter-spacing: -0.02em;">
+    Create Article.
+  </h1>
+  <p style="color: #707070; font-size: 15px; margin: 4px 0 0 0;">
+    Draft your post and deploy it to the edge.
+  </p>
+</div>
 
 {#if error}
-  <p style="color: red; border: 1px solid red; padding: 8px;">{error}</p>
+  <div style="background-color: #fff0f0; border: 1px solid #ffcdd2; border-radius: 16px; padding: 16px; color: #d32f2f; margin-bottom: 24px;">
+    <strong>Error:</strong> {error}
+  </div>
 {/if}
 
-<form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 14px;">
-  <div>
-    <label for="title"><strong>Title:</strong></label><br />
-    <input
-      id="title"
-      type="text"
-      bind:value={title}
-      oninput={() => { if (!slug) autoSlug(); }}
-      placeholder="Post title"
-      required
-      style="width: 100%; padding: 6px;"
-    />
-  </div>
+<div class="form-card">
+  <form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 24px;">
+    <!-- Title -->
+    <div>
+      <label for="title" style="display: block; font-size: 13px; font-weight: 600; color: #141414; margin-bottom: 8px;">
+        Title
+      </label>
+      <input
+        id="title"
+        type="text"
+        class="input-field"
+        bind:value={title}
+        oninput={() => { if (!slug) autoSlug(); }}
+        placeholder="Enter article title..."
+        required
+      />
+    </div>
 
-  <div>
-    <label for="slug"><strong>Slug:</strong></label><br />
-    <div style="display: flex; gap: 8px;">
+    <!-- Slug & Slugify -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <label for="slug" style="font-size: 13px; font-weight: 600; color: #141414;">
+          Slug / URL Path
+        </label>
+        <button type="button" onclick={autoSlug} class="btn-pill-soft" style="font-size: 12px; padding: 4px 10px;">
+          Generate from title
+        </button>
+      </div>
       <input
         id="slug"
         type="text"
+        class="input-field"
         bind:value={slug}
-        placeholder="url-friendly-slug"
+        placeholder="article-slug"
         required
-        style="flex: 1; padding: 6px;"
       />
-      <button type="button" onclick={autoSlug}>Generate from Title</button>
     </div>
-  </div>
 
-  <div>
-    <label for="status"><strong>Status:</strong></label><br />
-    <select id="status" bind:value={status} style="padding: 6px;">
-      <option value="draft">Draft (Private)</option>
-      <option value="published">Published (Public)</option>
-    </select>
-  </div>
-
-  <div>
-    <label for="cover"><strong>Cover Image (Cloudflare R2):</strong></label><br />
-    <input id="cover" type="file" accept="image/*" onchange={handleFileUpload} />
-    {#if uploading}
-      <span>Uploading to R2...</span>
-    {/if}
-    {#if cover_image}
-      <div style="margin-top: 6px;">
-        <input type="text" bind:value={cover_image} readonly style="width: 100%; font-size: 11px;" />
-        <br />
-        <img src={cover_image} alt="Preview" style="max-height: 120px; margin-top: 4px; border: 1px solid #ccc;" />
+    <!-- Status (Segmented Control) -->
+    <div>
+      <div style="font-size: 13px; font-weight: 600; color: #141414; margin-bottom: 8px;">
+        Publishing Status
       </div>
-    {/if}
-  </div>
+      <div class="segmented-control">
+        <button
+          type="button"
+          class="segment-item {status === 'draft' ? 'active' : ''}"
+          onclick={() => (status = 'draft')}
+        >
+          Draft (Internal)
+        </button>
+        <button
+          type="button"
+          class="segment-item {status === 'published' ? 'active' : ''}"
+          onclick={() => (status = 'published')}
+        >
+          Published (Public)
+        </button>
+      </div>
+    </div>
 
-  <div>
-    <label for="excerpt"><strong>Excerpt / Summary:</strong></label><br />
-    <textarea
-      id="excerpt"
-      bind:value={excerpt}
-      rows="2"
-      placeholder="Brief description for search and listings..."
-      style="width: 100%; padding: 6px;"
-    ></textarea>
-  </div>
+    <!-- Cover Image (R2 Upload) -->
+    <div>
+      <div style="font-size: 13px; font-weight: 600; color: #141414; margin-bottom: 8px;">
+        Cover Image (Cloudflare R2)
+      </div>
+      {#if cover_image}
+        <div style="background-color: #f3f3f3; border-radius: 16px; padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <img src={cover_image} alt="Cover Preview" class="squircle-thumb" style="width: 56px; height: 56px;" />
+            <div>
+              <div style="font-size: 13px; font-weight: 600; color: #141414;">Image uploaded to R2</div>
+              <div style="font-size: 12px; color: #707070; word-break: break-all;">{cover_image}</div>
+            </div>
+          </div>
+          <button type="button" onclick={() => { cover_image = ''; }} class="btn-danger-soft">
+            Remove
+          </button>
+        </div>
+      {:else}
+        <div style="border: 2px dashed #e0e0e0; border-radius: 16px; padding: 24px; text-align: center; background-color: #fafafa;">
+          <input
+            id="cover"
+            type="file"
+            accept="image/*"
+            onchange={handleFileUpload}
+            style="display: none;"
+          />
+          <label for="cover" class="btn-outline" style="cursor: pointer;">
+            {uploading ? 'Uploading to R2...' : 'Select Cover Image'}
+          </label>
+          <p style="margin: 8px 0 0 0; font-size: 12px; color: #707070;">
+            PNG, JPG, WebP up to 10MB stored directly in Cloudflare R2 bucket
+          </p>
+        </div>
+      {/if}
+    </div>
 
-  <div>
-    <label for="content"><strong>Content (Markdown / Text):</strong></label><br />
-    <textarea
-      id="content"
-      bind:value={content}
-      rows="15"
-      placeholder="Write your article in Markdown..."
-      style="width: 100%; padding: 6px; font-family: monospace;"
-    ></textarea>
-  </div>
+    <!-- Excerpt -->
+    <div>
+      <label for="excerpt" style="display: block; font-size: 13px; font-weight: 600; color: #141414; margin-bottom: 8px;">
+        Excerpt / Lead Paragraph
+      </label>
+      <textarea
+        id="excerpt"
+        class="input-field"
+        bind:value={excerpt}
+        rows="2"
+        placeholder="A short summary of this article..."
+      ></textarea>
+    </div>
 
-  <div style="display: flex; gap: 10px;">
-    <button type="submit" disabled={submitting} style="padding: 8px 16px; font-weight: bold;">
-      {submitting ? 'Saving...' : 'Create Post'}
-    </button>
-    <a href="/" style="display: inline-block; padding: 8px 16px;">Cancel</a>
-  </div>
-</form>
+    <!-- Content (Markdown) -->
+    <div>
+      <label for="content" style="display: block; font-size: 13px; font-weight: 600; color: #141414; margin-bottom: 8px;">
+        Article Content (Markdown)
+      </label>
+      <textarea
+        id="content"
+        class="input-field"
+        bind:value={content}
+        rows="16"
+        placeholder="# Write your article in Markdown..."
+        style="line-height: 1.6; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;"
+      ></textarea>
+    </div>
 
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 12px; align-items: center; padding-top: 8px; border-top: 1px solid #f0f0f0;">
+      <button type="submit" disabled={submitting} class="btn-primary" style="padding: 12px 28px;">
+        {submitting ? 'Saving...' : status === 'published' ? 'Publish Article' : 'Save Draft'}
+      </button>
+      <a href="/" class="btn-outline" style="padding: 11px 24px;">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
