@@ -1,0 +1,10 @@
+node_modules
+.wrangler
+.svelte-kit
+.astro
+dist
+build
+.env
+.env.*
+!.env.example
+

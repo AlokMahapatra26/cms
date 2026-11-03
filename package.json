@@ -1,0 +1,13 @@
+{
+  "name": "edge-cms-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:api": "pnpm --filter @cms/api dev",
+    "dev:admin": "pnpm --filter @cms/admin dev",
+    "dev:web": "pnpm --filter @cms/web dev",
+    "migrate:local": "pnpm --filter @cms/api migrate:local",
+    "build:web": "pnpm --filter @cms/web build",
+    "build:admin": "pnpm --filter @cms/admin build"
+  }
+}

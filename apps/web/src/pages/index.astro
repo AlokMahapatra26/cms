@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import type { Post } from '@cms/shared';
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8787';
+
+let posts: Post[] = [];
+let fetchError = null;
+
+try {
+  const res = await fetch(`${API_BASE}/api/posts`);
+  if (res.ok) {
+    posts = await res.json();
+  } else {
+    fetchError = `API error: ${res.status} ${res.statusText}`;
+  }
+} catch (e: any) {
+  fetchError = `Failed to connect to Hono API at ${API_BASE}. Make sure the API worker is running.`;
+}
+---
+
+<Layout title="Public Edge Blog">
+  <h2>Articles</h2>
+
+  {fetchError && (
+    <div style="padding: 10px; border: 1px solid red; background: #fff5f5; color: red;">
+      <strong>Notice:</strong> {fetchError}
+    </div>
+  )}
+
+  {posts.length === 0 && !fetchError && (
+    <p>No published articles found. Create and publish one in the <a href="http://localhost:5173/new">CMS Admin</a>.</p>
+  )}
+
+  <ul style="list-style: none; padding: 0;">
+    {posts.map((post) => (
+      <li style="margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px dashed #ddd;">
+        <h3 style="margin-bottom: 6px;">
+          <a href={`/posts/${post.slug}`} style="color: #0044cc;">
+            {post.title}
+          </a>
+        </h3>
+        <small style="color: #666;">Published: {new Date(post.created_at).toLocaleDateString()}</small>
+        {post.excerpt && <p style="margin: 8px 0 0 0;">{post.excerpt}</p>}
+      </li>
+    ))}
+  </ul>
+</Layout>
+

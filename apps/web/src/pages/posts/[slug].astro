@@ -1,0 +1,73 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { marked } from 'marked';
+import type { Post } from '@cms/shared';
+
+const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8787';
+
+export async function getStaticPaths() {
+  const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8787';
+  try {
+    const res = await fetch(`${API_BASE}/api/posts`);
+    if (!res.ok) return [];
+    const posts: Post[] = await res.json();
+    return posts.map((post) => ({
+      params: { slug: post.slug }
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+const { slug } = Astro.params;
+let post: Post | null = null;
+
+try {
+  const res = await fetch(`${API_BASE}/api/posts/${slug}`);
+  if (res.ok) {
+    post = await res.json();
+  }
+} catch (e) {
+  // handled in UI
+}
+
+const htmlContent = post ? await marked.parse(post.content || '') : '';
+---
+
+<Layout title={post ? post.title : 'Post Not Found'}>
+  <p><a href="/">&larr; Back to all articles</a></p>
+
+  {!post ? (
+    <div>
+      <h2>404 - Post Not Found</h2>
+      <p>The post "<code>{slug}</code>" could not be found or is not published yet.</p>
+    </div>
+  ) : (
+    <article>
+      <h2>{post.title}</h2>
+      <p style="color: #666; font-size: 13px;">
+        Published on: {new Date(post.created_at).toLocaleDateString()}
+      </p>
+
+      {post.cover_image && (
+        <div style="margin: 20px 0;">
+          <img
+            src={post.cover_image}
+            alt={post.title}
+            style="max-width: 100%; height: auto; border: 1px solid #ccc;"
+          />
+        </div>
+      )}
+
+      {post.excerpt && (
+        <blockquote style="margin: 16px 0; padding-left: 12px; border-left: 3px solid #666; color: #444; font-style: italic;">
+          {post.excerpt}
+        </blockquote>
+      )}
+
+      <hr style="border: none; border-top: 1px dashed #ccc; margin: 20px 0;" />
+
+      <div style="font-family: sans-serif; line-height: 1.7;" set:html={htmlContent} />
+    </article>
+  )}
+</Layout>
