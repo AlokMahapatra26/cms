@@ -21,6 +21,7 @@
         <div class="nav-links" style="margin-left: 16px;">
           <a href="/" class="nav-link {page.url.pathname === '/' ? 'active' : ''}">Posts</a>
           <a href="/new" class="nav-link {page.url.pathname === '/new' ? 'active' : ''}">New Post</a>
+          <a href="/api" class="nav-link {page.url.pathname === '/api' ? 'active' : ''}">API Reference</a>
         </div>
       </div>
 
