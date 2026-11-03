@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { fetchAdminPosts, deletePost } from '$lib/api';
-  import type { Post } from '@cms/shared';
+  import { fetchAdminPosts, updatePost, deletePost } from '$lib/api';
+  import type { Post, PostStatus } from '@cms/shared';
 
   let posts = $state<Post[]>([]);
   let loading = $state(true);
@@ -17,6 +17,16 @@
       error = e.message || 'Error loading posts';
     } finally {
       loading = false;
+    }
+  }
+
+  async function handleTogglePublish(post: Post) {
+    const nextStatus: PostStatus = post.status === 'published' ? 'draft' : 'published';
+    try {
+      const updated = await updatePost(post.id, { status: nextStatus });
+      posts = posts.map((p) => (p.id === post.id ? updated : p));
+    } catch (e: any) {
+      alert(`Failed to update status: ${e.message}`);
     }
   }
 
@@ -158,24 +168,43 @@
               </span>
             </td>
             <td style="text-align: right; white-space: nowrap;">
-              <div style="display: inline-flex; gap: 6px;">
-                {#if post.status === 'published'}
+              <div style="display: inline-flex; align-items: center; gap: 6px;">
+                {#if post.status === 'draft'}
+                  <button
+                    onclick={() => handleTogglePublish(post)}
+                    class="btn-primary"
+                    style="font-size: 12px; padding: 6px 14px; background-color: #0066ff;"
+                    title="Publish immediately to public blog"
+                  >
+                    Publish
+                  </button>
+                {:else}
                   <a
                     href="http://localhost:4321/posts/{post.slug}"
                     target="_blank"
                     rel="noopener"
                     class="btn-pill-soft"
+                    style="font-size: 12px; padding: 6px 12px;"
                     title="View live static site"
                   >
                     Live ↗
                   </a>
+                  <button
+                    onclick={() => handleTogglePublish(post)}
+                    class="btn-pill-soft"
+                    style="font-size: 12px; padding: 6px 12px; color: #707070;"
+                    title="Revert article to draft"
+                  >
+                    Unpublish
+                  </button>
                 {/if}
-                <a href="/edit/{post.id}" class="btn-pill-soft">
+                <a href="/edit/{post.id}" class="btn-pill-soft" style="font-size: 12px; padding: 6px 12px;">
                   Edit
                 </a>
                 <button
                   onclick={() => handleDelete(post.id, post.title)}
                   class="btn-danger-soft"
+                  style="font-size: 12px; padding: 6px 12px;"
                   title="Delete post"
                 >
                   Delete

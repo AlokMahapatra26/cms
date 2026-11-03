@@ -212,11 +212,36 @@
     </div>
 
     <!-- Action Buttons -->
-    <div style="display: flex; gap: 12px; align-items: center; padding-top: 8px; border-top: 1px solid #f0f0f0;">
-      <button type="submit" disabled={submitting} class="btn-primary" style="padding: 12px 28px;">
-        {submitting ? 'Saving...' : status === 'published' ? 'Publish Article' : 'Save Draft'}
+    <div style="display: flex; gap: 12px; align-items: center; padding-top: 12px; border-top: 1px solid #f0f0f0; flex-wrap: wrap;">
+      <button
+        type="button"
+        disabled={submitting}
+        onclick={() => {
+          status = 'published';
+          const form = document.querySelector('form');
+          if (form) form.requestSubmit();
+        }}
+        class="btn-primary"
+        style="padding: 12px 28px; background-color: #0066ff;"
+      >
+        {submitting && status === 'published' ? 'Publishing...' : 'Publish Article'}
       </button>
-      <a href="/" class="btn-outline" style="padding: 11px 24px;">
+
+      <button
+        type="button"
+        disabled={submitting}
+        onclick={() => {
+          status = 'draft';
+          const form = document.querySelector('form');
+          if (form) form.requestSubmit();
+        }}
+        class="btn-outline"
+        style="padding: 11px 24px;"
+      >
+        {submitting && status === 'draft' ? 'Saving...' : 'Save as Draft'}
+      </button>
+
+      <a href="/" class="btn-pill-soft" style="padding: 11px 20px; color: #707070;">
         Cancel
       </a>
     </div>
