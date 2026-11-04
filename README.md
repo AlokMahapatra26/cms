@@ -1,8 +1,6 @@
 # Cloudflare Edge CMS (Headless Blog)
 
-A lightweight, edge-native headless blog built on Cloudflare Workers, Hono, D1 (SQLite), R2 (Object Storage), SvelteKit (Admin Dashboard), and Astro (Static Website).
-
-The UI is intentionally bare-minimum, raw HTML elements with zero bloated styles.
+A high-performance, edge-native headless CMS built with **Cloudflare Workers**, **Hono**, **Cloudflare D1** (SQLite), **Cloudflare R2** (Object Storage), **SvelteKit** (Admin Dashboard with Shopify Polaris design), and **Astro** (Public Static Storefront).
 
 ---
 
@@ -11,58 +9,84 @@ The UI is intentionally bare-minimum, raw HTML elements with zero bloated styles
 ```
 apps/
 ├── api/       # Cloudflare Worker running Hono (D1 database + R2 bucket)
-├── admin/     # SvelteKit Admin Dashboard (Bare-minimum raw HTML)
-└── web/       # Astro Static Website (Consumes Hono Content API)
+├── admin/     # SvelteKit Admin Dashboard (Shopify Polaris UI theme)
+└── web/       # Astro Storefront / Blog (Consumes Hono Content API)
 packages/
-└── shared/    # Shared TypeScript interfaces (Post, CreatePostInput, etc.)
+└── shared/    # Shared TypeScript interfaces (Post, User, Auth, etc.)
 ```
+
+---
+
+## First-Time Setup & Authentication Flow
+
+When anyone clones or downloads this repository, the database contains **0 users**.
+
+1. When you run the admin dashboard and visit `http://localhost:5173`, EdgeCMS automatically detects that no admin exists.
+2. It immediately routes you to the **First-Time Setup Wizard** at `/setup`.
+3. You fill out:
+   - **Full Name**
+   - **Admin Email**
+   - **Password** (minimum 6 characters)
+4. EdgeCMS hashes the password using edge-native **Web Crypto PBKDF2** with a unique salt, saves your Super Admin account in Cloudflare D1, creates an active 7-day session token, and automatically redirects you into the dashboard.
+5. Once this first user is created, the `/setup` endpoint is locked permanently and future visits will ask for your login credentials at `/login`.
 
 ---
 
 ## Ports & Services
 
 * **Hono API Worker**: `http://localhost:8787`
-  * `GET /api/posts` - List published posts
-  * `GET /api/posts/:slug` - Single published post
-  * `GET /api/admin/posts` - List all posts (including drafts)
-  * `POST /api/admin/posts` - Create post
-  * `PUT /api/admin/posts/:id` - Update post
-  * `DELETE /api/admin/posts/:id` - Delete post
-  * `POST /api/admin/upload` - Direct file upload to Cloudflare R2
-  * `GET /api/media/*` - Stream file from Cloudflare R2
+  * **Public Endpoints** (Zero auth needed - for Astro & external frontends):
+    * `GET /api/posts` - List published articles
+    * `GET /api/posts/:slug` - Get single published article
+    * `GET /api/media/*` - Stream images/media from Cloudflare R2
+    * `GET /health` - Worker health status
+  * **Auth Endpoints**:
+    * `GET /api/auth/setup-status` - Check if initial setup is needed
+    * `POST /api/auth/setup` - Create primary Super Admin
+    * `POST /api/auth/login` - Authenticate admin & receive session token
+    * `POST /api/auth/logout` - Invalidate session token
+    * `GET /api/auth/me` - Validate session & get current user profile
+  * **Protected Admin Endpoints** (Requires `Authorization: Bearer <token>`):
+    * `GET /api/admin/posts` - List all posts (drafts and published)
+    * `POST /api/admin/posts` - Create post
+    * `GET /api/admin/posts/:id` - Fetch post by ID
+    * `PUT /api/admin/posts/:id` - Update post
+    * `DELETE /api/admin/posts/:id` - Delete post
+    * `POST /api/admin/upload` - Upload media to Cloudflare R2
 * **SvelteKit Admin CMS**: `http://localhost:5173`
-  * Bare-minimum raw HTML table, inputs, textareas, file upload to R2
-* **Astro Static Blog**: `http://localhost:4321`
-  * Clean, minimal blog consuming the Hono API and rendering markdown
+  * First-time setup wizard (`/setup`), login screen (`/login`), article publisher, interactive markdown editor, R2 cover image uploader, and live API documentation (`/api`).
+* **Astro Public Blog**: `http://localhost:4321`
+  * Fast static blog consuming the Hono API and rendering markdown.
 
 ---
 
 ## Quickstart (Local Development)
 
-### 1. Apply D1 Migrations (Local SQLite)
+### 1. Install Dependencies
+```bash
+pnpm install
+```
+
+### 2. Apply D1 Migrations (Local SQLite)
 ```bash
 pnpm migrate:local
 ```
 
-### 2. Run the Hono API (Cloudflare Worker)
+### 3. Run Development Servers
+You can start all three apps or run them in separate terminals:
+
 ```bash
+# Terminal 1: Hono Worker (Port 8787)
 pnpm dev:api
-```
-*(Runs on `http://localhost:8787` with local D1 and R2 persistence)*
 
-### 3. Run the SvelteKit Admin Dashboard
-In a new terminal:
-```bash
+# Terminal 2: SvelteKit Admin (Port 5173)
 pnpm dev:admin
-```
-*(Open `http://localhost:5173` to manage posts and upload cover images)*
 
-### 4. Run the Astro Static Blog
-In a new terminal:
-```bash
+# Terminal 3: Astro Storefront (Port 4321)
 pnpm dev:web
 ```
-*(Open `http://localhost:4321` to view published blog posts)*
+
+Open `http://localhost:5173` in your browser. Since it's a fresh installation, you will automatically be greeted by the **Setup Wizard** to create your primary administrator account.
 
 ---
 
@@ -83,4 +107,3 @@ pnpm dev:web
    pnpm --filter @cms/api deploy
    ```
 5. Deploy `apps/admin` and `apps/web` to **Cloudflare Pages**.
-

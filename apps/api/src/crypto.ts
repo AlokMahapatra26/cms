@@ -69,3 +69,4 @@ export async function verifyPassword(password: string, expectedHash: string, sal
   }
   return result === 0;
 }
+
