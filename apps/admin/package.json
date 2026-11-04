@@ -8,7 +8,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@cms/shared": "workspace:*"
+    "@cms/shared": "workspace:*",
+    "@tiptap/core": "^3.32.2",
+    "@tiptap/extension-image": "^3.32.2",
+    "@tiptap/extension-link": "^3.32.2",
+    "@tiptap/extension-placeholder": "^3.32.2",
+    "@tiptap/starter-kit": "^3.32.2"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^4.0.0",
@@ -18,4 +23,3 @@
     "vite": "^6.0.0"
   }
 }
-

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { createPost, uploadMedia } from '$lib/api';
+  import RichTextEditor from '$lib/RichTextEditor.svelte';
   import type { PostStatus } from '@cms/shared';
 
   let title = $state('');
@@ -198,17 +199,13 @@
 
     <!-- Content -->
     <div>
-      <label for="content" style="display: block; font-size: 13px; font-weight: 600; color: #000000; margin-bottom: 8px;">
-        Article Content (Markdown)
-      </label>
-      <textarea
-        id="content"
-        class="shopify-input"
-        bind:value={content}
-        rows="16"
-        placeholder="# Write your article in Markdown..."
-        style="line-height: 1.6; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;"
-      ></textarea>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <label for="content" style="font-size: 13px; font-weight: 600; color: #000000;">
+          Article Content (Rich Text WYSIWYG)
+        </label>
+        <span style="font-size: 11.5px; color: #71717a;">Formats as clean HTML for storefront</span>
+      </div>
+      <RichTextEditor bind:content={content} />
     </div>
 
     <!-- Actions -->
