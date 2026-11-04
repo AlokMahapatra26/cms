@@ -128,6 +128,88 @@
 				background-color: #e4e4e7;
 			}
 
+			/* Shopify Modern Sidebar Layout */
+			.shopify-app-body {
+				display: flex;
+				min-height: calc(100vh - 61px);
+				width: 100%;
+			}
+
+			.shopify-sidebar {
+				width: 240px;
+				min-width: 240px;
+				background-color: #ffffff;
+				border-right: 1px solid var(--color-hairline);
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				padding: 20px 14px;
+				position: sticky;
+				top: 61px;
+				height: calc(100vh - 61px);
+				overflow-y: auto;
+				box-sizing: border-box;
+			}
+
+			.shopify-sidebar-section {
+				margin-bottom: 24px;
+			}
+
+			.shopify-sidebar-heading {
+				font-size: 11px;
+				font-weight: 600;
+				color: #71717a;
+				text-transform: uppercase;
+				letter-spacing: 0.05em;
+				padding: 0 10px 8px 10px;
+				margin: 0;
+			}
+
+			.shopify-sidebar-link {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 8px 12px;
+				border-radius: var(--radius-md);
+				font-size: 13.5px;
+				font-weight: 500;
+				color: #3f3f46;
+				text-decoration: none;
+				transition: all 0.15s ease;
+				margin-bottom: 2px;
+			}
+
+			.shopify-sidebar-link:hover {
+				background-color: #f4f4f5;
+				color: #000000;
+			}
+
+			.shopify-sidebar-link.active {
+				background-color: #f4f4f5;
+				color: #000000;
+				font-weight: 600;
+			}
+
+			.shopify-sidebar-link-content {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+			}
+
+			.shopify-content-area {
+				flex: 1;
+				background-color: var(--color-canvas-cream);
+				padding: 32px 36px 80px 36px;
+				box-sizing: border-box;
+				overflow-x: hidden;
+			}
+
+			.shopify-content-inner {
+				max-width: 1080px;
+				margin: 0 auto;
+				width: 100%;
+			}
+
 			/* Shopify Pill Buttons */
 			.btn-primary-pill {
 				background-color: #000000;

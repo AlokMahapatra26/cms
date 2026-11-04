@@ -45,6 +45,13 @@ export interface UploadResponse {
   url: string;
 }
 
+export interface MediaItem {
+  key: string;
+  size: number;
+  uploaded: string;
+  url: string;
+}
+
 export interface LoginInput {
   email: string;
   password: string;

@@ -3,6 +3,7 @@ import type {
   CreatePostInput,
   UpdatePostInput,
   UploadResponse,
+  MediaItem,
   User,
   LoginInput,
   SetupInput,
@@ -260,4 +261,22 @@ export async function uploadMedia(file: File): Promise<UploadResponse> {
   const data = await res.json();
   const fullUrl = data.url.startsWith('http') ? data.url : `${API_BASE}${data.url}`;
   return { key: data.key, url: fullUrl };
+}
+
+export async function fetchMediaItems(): Promise<MediaItem[]> {
+  const res = await fetch(`${API_BASE}/api/admin/media`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) throw new Error('Failed to fetch media');
+  const items: MediaItem[] = await res.json();
+  return items.map((item) => ({
+    ...item,
+    url: item.url.startsWith('http') ? item.url : `${API_BASE}${item.url}`
+  }));
 }

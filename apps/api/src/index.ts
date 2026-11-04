@@ -528,8 +528,24 @@ app.delete('/api/admin/posts/:id', async (c) => {
 });
 
 // -------------------------------------------------------------
-// MEDIA / R2 ASSET PIPELINE (Protected for uploads)
+// MEDIA / R2 ASSET PIPELINE (Protected for uploads & list)
 // -------------------------------------------------------------
+
+// List uploaded media from R2
+app.get('/api/admin/media', async (c) => {
+  try {
+    const listResult = await c.env.MEDIA_BUCKET.list({ limit: 100 });
+    const items = listResult.objects.map((obj) => ({
+      key: obj.key,
+      size: obj.size,
+      uploaded: obj.uploaded.toISOString(),
+      url: `/api/media/${obj.key}`
+    }));
+    return c.json(items);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to list media' }, 500);
+  }
+});
 
 // Upload file to R2 (under /api/admin/upload so protected by auth middleware)
 app.post('/api/admin/upload', async (c) => {
