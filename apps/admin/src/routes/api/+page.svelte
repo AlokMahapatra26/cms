@@ -58,19 +58,19 @@ curl -X GET ${API_BASE}/api/admin/posts \\
   -H "Authorization: Bearer <YOUR_SESSION_TOKEN>"`;
 </script>
 
-<div style="margin-bottom: 28px;">
-  <h1 style="font-size: 32px; font-weight: 400; color: #000000; margin: 0 0 6px 0; letter-spacing: -0.01em;">
+<div style="margin-bottom: 16px;">
+  <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0 0 2px 0; letter-spacing: -0.01em;">
     API Reference
   </h1>
-  <p style="font-size: 14px; color: #71717a; margin: 0; font-weight: 400;">
+  <p style="font-size: 12.5px; color: #71717a; margin: 0;">
     Connect external storefronts, headless checkouts, and mobile apps to your Cloudflare edge CMS.
   </p>
 </div>
 
 <!-- Endpoints Table Card -->
-<div style="margin-bottom: 32px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-    <h2 style="font-size: 18px; font-weight: 600; margin: 0;">Storefront Delivery Endpoints</h2>
+<div style="margin-bottom: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <h2 style="font-size: 15px; font-weight: 600; margin: 0;">Storefront Delivery Endpoints</h2>
     <span class="pill-tag-mint">CORS Enabled</span>
   </div>
 

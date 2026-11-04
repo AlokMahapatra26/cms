@@ -84,32 +84,32 @@
   });
 </script>
 
-<div style="margin-bottom: 24px;">
-  <div style="margin-bottom: 8px;">
-    <a href="/" style="font-size: 13px; color: #71717a; text-decoration: none;">&larr; Back to articles</a>
+<div style="margin-bottom: 16px;">
+  <div style="margin-bottom: 4px;">
+    <a href="/" style="font-size: 12px; color: #71717a; text-decoration: none;">&larr; Back to articles</a>
   </div>
-  <h1 style="font-size: 32px; font-weight: 400; color: #000000; margin: 0; letter-spacing: -0.01em;">
+  <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0; letter-spacing: -0.01em;">
     Edit Article
   </h1>
-  <p style="color: #71717a; font-size: 14px; margin: 4px 0 0 0;">
+  <p style="color: #71717a; font-size: 12.5px; margin: 2px 0 0 0;">
     Update content stored in D1 database and media on R2.
   </p>
 </div>
 
 {#if loading}
-  <div class="shopify-card" style="padding: 48px; text-align: center; color: #71717a;">
-    <p style="margin: 0; font-size: 14px;">Loading article details...</p>
+  <div class="shopify-card" style="padding: 36px; text-align: center; color: #71717a;">
+    <p style="margin: 0; font-size: 13px;">Loading article details...</p>
   </div>
 {:else if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 16px; color: #b91c1c; margin-bottom: 24px;">
+  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 12px 16px; color: #b91c1c; margin-bottom: 16px; font-size: 13px;">
     <strong>Error:</strong> {error}
-    <div style="margin-top: 10px;">
+    <div style="margin-top: 8px;">
       <button class="btn-primary-pill" onclick={load}>Retry</button>
     </div>
   </div>
 {:else}
-  <div class="shopify-card" style="padding: 32px;">
-    <form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 24px;">
+  <div class="shopify-card" style="padding: 20px;">
+    <form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 16px;">
       <!-- Title -->
       <div>
         <label for="title" style="display: block; font-size: 13px; font-weight: 600; color: #000000; margin-bottom: 8px;">

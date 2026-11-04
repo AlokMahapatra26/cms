@@ -60,14 +60,14 @@
 			.shopify-header {
 				background-color: #ffffff;
 				border-bottom: 1px solid var(--color-hairline);
-				padding: 14px 24px;
+				padding: 10px 20px;
 				position: sticky;
 				top: 0;
 				z-index: 50;
 			}
 
 			.shopify-nav-inner {
-				max-width: 1040px;
+				max-width: 100%;
 				margin: 0 auto;
 				display: flex;
 				align-items: center;
@@ -77,9 +77,9 @@
 			.shopify-brand {
 				display: flex;
 				align-items: center;
-				gap: 10px;
+				gap: 8px;
 				font-weight: 600;
-				font-size: 17px;
+				font-size: 15px;
 				color: #000000;
 				text-decoration: none;
 				letter-spacing: -0.02em;
@@ -88,14 +88,14 @@
 			.shopify-nav-links {
 				display: flex;
 				align-items: center;
-				gap: 6px;
+				gap: 4px;
 			}
 
 			.shopify-nav-link {
-				font-size: 14px;
+				font-size: 13px;
 				font-weight: 500;
 				color: var(--color-shade-60);
-				padding: 7px 16px;
+				padding: 5px 12px;
 				border-radius: var(--radius-pill);
 				text-decoration: none;
 				transition: all 0.15s ease;
@@ -115,11 +115,11 @@
 			.shopify-user-pill {
 				display: flex;
 				align-items: center;
-				gap: 8px;
+				gap: 6px;
 				background-color: #f4f4f5;
-				padding: 4px 10px;
+				padding: 3px 8px;
 				border-radius: var(--radius-pill);
-				font-size: 13px;
+				font-size: 12px;
 				text-decoration: none;
 				color: inherit;
 				transition: background-color 0.15s ease;
@@ -131,37 +131,37 @@
 			/* Shopify Modern Sidebar Layout */
 			.shopify-app-body {
 				display: flex;
-				min-height: calc(100vh - 61px);
+				min-height: calc(100vh - 51px);
 				width: 100%;
 			}
 
 			.shopify-sidebar {
-				width: 240px;
-				min-width: 240px;
+				width: 200px;
+				min-width: 200px;
 				background-color: #ffffff;
 				border-right: 1px solid var(--color-hairline);
 				display: flex;
 				flex-direction: column;
 				justify-content: space-between;
-				padding: 20px 14px;
+				padding: 14px 10px;
 				position: sticky;
-				top: 61px;
-				height: calc(100vh - 61px);
+				top: 51px;
+				height: calc(100vh - 51px);
 				overflow-y: auto;
 				box-sizing: border-box;
 			}
 
 			.shopify-sidebar-section {
-				margin-bottom: 24px;
+				margin-bottom: 16px;
 			}
 
 			.shopify-sidebar-heading {
-				font-size: 11px;
+				font-size: 10px;
 				font-weight: 600;
 				color: #71717a;
 				text-transform: uppercase;
-				letter-spacing: 0.05em;
-				padding: 0 10px 8px 10px;
+				letter-spacing: 0.06em;
+				padding: 0 8px 6px 8px;
 				margin: 0;
 			}
 
@@ -169,9 +169,9 @@
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				padding: 8px 12px;
-				border-radius: var(--radius-md);
-				font-size: 13.5px;
+				padding: 6px 10px;
+				border-radius: 6px;
+				font-size: 12.5px;
 				font-weight: 500;
 				color: #3f3f46;
 				text-decoration: none;
@@ -193,36 +193,37 @@
 			.shopify-sidebar-link-content {
 				display: flex;
 				align-items: center;
-				gap: 10px;
+				gap: 8px;
 			}
 
 			.shopify-content-area {
 				flex: 1;
+				min-width: 0;
 				background-color: var(--color-canvas-cream);
-				padding: 32px 36px 80px 36px;
+				padding: 20px 24px 60px 24px;
 				box-sizing: border-box;
-				overflow-x: hidden;
+				overflow-x: auto;
 			}
 
 			.shopify-content-inner {
-				max-width: 1080px;
-				margin: 0 auto;
 				width: 100%;
+				max-width: 100%;
+				margin: 0 auto;
 			}
 
 			/* Shopify Pill Buttons */
 			.btn-primary-pill {
 				background-color: #000000;
 				color: #ffffff;
-				font-size: 14px;
+				font-size: 13px;
 				font-weight: 500;
 				border-radius: var(--radius-pill);
-				padding: 9px 22px;
+				padding: 7px 16px;
 				border: 1px solid #000000;
 				cursor: pointer;
 				display: inline-flex;
 				align-items: center;
-				gap: 8px;
+				gap: 6px;
 				text-decoration: none;
 				transition: all 0.15s ease;
 			}
@@ -233,15 +234,15 @@
 			.btn-aloe-pill {
 				background-color: var(--color-aloe);
 				color: #000000;
-				font-size: 14px;
+				font-size: 13px;
 				font-weight: 600;
 				border-radius: var(--radius-pill);
-				padding: 9px 22px;
+				padding: 7px 16px;
 				border: 1px solid rgba(0, 0, 0, 0.1);
 				cursor: pointer;
 				display: inline-flex;
 				align-items: center;
-				gap: 8px;
+				gap: 6px;
 				text-decoration: none;
 				transition: all 0.15s ease;
 			}
@@ -252,15 +253,15 @@
 			.btn-outline-pill {
 				background-color: #ffffff;
 				color: #000000;
-				font-size: 14px;
+				font-size: 12.5px;
 				font-weight: 500;
 				border: 1px solid #d4d4d8;
 				border-radius: var(--radius-pill);
-				padding: 8px 20px;
+				padding: 5px 14px;
 				cursor: pointer;
 				display: inline-flex;
 				align-items: center;
-				gap: 6px;
+				gap: 5px;
 				text-decoration: none;
 				transition: all 0.15s ease;
 			}
@@ -270,9 +271,9 @@
 			}
 
 			.btn-sm-pill {
-				font-size: 12px;
-				padding: 5px 12px;
-				border-radius: var(--radius-pill);
+				font-size: 11.5px;
+				padding: 3px 9px;
+				border-radius: 6px;
 				font-weight: 500;
 				cursor: pointer;
 				border: none;
@@ -280,11 +281,12 @@
 				align-items: center;
 				text-decoration: none;
 				transition: all 0.15s ease;
+				line-height: 1.4;
 			}
 
 			.btn-aloe-sm {
 				background-color: var(--color-aloe);
-				color: #000000;
+				color: #043e1d;
 				font-weight: 600;
 				border: 1px solid rgba(0, 0, 0, 0.08);
 			}
@@ -314,26 +316,26 @@
 			/* Shopify Tags */
 			.pill-tag-mint {
 				background-color: var(--color-aloe);
-				color: #000000;
-				font-size: 11px;
-				font-weight: 600;
+				color: #043e1d;
+				font-size: 10px;
+				font-weight: 700;
 				letter-spacing: 0.04em;
 				text-transform: uppercase;
-				padding: 3px 9px;
+				padding: 2px 7px;
 				border-radius: var(--radius-pill);
 				display: inline-flex;
 				align-items: center;
-				border: 1px solid rgba(0, 0, 0, 0.08);
+				border: 1px solid rgba(0, 0, 0, 0.06);
 			}
 
 			.pill-tag-shade {
 				background-color: #f4f4f5;
 				color: var(--color-shade-60);
-				font-size: 11px;
+				font-size: 10px;
 				font-weight: 600;
 				letter-spacing: 0.04em;
 				text-transform: uppercase;
-				padding: 3px 9px;
+				padding: 2px 7px;
 				border-radius: var(--radius-pill);
 				display: inline-flex;
 				align-items: center;
@@ -344,7 +346,7 @@
 			.shopify-card {
 				background-color: #ffffff;
 				border: 1px solid var(--color-hairline);
-				border-radius: var(--radius-lg);
+				border-radius: 10px;
 				box-shadow: var(--shadow-card);
 				overflow: hidden;
 			}
@@ -353,23 +355,25 @@
 				width: 100%;
 				border-collapse: collapse;
 				text-align: left;
+				font-size: 13px;
 			}
 
 			.shopify-table th {
 				background-color: #fafafa;
 				color: var(--color-shade-50);
-				font-size: 12px;
-				font-weight: 500;
+				font-size: 11px;
+				font-weight: 600;
 				text-transform: uppercase;
 				letter-spacing: 0.05em;
-				padding: 14px 20px;
+				padding: 9px 12px;
 				border-bottom: 1px solid var(--color-hairline);
+				white-space: nowrap;
 			}
 
 			.shopify-table td {
-				padding: 16px 20px;
+				padding: 10px 12px;
 				border-bottom: 1px solid var(--color-hairline);
-				font-size: 14px;
+				font-size: 13px;
 				vertical-align: middle;
 			}
 
@@ -385,9 +389,9 @@
 			.shopify-input {
 				background-color: #ffffff;
 				border: 1px solid #d4d4d8;
-				border-radius: var(--radius-md);
-				padding: 11px 14px;
-				font-size: 14px;
+				border-radius: 6px;
+				padding: 8px 12px;
+				font-size: 13px;
 				color: #000000;
 				outline: none;
 				width: 100% !important;
@@ -407,15 +411,15 @@
 			.shopify-segmented {
 				background-color: #f4f4f5;
 				border-radius: var(--radius-pill);
-				padding: 3px;
+				padding: 2px;
 				display: inline-flex;
 				gap: 2px;
 				border: 1px solid var(--color-hairline);
 			}
 
 			.shopify-segment-btn {
-				padding: 6px 16px;
-				font-size: 13px;
+				padding: 4px 10px;
+				font-size: 12px;
 				font-weight: 500;
 				border-radius: var(--radius-pill);
 				border: none;
@@ -429,13 +433,13 @@
 				background-color: #ffffff;
 				color: #000000;
 				font-weight: 600;
-				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+				box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 			}
 
 			.squircle-thumb {
-				width: 44px;
-				height: 44px;
-				border-radius: 8px;
+				width: 32px;
+				height: 32px;
+				border-radius: 6px;
 				object-fit: cover;
 				background-color: #f4f4f5;
 				border: 1px solid var(--color-hairline);

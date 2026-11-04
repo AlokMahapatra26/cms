@@ -66,26 +66,26 @@
   }
 </script>
 
-<div style="margin-bottom: 24px;">
-  <div style="margin-bottom: 8px;">
-    <a href="/" style="font-size: 13px; color: #71717a; text-decoration: none;">&larr; Back to articles</a>
+<div style="margin-bottom: 16px;">
+  <div style="margin-bottom: 4px;">
+    <a href="/" style="font-size: 12px; color: #71717a; text-decoration: none;">&larr; Back to articles</a>
   </div>
-  <h1 style="font-size: 32px; font-weight: 400; color: #000000; margin: 0; letter-spacing: -0.01em;">
+  <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0; letter-spacing: -0.01em;">
     Create Article
   </h1>
-  <p style="color: #71717a; font-size: 14px; margin: 4px 0 0 0;">
+  <p style="color: #71717a; font-size: 12.5px; margin: 2px 0 0 0;">
     Draft content and publish to your edge-native storefront.
   </p>
 </div>
 
 {#if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 16px; color: #b91c1c; margin-bottom: 24px;">
+  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 12px 16px; color: #b91c1c; margin-bottom: 16px; font-size: 13px;">
     <strong>Error:</strong> {error}
   </div>
 {/if}
 
-<div class="shopify-card" style="padding: 32px;">
-  <form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 24px;">
+<div class="shopify-card" style="padding: 20px;">
+  <form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 16px;">
     <!-- Title -->
     <div>
       <label for="title" style="display: block; font-size: 13px; font-weight: 600; color: #000000; margin-bottom: 8px;">

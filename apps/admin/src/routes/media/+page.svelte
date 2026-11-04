@@ -69,19 +69,19 @@
 </svelte:head>
 
 <!-- Header -->
-<div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+<div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
   <div>
-    <h1 style="font-size: 32px; font-weight: 400; color: #000000; margin: 0 0 6px 0; letter-spacing: -0.01em;">
+    <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0 0 2px 0; letter-spacing: -0.01em;">
       Media Library
     </h1>
-    <p style="font-size: 14px; color: #71717a; margin: 0; font-weight: 400;">
+    <p style="font-size: 12.5px; color: #71717a; margin: 0;">
       Assets, cover images, and graphics stored globally on Cloudflare R2.
     </p>
   </div>
 
   <div>
-    <label class="btn-primary-pill" style="cursor: pointer; font-size: 13px; padding: 8px 18px;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <label class="btn-primary-pill" style="cursor: pointer; font-size: 12px; padding: 6px 14px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="17 8 12 3 7 8"></polyline>
         <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -127,11 +127,11 @@
     </label>
   </div>
 {:else}
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;">
     {#each items as item (item.key)}
       <div class="shopify-card" style="overflow: hidden; display: flex; flex-direction: column;">
         <!-- Thumbnail -->
-        <div style="height: 150px; background-color: #f4f4f5; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+        <div style="height: 110px; background-color: #f4f4f5; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
           <img
             src={item.url}
             alt={item.key}
@@ -143,20 +143,20 @@
         </div>
 
         <!-- Details -->
-        <div style="padding: 14px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
-            <div style="font-size: 13px; font-weight: 600; color: #000000; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 4px;" title={item.key}>
+            <div style="font-size: 12px; font-weight: 600; color: #000000; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px;" title={item.key}>
               {item.key.replace('uploads/', '')}
             </div>
-            <div style="font-size: 11px; color: #71717a; margin-bottom: 12px;">
+            <div style="font-size: 10.5px; color: #71717a; margin-bottom: 8px;">
               {formatBytes(item.size)}
             </div>
           </div>
 
-          <div style="display: flex; gap: 8px;">
+          <div style="display: flex; gap: 6px;">
             <button
               class="btn-sm-pill btn-gray-sm"
-              style="flex: 1; justify-content: center;"
+              style="flex: 1; justify-content: center; font-size: 11px; padding: 2px 6px;"
               onclick={() => copyUrl(item.url, item.key)}
             >
               {copiedKey === item.key ? 'Copied URL!' : 'Copy URL'}
@@ -166,6 +166,7 @@
               target="_blank"
               rel="noopener"
               class="btn-sm-pill btn-gray-sm"
+              style="font-size: 11px; padding: 2px 6px;"
               title="Open full image"
             >
               ↗

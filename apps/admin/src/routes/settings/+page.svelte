@@ -111,30 +111,30 @@
   <title>Account Settings & Credentials - EdgeCMS</title>
 </svelte:head>
 
-<div style="margin-bottom: 28px;">
-  <h1 style="font-size: 32px; font-weight: 400; color: #000000; margin: 0 0 6px 0; letter-spacing: -0.01em;">
+<div style="margin-bottom: 16px;">
+  <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0 0 2px 0; letter-spacing: -0.01em;">
     Account & Credentials
   </h1>
-  <p style="font-size: 14px; color: #71717a; margin: 0; font-weight: 400;">
+  <p style="font-size: 12.5px; color: #71717a; margin: 0;">
     Manage your administrator profile details, login email address, and security password.
   </p>
 </div>
 
 {#if loadingUser}
-  <div class="shopify-card" style="padding: 48px; text-align: center; color: #71717a;">
-    <p style="margin: 0; font-size: 14px;">Loading user profile...</p>
+  <div class="shopify-card" style="padding: 36px; text-align: center; color: #71717a;">
+    <p style="margin: 0; font-size: 13px;">Loading user profile...</p>
   </div>
 {:else if user}
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
     
     <!-- Profile Card -->
-    <div class="shopify-card" style="padding: 28px;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+    <div class="shopify-card" style="padding: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
         <div>
-          <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 4px 0;">Profile Credentials</h2>
-          <p style="font-size: 13px; color: #71717a; margin: 0;">Update your display name and login email.</p>
+          <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 2px 0;">Profile Credentials</h2>
+          <p style="font-size: 12px; color: #71717a; margin: 0;">Update your display name and login email.</p>
         </div>
-        <span style="background-color: var(--color-aloe); color: #043e1d; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 9999px; letter-spacing: 0.04em;">
+        <span style="background-color: var(--color-aloe); color: #043e1d; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 9999px; letter-spacing: 0.04em;">
           {user.role}
         </span>
       </div>
@@ -203,10 +203,10 @@
     </div>
 
     <!-- Password Card -->
-    <div class="shopify-card" style="padding: 28px;">
-      <div style="margin-bottom: 20px;">
-        <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 4px 0;">Change Password</h2>
-        <p style="font-size: 13px; color: #71717a; margin: 0;">Update your edge-encrypted master password.</p>
+    <div class="shopify-card" style="padding: 20px;">
+      <div style="margin-bottom: 16px;">
+        <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 2px 0;">Change Password</h2>
+        <p style="font-size: 12px; color: #71717a; margin: 0;">Update your edge-encrypted master password.</p>
       </div>
 
       {#if passwordSuccess}

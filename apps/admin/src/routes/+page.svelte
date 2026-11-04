@@ -58,12 +58,12 @@
 </script>
 
 <!-- Header & Controls -->
-<div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+<div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
   <div>
-    <h1 style="font-size: 32px; font-weight: 400; color: #000000; margin: 0 0 6px 0; letter-spacing: -0.01em;">
+    <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0 0 2px 0; letter-spacing: -0.01em;">
       Articles
     </h1>
-    <p style="font-size: 14px; color: #71717a; margin: 0; font-weight: 400;">
+    <p style="font-size: 12.5px; color: #71717a; margin: 0;">
       Manage blog posts, announcements, and content distributed globally.
     </p>
   </div>
@@ -92,44 +92,44 @@
 </div>
 
 {#if loading}
-  <div class="shopify-card" style="padding: 48px; text-align: center; color: #71717a;">
-    <p style="margin: 0; font-size: 14px;">Loading articles from D1 edge database...</p>
+  <div class="shopify-card" style="padding: 36px; text-align: center; color: #71717a;">
+    <p style="margin: 0; font-size: 13px;">Loading articles from D1 edge database...</p>
   </div>
 {:else if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 20px; color: #b91c1c; margin-bottom: 24px;">
+  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 14px 18px; color: #b91c1c; margin-bottom: 20px; font-size: 13px;">
     <strong>Error loading posts:</strong> {error}
-    <div style="margin-top: 10px;">
+    <div style="margin-top: 8px;">
       <button class="btn-primary-pill" onclick={loadPosts}>Retry</button>
     </div>
   </div>
 {:else if filteredPosts.length === 0}
-  <div class="shopify-card" style="padding: 64px 24px; text-align: center;">
-    <div style="width: 48px; height: 48px; background: #c1fbd4; border-radius: 50%; margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+  <div class="shopify-card" style="padding: 48px 20px; text-align: center;">
+    <div style="width: 40px; height: 40px; background: #c1fbd4; border-radius: 50%; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; font-size: 18px;">
       🛍️
     </div>
-    <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600;">No articles found</h3>
-    <p style="color: #71717a; margin: 0 0 20px 0; font-size: 14px;">
+    <h3 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 600;">No articles found</h3>
+    <p style="color: #71717a; margin: 0 0 16px 0; font-size: 13px;">
       {filter === 'all' ? 'Create your first article to publish to your storefront.' : `No articles in ${filter} status.`}
     </p>
     <a href="/new" class="btn-primary-pill">+ Create New Article</a>
   </div>
 {:else}
-  <div class="shopify-card">
+  <div class="shopify-card" style="overflow-x: auto;">
     <table class="shopify-table">
       <thead>
         <tr>
-          <th style="width: 60px;">Cover</th>
-          <th>Title & Excerpt</th>
-          <th>Slug</th>
-          <th>Status</th>
-          <th>Date</th>
-          <th style="text-align: right;">Actions</th>
+          <th style="width: 44px; text-align: center;">Cover</th>
+          <th style="min-width: 180px;">Title & Excerpt</th>
+          <th style="width: 130px;">Slug</th>
+          <th style="width: 80px;">Status</th>
+          <th style="width: 95px;">Date</th>
+          <th style="width: 170px; text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {#each filteredPosts as post (post.id)}
           <tr>
-            <td>
+            <td style="text-align: center; width: 44px;">
               {#if post.cover_image}
                 <img
                   src={post.cover_image}
@@ -137,27 +137,27 @@
                   class="squircle-thumb"
                 />
               {:else}
-                <div class="squircle-thumb" style="display: flex; align-items: center; justify-content: center; color: #a1a1aa; font-size: 11px; font-weight: 600;">
+                <div class="squircle-thumb" style="display: flex; align-items: center; justify-content: center; color: #a1a1aa; font-size: 10px; font-weight: 600;">
                   POST
                 </div>
               {/if}
             </td>
             <td>
-              <div style="font-weight: 600; color: #000000; font-size: 15px; margin-bottom: 2px;">
+              <div style="font-weight: 600; color: #000000; font-size: 13px; line-height: 1.3; margin-bottom: 2px;">
                 {post.title}
               </div>
               {#if post.excerpt}
-                <div style="font-size: 13px; color: #71717a; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <div style="font-size: 11.5px; color: #71717a; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   {post.excerpt}
                 </div>
               {/if}
             </td>
-            <td>
-              <code style="background-color: #f4f4f5; padding: 3px 8px; border-radius: 6px; font-size: 12px; color: #3f3f46; font-family: monospace;">
+            <td style="white-space: nowrap;">
+              <code style="background-color: #f4f4f5; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #3f3f46; font-family: monospace; white-space: nowrap; display: inline-block;">
                 /{post.slug}
               </code>
             </td>
-            <td>
+            <td style="white-space: nowrap;">
               {#if post.status === 'published'}
                 <span class="pill-tag-mint">
                   Published
@@ -168,13 +168,11 @@
                 </span>
               {/if}
             </td>
-            <td>
-              <span style="font-size: 13px; color: #71717a;">
-                {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-              </span>
+            <td style="white-space: nowrap; font-size: 12px; color: #71717a;">
+              {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
             </td>
             <td style="text-align: right; white-space: nowrap;">
-              <div style="display: inline-flex; align-items: center; gap: 6px;">
+              <div style="display: inline-flex; align-items: center; gap: 4px;">
                 {#if post.status === 'draft'}
                   <button
                     onclick={() => handleTogglePublish(post)}
