@@ -60,3 +60,14 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+
+export interface UpdateProfileInput {
+  name?: string;
+  email?: string;
+}
+
+export interface ChangePasswordInput {
+  current_password: string;
+  new_password: string;
+}
+

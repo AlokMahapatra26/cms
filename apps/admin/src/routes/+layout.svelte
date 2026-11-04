@@ -95,6 +95,9 @@
             <a href="/api" class="shopify-nav-link {page.url.pathname === '/api' ? 'active' : ''}">
               API Reference
             </a>
+            <a href="/settings" class="shopify-nav-link {page.url.pathname === '/settings' ? 'active' : ''}">
+              Settings
+            </a>
           </nav>
         {/if}
       </div>
@@ -102,8 +105,12 @@
       <!-- Right Action Controls -->
       <div style="display: flex; align-items: center; gap: 12px;">
         {#if currentUser}
-          <!-- User Profile Chip -->
-          <div style="display: flex; align-items: center; gap: 8px; background: #f4f4f5; padding: 4px 10px; border-radius: 9999px; font-size: 13px;">
+          <!-- User Profile Chip (Clickable link to Settings) -->
+          <a
+            href="/settings"
+            class="shopify-user-pill"
+            title="Edit credentials & settings"
+          >
             <div style="width: 22px; height: 22px; border-radius: 50%; background: #000000; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">
               {currentUser.name.charAt(0).toUpperCase()}
             </div>
@@ -111,7 +118,7 @@
             <span style="background-color: var(--color-aloe); color: #043e1d; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 9999px; letter-spacing: 0.04em;">
               {currentUser.role}
             </span>
-          </div>
+          </a>
 
           <a href="http://localhost:4321" target="_blank" rel="noopener" class="btn-outline-pill" style="font-size: 13px; padding: 6px 14px;">
             <span>Live Blog</span>

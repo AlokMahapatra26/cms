@@ -6,7 +6,9 @@ import type {
   User,
   LoginInput,
   SetupInput,
-  AuthResponse
+  AuthResponse,
+  UpdateProfileInput,
+  ChangePasswordInput
 } from '@cms/shared';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8787';
@@ -109,6 +111,44 @@ export async function getMe(): Promise<User> {
 
   const data = await res.json();
   return data.user;
+}
+
+export async function updateProfile(input: UpdateProfileInput): Promise<User> {
+  const res = await fetch(`${API_BASE}/api/admin/profile`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update profile');
+  }
+
+  return data;
+}
+
+export async function changePassword(input: ChangePasswordInput): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/admin/password`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update password');
+  }
 }
 
 // -------------------------------------------------------------

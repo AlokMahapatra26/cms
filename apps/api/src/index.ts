@@ -7,7 +7,9 @@ import type {
   User,
   LoginInput,
   SetupInput,
-  AuthResponse
+  AuthResponse,
+  UpdateProfileInput,
+  ChangePasswordInput
 } from '@cms/shared';
 import {
   generateSalt,
@@ -276,6 +278,122 @@ app.use('/api/admin/*', async (c, next) => {
 
   c.set('user', user);
   await next();
+});
+
+// -------------------------------------------------------------
+// USER CREDENTIALS & PROFILE MANAGEMENT
+// -------------------------------------------------------------
+
+// Update current user profile credentials (name & email)
+app.put('/api/admin/profile', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    if (!currentUser) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const body = await c.req.json<UpdateProfileInput>();
+    const name = body.name?.trim();
+    const email = body.email?.trim().toLowerCase();
+
+    if (name !== undefined && name.length < 2) {
+      return c.json({ error: 'Name must be at least 2 characters' }, 400);
+    }
+
+    if (email !== undefined && (!email || !email.includes('@'))) {
+      return c.json({ error: 'A valid email address is required' }, 400);
+    }
+
+    // Check collision if email is being changed
+    if (email && email !== currentUser.email) {
+      const collision = await c.env.DB.prepare(
+        `SELECT id FROM users WHERE email = ? AND id != ?`
+      )
+        .bind(email, currentUser.id)
+        .first();
+
+      if (collision) {
+        return c.json({ error: 'Email address is already in use by another user' }, 409);
+      }
+    }
+
+    const finalName = name ?? currentUser.name;
+    const finalEmail = email ?? currentUser.email;
+    const now = new Date().toISOString();
+
+    await c.env.DB.prepare(
+      `UPDATE users SET name = ?, email = ?, updated_at = ? WHERE id = ?`
+    )
+      .bind(finalName, finalEmail, now, currentUser.id)
+      .run();
+
+    const updatedUser = await c.env.DB.prepare(
+      `SELECT id, email, name, role, created_at, updated_at FROM users WHERE id = ?`
+    )
+      .bind(currentUser.id)
+      .first<User>();
+
+    return c.json(updatedUser);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to update profile' }, 500);
+  }
+});
+
+// Change password for the current authenticated user
+app.put('/api/admin/password', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    if (!currentUser) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const body = await c.req.json<ChangePasswordInput>();
+    const currentPassword = body.current_password;
+    const newPassword = body.new_password;
+
+    if (!currentPassword) {
+      return c.json({ error: 'Current password is required' }, 400);
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return c.json({ error: 'New password must be at least 6 characters long' }, 400);
+    }
+
+    // Retrieve stored password_hash and salt
+    interface StoredCredentials {
+      password_hash: string;
+      salt: string;
+    }
+
+    const credentials = await c.env.DB.prepare(
+      `SELECT password_hash, salt FROM users WHERE id = ?`
+    )
+      .bind(currentUser.id)
+      .first<StoredCredentials>();
+
+    if (!credentials) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    const isMatch = await verifyPassword(currentPassword, credentials.password_hash, credentials.salt);
+    if (!isMatch) {
+      return c.json({ error: 'Current password is incorrect' }, 400);
+    }
+
+    const newSalt = generateSalt();
+    const newHash = await hashPassword(newPassword, newSalt);
+    const now = new Date().toISOString();
+
+    await c.env.DB.prepare(
+      `UPDATE users SET password_hash = ?, salt = ?, updated_at = ? WHERE id = ?`
+    )
+      .bind(newHash, newSalt, now, currentUser.id)
+      .run();
+
+    return c.json({ success: true, message: 'Password updated successfully' });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to update password' }, 500);
+  }
 });
 
 // -------------------------------------------------------------
