@@ -1,13 +1,31 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import type { Post, CreatePostInput, UpdatePostInput } from '@cms/shared';
+import type {
+  Post,
+  CreatePostInput,
+  UpdatePostInput,
+  User,
+  LoginInput,
+  SetupInput,
+  AuthResponse
+} from '@cms/shared';
+import {
+  generateSalt,
+  generateSessionToken,
+  hashPassword,
+  verifyPassword
+} from './crypto';
 
 type Bindings = {
   DB: D1Database;
   MEDIA_BUCKET: R2Bucket;
 };
 
-const app = new Hono<{ Bindings: Bindings }>();
+type Variables = {
+  user?: User;
+};
+
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Enable CORS for frontend consumers (SvelteKit admin & Astro)
 app.use('/*', cors());
@@ -16,7 +34,190 @@ app.use('/*', cors());
 app.get('/health', (c) => c.json({ status: 'ok', runtime: 'cloudflare-workers' }));
 
 // -------------------------------------------------------------
+// AUTHENTICATION & ACCESS CONTROL API
+// -------------------------------------------------------------
+
+// Check if first-time admin setup is required
+app.get('/api/auth/setup-status', async (c) => {
+  const result = await c.env.DB.prepare(
+    `SELECT count(*) as count FROM users`
+  ).first<{ count: number }>();
+
+  const needsSetup = (result?.count || 0) === 0;
+  return c.json({ needsSetup });
+});
+
+// Initial Super Admin onboarding (only available when 0 users exist)
+app.post('/api/auth/setup', async (c) => {
+  try {
+    const userCountResult = await c.env.DB.prepare(
+      `SELECT count(*) as count FROM users`
+    ).first<{ count: number }>();
+
+    if ((userCountResult?.count || 0) > 0) {
+      return c.json({ error: 'Admin setup has already been completed' }, 400);
+    }
+
+    const body = await c.req.json<SetupInput>();
+    const email = body.email?.trim().toLowerCase();
+    const name = body.name?.trim();
+    const password = body.password;
+
+    if (!email || !email.includes('@')) {
+      return c.json({ error: 'A valid email address is required' }, 400);
+    }
+    if (!name || name.length < 2) {
+      return c.json({ error: 'Full name is required (min 2 characters)' }, 400);
+    }
+    if (!password || password.length < 6) {
+      return c.json({ error: 'Password must be at least 6 characters' }, 400);
+    }
+
+    const userId = crypto.randomUUID();
+    const salt = generateSalt();
+    const passwordHash = await hashPassword(password, salt);
+    const now = new Date().toISOString();
+
+    // Insert primary super admin
+    await c.env.DB.prepare(
+      `INSERT INTO users (id, email, password_hash, salt, name, role, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, 'admin', ?, ?)`
+    )
+      .bind(userId, email, passwordHash, salt, name, now, now)
+      .run();
+
+    // Create initial 7-day session
+    const sessionId = crypto.randomUUID();
+    const token = generateSessionToken();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    await c.env.DB.prepare(
+      `INSERT INTO sessions (id, user_id, token, expires_at, created_at)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+      .bind(sessionId, userId, token, expiresAt, now)
+      .run();
+
+    const user: User = {
+      id: userId,
+      email,
+      name,
+      role: 'admin',
+      created_at: now,
+      updated_at: now
+    };
+
+    const response: AuthResponse = { token, user };
+    return c.json(response, 201);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Setup failed' }, 500);
+  }
+});
+
+// Login with email and password
+app.post('/api/auth/login', async (c) => {
+  try {
+    const body = await c.req.json<LoginInput>();
+    const email = body.email?.trim().toLowerCase();
+    const password = body.password;
+
+    if (!email || !password) {
+      return c.json({ error: 'Email and password are required' }, 400);
+    }
+
+    interface UserRow {
+      id: string;
+      email: string;
+      password_hash: string;
+      salt: string;
+      name: string;
+      role: 'admin' | 'editor' | 'author';
+      created_at: string;
+      updated_at: string;
+    }
+
+    const userRecord = await c.env.DB.prepare(
+      `SELECT * FROM users WHERE email = ?`
+    )
+      .bind(email)
+      .first<UserRow>();
+
+    if (!userRecord) {
+      return c.json({ error: 'Invalid email or password' }, 401);
+    }
+
+    const isValid = await verifyPassword(password, userRecord.password_hash, userRecord.salt);
+    if (!isValid) {
+      return c.json({ error: 'Invalid email or password' }, 401);
+    }
+
+    // Generate session token (7-day validity)
+    const sessionId = crypto.randomUUID();
+    const token = generateSessionToken();
+    const now = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    await c.env.DB.prepare(
+      `INSERT INTO sessions (id, user_id, token, expires_at, created_at)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+      .bind(sessionId, userRecord.id, token, expiresAt, now)
+      .run();
+
+    const user: User = {
+      id: userRecord.id,
+      email: userRecord.email,
+      name: userRecord.name,
+      role: userRecord.role,
+      created_at: userRecord.created_at,
+      updated_at: userRecord.updated_at
+    };
+
+    const response: AuthResponse = { token, user };
+    return c.json(response);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Login failed' }, 500);
+  }
+});
+
+// Logout session
+app.post('/api/auth/logout', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    await c.env.DB.prepare(`DELETE FROM sessions WHERE token = ?`).bind(token).run();
+  }
+  return c.json({ success: true });
+});
+
+// Verify token and get current user info
+app.get('/api/auth/me', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized: Missing or invalid token' }, 401);
+  }
+  const token = authHeader.substring(7).trim();
+  const now = new Date().toISOString();
+
+  const user = await c.env.DB.prepare(
+    `SELECT u.id, u.email, u.name, u.role, u.created_at, u.updated_at
+     FROM sessions s
+     JOIN users u ON s.user_id = u.id
+     WHERE s.token = ? AND s.expires_at > ?`
+  )
+    .bind(token, now)
+    .first<User>();
+
+  if (!user) {
+    return c.json({ error: 'Unauthorized: Session expired or invalid' }, 401);
+  }
+
+  return c.json({ user });
+});
+
+// -------------------------------------------------------------
 // PUBLIC CONTENT DELIVERY API (Astro / Public Frontends)
+// No authentication required. Fast edge retrieval.
 // -------------------------------------------------------------
 
 // List published posts
@@ -48,7 +249,37 @@ app.get('/api/posts/:slug', async (c) => {
 });
 
 // -------------------------------------------------------------
-// ADMIN CONTENT MANAGEMENT API (SvelteKit Admin)
+// ADMIN AUTHENTICATION MIDDLEWARE
+// Enforces valid session token for all /api/admin/* endpoints
+// -------------------------------------------------------------
+app.use('/api/admin/*', async (c, next) => {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized: Missing session token' }, 401);
+  }
+
+  const token = authHeader.substring(7).trim();
+  const now = new Date().toISOString();
+
+  const user = await c.env.DB.prepare(
+    `SELECT u.id, u.email, u.name, u.role, u.created_at, u.updated_at
+     FROM sessions s
+     JOIN users u ON s.user_id = u.id
+     WHERE s.token = ? AND s.expires_at > ?`
+  )
+    .bind(token, now)
+    .first<User>();
+
+  if (!user) {
+    return c.json({ error: 'Unauthorized: Invalid or expired session' }, 401);
+  }
+
+  c.set('user', user);
+  await next();
+});
+
+// -------------------------------------------------------------
+// ADMIN CONTENT MANAGEMENT API (Protected)
 // -------------------------------------------------------------
 
 // List all posts (including drafts)
@@ -179,10 +410,10 @@ app.delete('/api/admin/posts/:id', async (c) => {
 });
 
 // -------------------------------------------------------------
-// MEDIA / R2 ASSET PIPELINE
+// MEDIA / R2 ASSET PIPELINE (Protected for uploads)
 // -------------------------------------------------------------
 
-// Upload file to R2
+// Upload file to R2 (under /api/admin/upload so protected by auth middleware)
 app.post('/api/admin/upload', async (c) => {
   try {
     const formData = await c.req.formData();
@@ -201,16 +432,14 @@ app.post('/api/admin/upload', async (c) => {
       },
     });
 
-    // Compute accessible media path
     const url = `/api/media/${key}`;
-
     return c.json({ key, url }, 201);
   } catch (err: any) {
     return c.json({ error: err.message || 'Upload failed' }, 500);
   }
 });
 
-// Serve media from R2
+// Serve media from R2 (Public, cached)
 app.get('/api/media/*', async (c) => {
   const fullPath = c.req.path;
   const key = fullPath.replace('/api/media/', '');
@@ -234,4 +463,3 @@ app.get('/api/media/*', async (c) => {
 });
 
 export default app;
-

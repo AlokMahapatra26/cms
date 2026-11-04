@@ -1,7 +1,69 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { page } from '$app/state';
+  import { goto } from '$app/navigation';
+  import { getMe, logout, getToken, getSetupStatus } from '$lib/api';
+  import type { User } from '@cms/shared';
 
   let { children } = $props();
+
+  let currentUser = $state<User | null>(null);
+  let isCheckingAuth = $state(true);
+
+  const isAuthPage = $derived(
+    page.url.pathname === '/login' || page.url.pathname === '/setup'
+  );
+
+  async function checkAuth() {
+    isCheckingAuth = true;
+    try {
+      // Check setup status first
+      const setup = await getSetupStatus().catch(() => ({ needsSetup: false }));
+      if (setup.needsSetup) {
+        if (page.url.pathname !== '/setup') {
+          goto('/setup');
+          return;
+        }
+        isCheckingAuth = false;
+        return;
+      }
+
+      const token = getToken();
+      if (!token) {
+        if (!isAuthPage) {
+          goto('/login');
+          return;
+        }
+        isCheckingAuth = false;
+        return;
+      }
+
+      // Validate session with backend
+      const user = await getMe();
+      currentUser = user;
+
+      // If authenticated and visiting /login or /setup, redirect to dashboard
+      if (isAuthPage) {
+        goto('/');
+      }
+    } catch (e) {
+      if (!isAuthPage) {
+        goto('/login');
+      }
+    } finally {
+      isCheckingAuth = false;
+    }
+  }
+
+  onMount(() => {
+    checkAuth();
+  });
+
+  async function handleLogout() {
+    await logout();
+    currentUser = null;
+    goto('/login');
+  }
 </script>
 
 <div style="min-height: 100vh; display: flex; flex-direction: column; background-color: #fbfbf5;">
@@ -21,36 +83,67 @@
           </div>
         </a>
 
-        <!-- Navigation Links -->
-        <nav class="shopify-nav-links">
-          <a href="/" class="shopify-nav-link {page.url.pathname === '/' ? 'active' : ''}">
-            Articles
-          </a>
-          <a href="/new" class="shopify-nav-link {page.url.pathname === '/new' ? 'active' : ''}">
-            New Article
-          </a>
-          <a href="/api" class="shopify-nav-link {page.url.pathname === '/api' ? 'active' : ''}">
-            API Reference
-          </a>
-        </nav>
+        <!-- Navigation Links (only shown when authenticated) -->
+        {#if currentUser}
+          <nav class="shopify-nav-links">
+            <a href="/" class="shopify-nav-link {page.url.pathname === '/' ? 'active' : ''}">
+              Articles
+            </a>
+            <a href="/new" class="shopify-nav-link {page.url.pathname === '/new' ? 'active' : ''}">
+              New Article
+            </a>
+            <a href="/api" class="shopify-nav-link {page.url.pathname === '/api' ? 'active' : ''}">
+              API Reference
+            </a>
+          </nav>
+        {/if}
       </div>
 
       <!-- Right Action Controls -->
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <a href="http://localhost:4321" target="_blank" rel="noopener" class="btn-outline-pill" style="font-size: 13px; padding: 7px 16px;">
-          <span>Live Blog</span>
-          <span style="font-size: 11px; opacity: 0.6;">↗</span>
-        </a>
-        <a href="/new" class="btn-primary-pill" style="font-size: 13px; padding: 7px 18px;">
-          + Create Article
-        </a>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        {#if currentUser}
+          <!-- User Profile Chip -->
+          <div style="display: flex; align-items: center; gap: 8px; background: #f4f4f5; padding: 4px 10px; border-radius: 9999px; font-size: 13px;">
+            <div style="width: 22px; height: 22px; border-radius: 50%; background: #000000; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">
+              {currentUser.name.charAt(0).toUpperCase()}
+            </div>
+            <span style="font-weight: 500;">{currentUser.name}</span>
+            <span style="background-color: var(--color-aloe); color: #043e1d; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 9999px; letter-spacing: 0.04em;">
+              {currentUser.role}
+            </span>
+          </div>
+
+          <a href="http://localhost:4321" target="_blank" rel="noopener" class="btn-outline-pill" style="font-size: 13px; padding: 6px 14px;">
+            <span>Live Blog</span>
+            <span style="font-size: 11px; opacity: 0.6;">↗</span>
+          </a>
+
+          <button
+            onclick={handleLogout}
+            class="btn-outline-pill"
+            style="font-size: 13px; padding: 6px 14px; color: #71717a; border-color: #d4d4d8;"
+            title="Sign out"
+          >
+            Sign out
+          </button>
+        {:else if !isAuthPage}
+          <a href="/login" class="btn-primary-pill" style="font-size: 13px; padding: 6px 16px;">
+            Sign In
+          </a>
+        {/if}
       </div>
     </div>
   </header>
 
   <!-- Content Container -->
   <main style="max-width: 1040px; width: 100%; margin: 32px auto 80px auto; padding: 0 20px; flex: 1;">
-    {@render children()}
+    {#if isCheckingAuth && !isAuthPage}
+      <div style="text-align: center; padding: 60px; color: var(--color-shade-50); font-size: 14px;">
+        Loading dashboard...
+      </div>
+    {:else}
+      {@render children()}
+    {/if}
   </main>
 
   <!-- Clean Minimal Footer -->

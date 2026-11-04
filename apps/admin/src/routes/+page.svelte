@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import { fetchAdminPosts, updatePost, deletePost } from '$lib/api';
   import type { Post, PostStatus } from '@cms/shared';
 
@@ -14,6 +15,10 @@
     try {
       posts = await fetchAdminPosts();
     } catch (e: any) {
+      if (e.message === 'UNAUTHORIZED') {
+        goto('/login');
+        return;
+      }
       error = e.message || 'Error loading articles';
     } finally {
       loading = false;

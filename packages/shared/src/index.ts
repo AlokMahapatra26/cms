@@ -1,4 +1,14 @@
 export type PostStatus = 'draft' | 'published';
+export type UserRole = 'admin' | 'editor' | 'author';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface Post {
   id: string;
@@ -35,3 +45,18 @@ export interface UploadResponse {
   url: string;
 }
 
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface SetupInput {
+  email: string;
+  password: string;
+  name: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
