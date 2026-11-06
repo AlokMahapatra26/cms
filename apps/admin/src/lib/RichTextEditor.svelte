@@ -6,6 +6,7 @@
   import Link from '@tiptap/extension-link';
   import Placeholder from '@tiptap/extension-placeholder';
   import { uploadMedia } from '$lib/api';
+  import { modal } from '$lib/modal.svelte';
 
   let {
     content = $bindable(''),
@@ -119,7 +120,11 @@
       const res = await uploadMedia(target.files[0]);
       editor.chain().focus().setImage({ src: res.url, alt: target.files[0].name }).run();
     } catch (err: any) {
-      alert(`Image upload failed: ${err.message}`);
+      await modal.alert({
+        title: 'Image Upload Failed',
+        message: err.message || 'Failed to upload image to Cloudflare R2',
+        variant: 'danger'
+      });
     } finally {
       isUploadingImage = false;
       target.value = '';

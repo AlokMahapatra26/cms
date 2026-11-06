@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { fetchAdminPosts, updatePost, deletePost } from '$lib/api';
+  import { modal } from '$lib/modal.svelte';
   import type { Post, PostStatus } from '@cms/shared';
 
   let posts = $state<Post[]>([]);
@@ -31,17 +32,32 @@
       const updated = await updatePost(post.id, { status: nextStatus });
       posts = posts.map((p) => (p.id === post.id ? updated : p));
     } catch (e: any) {
-      alert(`Failed to update status: ${e.message}`);
+      await modal.alert({
+        title: 'Status Update Failed',
+        message: e.message || 'Failed to update article status',
+        variant: 'danger'
+      });
     }
   }
 
   async function handleDelete(id: string, title: string) {
-    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+    const confirmed = await modal.confirm({
+      title: 'Delete Article?',
+      message: `Are you sure you want to permanently delete "${title}"? This action cannot be undone.`,
+      confirmText: 'Delete Article',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
+
     try {
       await deletePost(id);
       posts = posts.filter((p) => p.id !== id);
     } catch (e: any) {
-      alert(`Delete failed: ${e.message}`);
+      await modal.alert({
+        title: 'Delete Failed',
+        message: e.message || 'Failed to delete article',
+        variant: 'danger'
+      });
     }
   }
 

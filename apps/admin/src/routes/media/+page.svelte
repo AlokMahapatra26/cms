@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { fetchMediaItems, uploadMedia, deleteMedia } from '$lib/api';
+  import { modal } from '$lib/modal.svelte';
   import type { MediaItem } from '@cms/shared';
 
   let items = $state<MediaItem[]>([]);
@@ -45,9 +46,13 @@
   }
 
   async function handleDeleteMedia(key: string, fileName: string) {
-    if (!confirm(`Are you sure you want to permanently delete "${fileName}" from Cloudflare R2?`)) {
-      return;
-    }
+    const confirmed = await modal.confirm({
+      title: 'Delete Media Asset?',
+      message: `Are you sure you want to permanently delete "${fileName}" from Cloudflare R2? This action cannot be undone.`,
+      confirmText: 'Delete Asset',
+      variant: 'danger'
+    });
+    if (!confirmed) return;
 
     deletingKey = key;
     error = null;

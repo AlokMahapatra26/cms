@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { getMe, logout, getToken, getSetupStatus } from '$lib/api';
   import type { User } from '@cms/shared';
+  import ConfirmModal from '$lib/ConfirmModal.svelte';
 
   let { children } = $props();
 
@@ -268,4 +269,7 @@
       </div>
     </div>
   </footer>
+
+  <!-- Universal Polaris Modal for Confirmations & Alerts -->
+  <ConfirmModal />
 </div>
