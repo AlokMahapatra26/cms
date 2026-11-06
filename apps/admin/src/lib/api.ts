@@ -280,3 +280,20 @@ export async function fetchMediaItems(): Promise<MediaItem[]> {
     url: item.url.startsWith('http') ? item.url : `${API_BASE}${item.url}`
   }));
 }
+
+export async function deleteMedia(key: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/admin/media/${key}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to delete media asset');
+  }
+}

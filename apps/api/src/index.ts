@@ -547,6 +547,23 @@ app.get('/api/admin/media', async (c) => {
   }
 });
 
+// Delete media from R2 (under /api/admin/media/* so protected by auth middleware)
+app.delete('/api/admin/media/*', async (c) => {
+  try {
+    const fullPath = c.req.path;
+    const key = fullPath.replace('/api/admin/media/', '');
+
+    if (!key) {
+      return c.json({ error: 'Key is required' }, 400);
+    }
+
+    await c.env.MEDIA_BUCKET.delete(key);
+    return c.json({ success: true, key });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to delete media' }, 500);
+  }
+});
+
 // Upload file to R2 (under /api/admin/upload so protected by auth middleware)
 app.post('/api/admin/upload', async (c) => {
   try {

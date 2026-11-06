@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { fetchMediaItems, uploadMedia } from '$lib/api';
+  import { fetchMediaItems, uploadMedia, deleteMedia } from '$lib/api';
   import type { MediaItem } from '@cms/shared';
 
   let items = $state<MediaItem[]>([]);
   let loading = $state(true);
   let uploading = $state(false);
+  let deletingKey = $state<string | null>(null);
   let error = $state<string | null>(null);
   let copiedKey = $state<string | null>(null);
 
@@ -40,6 +41,23 @@
     } finally {
       uploading = false;
       target.value = '';
+    }
+  }
+
+  async function handleDeleteMedia(key: string, fileName: string) {
+    if (!confirm(`Are you sure you want to permanently delete "${fileName}" from Cloudflare R2?`)) {
+      return;
+    }
+
+    deletingKey = key;
+    error = null;
+    try {
+      await deleteMedia(key);
+      items = items.filter((item) => item.key !== key);
+    } catch (err: any) {
+      error = `Delete failed: ${err.message}`;
+    } finally {
+      deletingKey = null;
     }
   }
 
@@ -130,12 +148,13 @@
   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;">
     {#each items as item (item.key)}
       <div class="shopify-card" style="overflow: hidden; display: flex; flex-direction: column;">
-        <!-- Thumbnail -->
-        <div style="height: 110px; background-color: #f4f4f5; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+        <!-- Thumbnail with fallback for non-images -->
+        <div style="height: 110px; background-color: #f4f4f5; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #a1a1aa; font-size: 11px; font-weight: 600;">
+          <span style="position: absolute;">FILE</span>
           <img
             src={item.url}
             alt={item.key}
-            style="width: 100%; height: 100%; object-fit: cover;"
+            style="width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 1;"
             onerror={(e) => {
               (e.currentTarget as HTMLElement).style.display = 'none';
             }}
@@ -153,24 +172,40 @@
             </div>
           </div>
 
-          <div style="display: flex; gap: 6px;">
+          <div style="display: flex; gap: 5px; align-items: center;">
             <button
               class="btn-sm-pill btn-gray-sm"
-              style="flex: 1; justify-content: center; font-size: 11px; padding: 2px 6px;"
+              style="flex: 1; justify-content: center; font-size: 11px; padding: 2.5px 6px; white-space: nowrap;"
               onclick={() => copyUrl(item.url, item.key)}
             >
-              {copiedKey === item.key ? 'Copied URL!' : 'Copy URL'}
+              {copiedKey === item.key ? 'Copied!' : 'Copy URL'}
             </button>
             <a
               href={item.url}
               target="_blank"
               rel="noopener"
               class="btn-sm-pill btn-gray-sm"
-              style="font-size: 11px; padding: 2px 6px;"
-              title="Open full image"
+              style="font-size: 11px; padding: 2.5px 6px;"
+              title="Open full image in new tab"
             >
               ↗
             </a>
+            <button
+              class="btn-sm-pill btn-danger-sm"
+              style="font-size: 11px; padding: 2.5px 7px;"
+              title="Delete asset from Cloudflare R2"
+              disabled={deletingKey === item.key}
+              onclick={() => handleDeleteMedia(item.key, item.key.replace('uploads/', ''))}
+            >
+              {#if deletingKey === item.key}
+                ...
+              {:else}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              {/if}
+            </button>
           </div>
         </div>
       </div>
