@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { fetchMediaItems, uploadMedia, deleteMedia } from '$lib/api';
   import { modal } from '$lib/modal.svelte';
+  import RenameModal from '$lib/RenameModal.svelte';
   import type { MediaItem } from '@cms/shared';
 
   let items = $state<MediaItem[]>([]);
@@ -11,6 +12,8 @@
   let deletingKey = $state<string | null>(null);
   let error = $state<string | null>(null);
   let copiedKey = $state<string | null>(null);
+  let renameModalOpen = $state(false);
+  let renameTargetItem = $state<MediaItem | null>(null);
 
   async function loadMedia() {
     loading = true;
@@ -177,13 +180,26 @@
             </div>
           </div>
 
-          <div style="display: flex; gap: 5px; align-items: center;">
+          <div style="display: flex; gap: 4px; align-items: center;">
             <button
               class="btn-sm-pill btn-gray-sm"
               style="flex: 1; justify-content: center; font-size: 11px; padding: 2.5px 6px; white-space: nowrap;"
               onclick={() => copyUrl(item.url, item.key)}
             >
               {copiedKey === item.key ? 'Copied!' : 'Copy URL'}
+            </button>
+            <button
+              class="btn-sm-pill btn-gray-sm"
+              style="font-size: 11px; padding: 2.5px 6px;"
+              title="Rename asset"
+              onclick={() => {
+                renameTargetItem = item;
+                renameModalOpen = true;
+              }}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+              </svg>
             </button>
             <a
               href={item.url}
@@ -217,4 +233,17 @@
     {/each}
   </div>
 {/if}
+
+<!-- Rename Asset Dialog -->
+<RenameModal
+  isOpen={renameModalOpen}
+  item={renameTargetItem}
+  onClose={() => {
+    renameModalOpen = false;
+    renameTargetItem = null;
+  }}
+  onRenamed={(updatedItem) => {
+    items = items.map((i) => (i.key === renameTargetItem?.key ? updatedItem : i));
+  }}
+/>
 

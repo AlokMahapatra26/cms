@@ -9,7 +9,8 @@ import type {
   SetupInput,
   AuthResponse,
   UpdateProfileInput,
-  ChangePasswordInput
+  ChangePasswordInput,
+  RenameMediaInput
 } from '@cms/shared';
 import {
   generateSalt,
@@ -544,6 +545,83 @@ app.get('/api/admin/media', async (c) => {
     return c.json(items);
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to list media' }, 500);
+  }
+});
+
+// Rename media in R2 and update any article references
+app.post('/api/admin/media/rename', async (c) => {
+  try {
+    const body = await c.req.json<RenameMediaInput>();
+    const oldKey = body.oldKey?.trim();
+    let newName = body.newName?.trim();
+
+    if (!oldKey || !newName) {
+      return c.json({ error: 'Both oldKey and newName are required' }, 400);
+    }
+
+    // Extract directory prefix and original extension
+    const oldFileName = oldKey.includes('/') ? oldKey.substring(oldKey.lastIndexOf('/') + 1) : oldKey;
+    const dirPrefix = oldKey.includes('/') ? oldKey.substring(0, oldKey.lastIndexOf('/') + 1) : '';
+    const oldExt = oldFileName.includes('.') ? oldFileName.substring(oldFileName.lastIndexOf('.')) : '';
+
+    // If newName doesn't have an extension, preserve original extension
+    if (oldExt && !newName.includes('.')) {
+      newName += oldExt;
+    }
+
+    // Sanitize new file name (keep letters, digits, hyphen, underscore, period)
+    const sanitizedFileName = newName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const newKey = `${dirPrefix}${sanitizedFileName}`;
+
+    // If unchanged, return current info
+    if (newKey === oldKey) {
+      return c.json({
+        key: oldKey,
+        url: `/api/media/${oldKey}`
+      });
+    }
+
+    // Check if destination key already exists in R2
+    const existing = await c.env.MEDIA_BUCKET.head(newKey);
+    if (existing) {
+      return c.json({ error: `An asset named "${sanitizedFileName}" already exists in R2` }, 409);
+    }
+
+    // Retrieve original object from R2
+    const oldObj = await c.env.MEDIA_BUCKET.get(oldKey);
+    if (!oldObj) {
+      return c.json({ error: 'Original asset not found in R2' }, 404);
+    }
+
+    // Copy to new key in R2
+    await c.env.MEDIA_BUCKET.put(newKey, oldObj.body, {
+      httpMetadata: oldObj.httpMetadata,
+      customMetadata: oldObj.customMetadata,
+    });
+
+    // Delete old key in R2
+    await c.env.MEDIA_BUCKET.delete(oldKey);
+
+    // Update references in blog posts (cover_image and content)
+    const oldUrl = `/api/media/${oldKey}`;
+    const newUrl = `/api/media/${newKey}`;
+
+    await c.env.DB.prepare(
+      `UPDATE posts SET cover_image = replace(cover_image, ?, ?) WHERE cover_image LIKE ?`
+    ).bind(oldUrl, newUrl, `%${oldKey}%`).run();
+
+    await c.env.DB.prepare(
+      `UPDATE posts SET content = replace(content, ?, ?) WHERE content LIKE ?`
+    ).bind(oldUrl, newUrl, `%${oldKey}%`).run();
+
+    return c.json({
+      key: newKey,
+      size: oldObj.size,
+      uploaded: new Date().toISOString(),
+      url: `/api/media/${newKey}`
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to rename media' }, 500);
   }
 });
 

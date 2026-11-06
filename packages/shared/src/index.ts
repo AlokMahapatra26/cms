@@ -52,6 +52,11 @@ export interface MediaItem {
   url: string;
 }
 
+export interface RenameMediaInput {
+  oldKey: string;
+  newName: string;
+}
+
 export interface LoginInput {
   email: string;
   password: string;

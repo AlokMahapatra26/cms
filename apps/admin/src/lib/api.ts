@@ -297,3 +297,27 @@ export async function deleteMedia(key: string): Promise<void> {
     throw new Error(errorData.error || 'Failed to delete media asset');
   }
 }
+
+export async function renameMedia(oldKey: string, newName: string): Promise<MediaItem> {
+  const res = await fetch(`${API_BASE}/api/admin/media/rename`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ oldKey, newName })
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to rename media asset');
+  }
+
+  const item: MediaItem = await res.json();
+  return {
+    ...item,
+    url: item.url.startsWith('http') ? item.url : `${API_BASE}${item.url}`
+  };
+}
