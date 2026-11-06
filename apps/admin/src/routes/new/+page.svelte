@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { createPost, uploadMedia } from '$lib/api';
   import RichTextEditor from '$lib/RichTextEditor.svelte';
+  import SeoPreview from '$lib/SeoPreview.svelte';
   import type { PostStatus } from '@cms/shared';
 
   let title = $state('');
@@ -10,6 +11,10 @@
   let content = $state('');
   let cover_image = $state('');
   let status = $state<PostStatus>('draft');
+  let meta_title = $state('');
+  let meta_description = $state('');
+  let og_image = $state('');
+  let canonical_url = $state('');
 
   let uploading = $state(false);
   let submitting = $state(false);
@@ -56,7 +61,11 @@
         excerpt,
         content,
         cover_image: cover_image || undefined,
-        status
+        status,
+        meta_title: meta_title.trim() || undefined,
+        meta_description: meta_description.trim() || undefined,
+        og_image: og_image.trim() || undefined,
+        canonical_url: canonical_url.trim() || undefined
       });
       goto('/');
     } catch (err: any) {
@@ -207,6 +216,18 @@
       </div>
       <RichTextEditor bind:content={content} />
     </div>
+
+    <!-- SEO & Social Media Optimization -->
+    <SeoPreview
+      {title}
+      {slug}
+      {excerpt}
+      {cover_image}
+      bind:meta_title
+      bind:meta_description
+      bind:og_image
+      bind:canonical_url
+    />
 
     <!-- Actions -->
     <div style="display: flex; gap: 12px; align-items: center; padding-top: 14px; border-top: 1px solid #e4e4e7; flex-wrap: wrap;">

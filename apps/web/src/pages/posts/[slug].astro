@@ -31,9 +31,27 @@ try {
 }
 
 const htmlContent = post ? await marked.parse(post.content || '') : '';
+
+const pageTitle = post
+  ? (post.meta_title ? post.meta_title : `${post.title} — EdgeStorefront`)
+  : 'Article Not Found';
+const pageDescription = post
+  ? (post.meta_description || post.excerpt || 'Read this article on EdgeStorefront.')
+  : 'The requested article could not be found.';
+const pageImage = post
+  ? (post.og_image || post.cover_image || undefined)
+  : undefined;
+const canonicalUrl = post?.canonical_url || undefined;
 ---
 
-<Layout title={post ? `${post.title} — EdgeStorefront` : 'Article Not Found'}>
+<Layout
+  title={pageTitle}
+  description={pageDescription}
+  ogImage={pageImage}
+  canonicalUrl={canonicalUrl}
+  type="article"
+  publishedTime={post?.created_at}
+>
   <div style="margin-bottom: 24px;">
     <a href="/" class="btn-outline-pill" style="font-size: 13px; padding: 6px 16px;">
       &larr; Back to articles

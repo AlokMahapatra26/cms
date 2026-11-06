@@ -450,12 +450,16 @@ app.post('/api/admin/posts', async (c) => {
     const excerpt = body.excerpt || null;
     const cover_image = body.cover_image || null;
     const content = body.content || '';
+    const meta_title = body.meta_title?.trim() || null;
+    const meta_description = body.meta_description?.trim() || null;
+    const og_image = body.og_image?.trim() || null;
+    const canonical_url = body.canonical_url?.trim() || null;
 
     await c.env.DB.prepare(
-      `INSERT INTO posts (id, slug, title, excerpt, content, cover_image, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO posts (id, slug, title, excerpt, content, cover_image, status, meta_title, meta_description, og_image, canonical_url, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-      .bind(id, body.slug, body.title, excerpt, content, cover_image, status, now, now)
+      .bind(id, body.slug, body.title, excerpt, content, cover_image, status, meta_title, meta_description, og_image, canonical_url, now, now)
       .run();
 
     const created = await c.env.DB.prepare(`SELECT * FROM posts WHERE id = ?`)
@@ -489,6 +493,10 @@ app.put('/api/admin/posts/:id', async (c) => {
     const content = body.content ?? existing.content;
     const cover_image = body.cover_image !== undefined ? body.cover_image : existing.cover_image;
     const status = body.status ?? existing.status;
+    const meta_title = body.meta_title !== undefined ? (body.meta_title?.trim() || null) : existing.meta_title;
+    const meta_description = body.meta_description !== undefined ? (body.meta_description?.trim() || null) : existing.meta_description;
+    const og_image = body.og_image !== undefined ? (body.og_image?.trim() || null) : existing.og_image;
+    const canonical_url = body.canonical_url !== undefined ? (body.canonical_url?.trim() || null) : existing.canonical_url;
 
     // Check slug collision if slug changed
     if (slug !== existing.slug) {
@@ -505,10 +513,10 @@ app.put('/api/admin/posts/:id', async (c) => {
 
     await c.env.DB.prepare(
       `UPDATE posts 
-       SET title = ?, slug = ?, excerpt = ?, content = ?, cover_image = ?, status = ?, updated_at = ?
+       SET title = ?, slug = ?, excerpt = ?, content = ?, cover_image = ?, status = ?, meta_title = ?, meta_description = ?, og_image = ?, canonical_url = ?, updated_at = ?
        WHERE id = ?`
     )
-      .bind(title, slug, excerpt, content, cover_image, status, now, id)
+      .bind(title, slug, excerpt, content, cover_image, status, meta_title, meta_description, og_image, canonical_url, now, id)
       .run();
 
     const updated = await c.env.DB.prepare(`SELECT * FROM posts WHERE id = ?`)

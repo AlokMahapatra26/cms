@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { fetchAdminPost, updatePost, uploadMedia } from '$lib/api';
   import RichTextEditor from '$lib/RichTextEditor.svelte';
+  import SeoPreview from '$lib/SeoPreview.svelte';
   import type { PostStatus } from '@cms/shared';
 
   const postId = page.params.id;
@@ -14,6 +15,10 @@
   let content = $state('');
   let cover_image = $state('');
   let status = $state<PostStatus>('draft');
+  let meta_title = $state('');
+  let meta_description = $state('');
+  let og_image = $state('');
+  let canonical_url = $state('');
 
   let loading = $state(true);
   let uploading = $state(false);
@@ -31,6 +36,10 @@
       content = p.content;
       cover_image = p.cover_image || '';
       status = p.status;
+      meta_title = p.meta_title || '';
+      meta_description = p.meta_description || '';
+      og_image = p.og_image || '';
+      canonical_url = p.canonical_url || '';
     } catch (err: any) {
       error = err.message || 'Failed to load post';
     } finally {
@@ -70,7 +79,11 @@
         excerpt,
         content,
         cover_image: cover_image || undefined,
-        status
+        status,
+        meta_title: meta_title.trim() || undefined,
+        meta_description: meta_description.trim() || undefined,
+        og_image: og_image.trim() || undefined,
+        canonical_url: canonical_url.trim() || undefined
       });
       goto('/');
     } catch (err: any) {
@@ -224,6 +237,18 @@
         </div>
         <RichTextEditor bind:content={content} />
       </div>
+
+      <!-- SEO & Social Media Optimization -->
+      <SeoPreview
+        {title}
+        {slug}
+        {excerpt}
+        {cover_image}
+        bind:meta_title
+        bind:meta_description
+        bind:og_image
+        bind:canonical_url
+      />
 
       <!-- Actions -->
       <div style="display: flex; gap: 12px; align-items: center; padding-top: 14px; border-top: 1px solid #e4e4e7; flex-wrap: wrap;">

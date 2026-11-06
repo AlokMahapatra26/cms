@@ -18,6 +18,10 @@ export interface Post {
   content: string;
   cover_image: string | null;
   status: PostStatus;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  og_image?: string | null;
+  canonical_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +33,10 @@ export interface CreatePostInput {
   content: string;
   cover_image?: string;
   status?: PostStatus;
+  meta_title?: string;
+  meta_description?: string;
+  og_image?: string;
+  canonical_url?: string;
 }
 
 export interface UpdatePostInput {
@@ -38,6 +46,10 @@ export interface UpdatePostInput {
   content?: string;
   cover_image?: string;
   status?: PostStatus;
+  meta_title?: string;
+  meta_description?: string;
+  og_image?: string;
+  canonical_url?: string;
 }
 
 export interface UploadResponse {
