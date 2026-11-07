@@ -157,7 +157,7 @@
           style="width: 100%; justify-content: center; padding: 11px 20px; font-size: 14px; margin-top: 6px;"
           disabled={loading}
         >
-          {loading ? 'Creating Administrator...' : 'Complete Setup & Launch Dashboard'}
+          {loading ? 'Creating Administrator...' : 'Complete Setup & Launch CMS'}
         </button>
       </form>
     </div>

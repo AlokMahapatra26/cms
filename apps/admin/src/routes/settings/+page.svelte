@@ -185,7 +185,7 @@
             placeholder="admin@example.com"
           />
           <p style="font-size: 12px; color: #71717a; margin: 4px 0 0 0;">
-            This email is used to sign into the EdgeCMS admin dashboard.
+            This email is used to sign into EdgeCMS.
           </p>
         </div>
 

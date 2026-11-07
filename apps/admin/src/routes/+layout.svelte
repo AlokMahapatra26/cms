@@ -46,9 +46,9 @@
       currentUser = user;
       collectionsStore.load();
 
-      // If authenticated and visiting /login or /setup, redirect to dashboard
+      // If authenticated and visiting /login or /setup, redirect to schemas
       if (isAuthPage) {
-        goto('/');
+        goto('/schemas');
       }
     } catch (e) {
       if (!isAuthPage) {
@@ -75,7 +75,7 @@
   <header class="shopify-header">
     <div class="shopify-nav-inner">
       <!-- Brand Lockup -->
-      <a href="/" class="shopify-brand">
+      <a href="/schemas" class="shopify-brand">
         <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="28" height="28" rx="8" fill="#000000" />
           <path d="M14 6C12.3431 6 11 7.34315 11 9H9C8.44772 9 8 9.44772 8 10V20C8 20.5523 8.44772 21 9 21H19C19.5523 21 20 20.5523 20 20V10C20 9.44772 19.5523 9 19 9H17C17 7.34315 15.6569 6 14 6ZM14 7.5C14.8284 7.5 15.5 8.17157 15.5 9H12.5C12.5 8.17157 13.1716 7.5 14 7.5ZM9.5 10.5H18.5V19.5H9.5V10.5Z" fill="#C1FBD4" />
@@ -145,23 +145,7 @@
             </a>
           </div>
 
-          <!-- Section 1: Overview -->
-          <div class="shopify-sidebar-section">
-            <h3 class="shopify-sidebar-heading">Overview</h3>
-            <a href="/" class="shopify-sidebar-link {page.url.pathname === '/' ? 'active' : ''}">
-              <div class="shopify-sidebar-link-content">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="3" width="7" height="7"></rect>
-                  <rect x="14" y="14" width="7" height="7"></rect>
-                  <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <span>Dashboard</span>
-              </div>
-            </a>
-          </div>
-
-          <!-- Section 2: Dynamic Content Collections -->
+          <!-- Section 1: Dynamic Content Collections -->
           <div class="shopify-sidebar-section">
             <div class="flex items-center justify-between pr-2 mb-1">
               <h3 class="shopify-sidebar-heading m-0">Collections</h3>
@@ -262,7 +246,7 @@
     <main class="auth-screen-container">
       {#if isCheckingAuth && !isAuthPage}
         <div class="text-center p-12 text-muted text-base">
-          Loading dashboard...
+          Loading CMS...
         </div>
       {:else}
         {@render children()}
