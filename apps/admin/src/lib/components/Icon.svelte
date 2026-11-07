@@ -95,6 +95,18 @@
   {:else if name === 'chevron-up'}
     <!-- Chevron Up -->
     <path fill-rule="evenodd" d="M9.47 7.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1-1.06 1.06L10 8.81l-3.72 3.72a.75.75 0 0 1-1.06-1.06l4.25-4.25Z" clip-rule="evenodd" />
+  {:else if name === 'chevron-left'}
+    <!-- Chevron Left -->
+    <path fill-rule="evenodd" d="M12.78 5.22a.75.75 0 0 1 0 1.06L9.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+  {:else if name === 'chevron-right'}
+    <!-- Chevron Right -->
+    <path fill-rule="evenodd" d="M7.22 14.78a.75.75 0 0 1 0-1.06L10.94 10 7.22 6.28a.75.75 0 0 1 1.06-1.06l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0Z" clip-rule="evenodd" />
+  {:else if name === 'search'}
+    <!-- Search / Magnifying Glass -->
+    <path fill-rule="evenodd" d="M8.5 3a5.5 5.5 0 0 1 4.227 9.02l4.126 4.127a.75.75 0 0 1-1.06 1.06l-4.127-4.126A5.5 5.5 0 1 1 8.5 3Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" clip-rule="evenodd" />
+  {:else if name === 'sort'}
+    <!-- Sort Carets Up-Down -->
+    <path fill-rule="evenodd" d="M9.47 3.22a.75.75 0 0 1 1.06 0l3 3a.75.75 0 1 1-1.06 1.06L10 4.81 7.53 7.28a.75.75 0 0 1-1.06-1.06l3-3Zm-2.47 10.5a.75.75 0 0 1 1.06 0L10 15.19l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3 3a.75.75 0 0 1-1.06 0l-3-3a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
   {:else if name === 'warning' || name === 'danger'}
     <!-- Warning Alert Triangle -->
     <path fill-rule="evenodd" d="M8.59 2.87a1.65 1.65 0 0 1 2.82 0l6.98 12.08A1.65 1.65 0 0 1 16.98 17H3.02a1.65 1.65 0 0 1-1.41-2.05L8.59 2.87ZM10 6.5a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 0 1.5 0v-3.5A.75.75 0 0 0 10 6.5Zm0 7a.875.875 0 1 0 0-1.75.875.875 0 0 0 0 1.75Z" clip-rule="evenodd" />
