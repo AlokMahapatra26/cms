@@ -248,12 +248,13 @@ app.get('/api/posts', async (c) => {
   const sort = c.req.query('sort')?.trim() || 'created_at';
   const order = c.req.query('order')?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-  // 1. Check if we have articles in the dynamic content_items collection
-  const articleCountRow = await c.env.DB.prepare(
-    `SELECT count(*) as count FROM content_items WHERE collection_slug = 'articles' AND status = 'published'`
-  ).first<{ count: number }>();
+  // 1. Check if 'articles' collection exists in collections schema
+  const articlesCol = await c.env.DB.prepare(
+    `SELECT id FROM collections WHERE slug = 'articles'`
+  ).first();
 
-  if (articleCountRow && articleCountRow.count > 0) {
+  if (articlesCol) {
+    // Dynamic 'articles' collection is active: it is the single source of truth!
     const conditions: string[] = ["collection_slug = 'articles'", "status = 'published'"];
     const params: any[] = [];
 
@@ -1265,6 +1266,10 @@ app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
     await c.env.DB.prepare(
       `DELETE FROM content_items WHERE collection_slug = ? AND id = ?`
     ).bind(collectionSlug, id).run();
+
+    if (collectionSlug === 'articles') {
+      await c.env.DB.prepare(`DELETE FROM posts WHERE id = ?`).bind(id).run();
+    }
 
     return c.json({ success: true, id });
   } catch (err: any) {
