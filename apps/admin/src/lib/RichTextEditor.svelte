@@ -10,7 +10,7 @@
 
   let {
     content = $bindable(''),
-    placeholder = 'Start writing your article content here...'
+    placeholder = 'Start writing your rich content here...'
   }: {
     content?: string;
     placeholder?: string;

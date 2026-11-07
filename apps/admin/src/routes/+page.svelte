@@ -1,235 +1,230 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { fetchAdminPosts, updatePost, deletePost } from '$lib/api';
-  import { modal } from '$lib/modal.svelte';
-  import type { Post, PostStatus } from '@cms/shared';
+  import { collectionsStore } from '$lib/collections.svelte';
+  import { fetchMediaItems } from '$lib/api';
+  import { Button, Card, Badge } from '$lib/components';
+  import type { MediaItem } from '@cms/shared';
 
-  let posts = $state<Post[]>([]);
-  let loading = $state(true);
-  let error = $state<string | null>(null);
-  let filter = $state<'all' | 'published' | 'draft'>('all');
+  let mediaCount = $state(0);
+  let loadingMedia = $state(true);
 
-  async function loadPosts() {
-    loading = true;
-    error = null;
+  onMount(async () => {
     try {
-      posts = await fetchAdminPosts();
+      await collectionsStore.load();
+      const media = await fetchMediaItems();
+      mediaCount = media.length;
     } catch (e: any) {
       if (e.message === 'UNAUTHORIZED') {
         goto('/login');
-        return;
       }
-      error = e.message || 'Error loading articles';
     } finally {
-      loading = false;
+      loadingMedia = false;
     }
-  }
-
-  async function handleTogglePublish(post: Post) {
-    const nextStatus: PostStatus = post.status === 'published' ? 'draft' : 'published';
-    try {
-      const updated = await updatePost(post.id, { status: nextStatus });
-      posts = posts.map((p) => (p.id === post.id ? updated : p));
-    } catch (e: any) {
-      await modal.alert({
-        title: 'Status Update Failed',
-        message: e.message || 'Failed to update article status',
-        variant: 'danger'
-      });
-    }
-  }
-
-  async function handleDelete(id: string, title: string) {
-    const confirmed = await modal.confirm({
-      title: 'Delete Article?',
-      message: `Are you sure you want to permanently delete "${title}"? This action cannot be undone.`,
-      confirmText: 'Delete Article',
-      variant: 'danger'
-    });
-    if (!confirmed) return;
-
-    try {
-      await deletePost(id);
-      posts = posts.filter((p) => p.id !== id);
-    } catch (e: any) {
-      await modal.alert({
-        title: 'Delete Failed',
-        message: e.message || 'Failed to delete article',
-        variant: 'danger'
-      });
-    }
-  }
-
-  const filteredPosts = $derived(
-    posts.filter((p) => {
-      if (filter === 'all') return true;
-      return p.status === filter;
-    })
-  );
-
-  onMount(() => {
-    loadPosts();
   });
 </script>
 
-<!-- Header & Controls -->
-<div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+<svelte:head>
+  <title>Dashboard - EdgeCMS Headless Engine</title>
+</svelte:head>
+
+<!-- Page Header -->
+<div class="shopify-page-header">
   <div>
-    <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0 0 2px 0; letter-spacing: -0.01em;">
-      Articles
-    </h1>
-    <p style="font-size: 12.5px; color: #71717a; margin: 0;">
-      Manage blog posts, announcements, and content distributed globally.
+    <h1 class="shopify-page-title">Headless CMS Dashboard</h1>
+    <p class="shopify-page-subtitle">
+      Design dynamic schemas, manage content collections, and query edge REST APIs.
     </p>
   </div>
 
-  <!-- Shopify Segmented Filter -->
-  <div class="shopify-segmented">
-    <button
-      class="shopify-segment-btn {filter === 'all' ? 'active' : ''}"
-      onclick={() => (filter = 'all')}
-    >
-      All ({posts.length})
-    </button>
-    <button
-      class="shopify-segment-btn {filter === 'published' ? 'active' : ''}"
-      onclick={() => (filter = 'published')}
-    >
-      Published ({posts.filter(p => p.status === 'published').length})
-    </button>
-    <button
-      class="shopify-segment-btn {filter === 'draft' ? 'active' : ''}"
-      onclick={() => (filter = 'draft')}
-    >
-      Drafts ({posts.filter(p => p.status === 'draft').length})
-    </button>
+  <div class="flex items-center gap-2">
+    <Button variant="outline" href="/media">
+      Media Library
+    </Button>
+    <Button variant="primary" href="/schemas">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      <span>+ New Schema</span>
+    </Button>
   </div>
 </div>
 
-{#if loading}
-  <div class="shopify-card" style="padding: 36px; text-align: center; color: #71717a;">
-    <p style="margin: 0; font-size: 13px;">Loading articles from D1 edge database...</p>
-  </div>
-{:else if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 14px 18px; color: #b91c1c; margin-bottom: 20px; font-size: 13px;">
-    <strong>Error loading posts:</strong> {error}
-    <div style="margin-top: 8px;">
-      <button class="btn-primary-pill" onclick={loadPosts}>Retry</button>
+<!-- Stats Overview Cards -->
+<div class="grid grid-cols-auto gap-3 mb-6">
+  <!-- Stat 1: Collections -->
+  <Card compact>
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs text-muted uppercase font-semibold tracking-wide">Content Models</span>
+      <span class="pill-tag-mint">Dynamic</span>
     </div>
-  </div>
-{:else if filteredPosts.length === 0}
-  <div class="shopify-card" style="padding: 48px 20px; text-align: center;">
-    <div style="width: 40px; height: 40px; background: #c1fbd4; border-radius: 50%; margin: 0 auto 12px auto; display: flex; align-items: center; justify-content: center; font-size: 18px;">
-      🛍️
+    <div class="text-2xl font-bold text-dark">
+      {collectionsStore.list.length}
     </div>
-    <h3 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 600;">No articles found</h3>
-    <p style="color: #71717a; margin: 0 0 16px 0; font-size: 13px;">
-      {filter === 'all' ? 'Create your first article to publish to your storefront.' : `No articles in ${filter} status.`}
-    </p>
-    <a href="/new" class="btn-primary-pill">+ Create New Article</a>
+    <div class="text-xs text-muted mt-1">
+      Custom schemas defined
+    </div>
+  </Card>
+
+  <!-- Stat 2: Media Storage -->
+  <Card compact>
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs text-muted uppercase font-semibold tracking-wide">R2 Media Assets</span>
+      <span class="pill-tag-gray">Cloudflare</span>
+    </div>
+    <div class="text-2xl font-bold text-dark">
+      {loadingMedia ? '...' : mediaCount}
+    </div>
+    <div class="text-xs text-muted mt-1">
+      Images & files in global bucket
+    </div>
+  </Card>
+
+  <!-- Stat 3: Edge API -->
+  <Card compact>
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-xs text-muted uppercase font-semibold tracking-wide">Runtime Engine</span>
+      <span class="status-dot-active"></span>
+    </div>
+    <div class="text-2xl font-bold text-dark">
+      Edge Workers
+    </div>
+    <div class="text-xs text-muted mt-1">
+      D1 SQLite database active
+    </div>
+  </Card>
+</div>
+
+<!-- Content Collections Section -->
+<div class="mb-6">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h2 class="text-base font-semibold text-dark m-0">Your Content Collections</h2>
+      <p class="text-xs text-muted m-0">Dynamic schemas managed and published on the edge.</p>
+    </div>
+
+    <Button variant="outline" size="sm" href="/schemas">
+      Manage Models
+    </Button>
   </div>
-{:else}
-  <div class="shopify-card" style="overflow-x: auto;">
-    <table class="shopify-table">
-      <thead>
-        <tr>
-          <th style="width: 44px; text-align: center;">Cover</th>
-          <th style="min-width: 180px;">Title & Excerpt</th>
-          <th style="width: 130px;">Slug</th>
-          <th style="width: 80px;">Status</th>
-          <th style="width: 95px;">Date</th>
-          <th style="width: 170px; text-align: right;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each filteredPosts as post (post.id)}
-          <tr>
-            <td style="text-align: center; width: 44px;">
-              {#if post.cover_image}
-                <img
-                  src={post.cover_image}
-                  alt={post.title}
-                  class="squircle-thumb"
-                />
-              {:else}
-                <div class="squircle-thumb" style="display: flex; align-items: center; justify-content: center; color: #a1a1aa; font-size: 10px; font-weight: 600;">
-                  POST
-                </div>
-              {/if}
-            </td>
-            <td>
-              <div style="font-weight: 600; color: #000000; font-size: 13px; line-height: 1.3; margin-bottom: 2px;">
-                {post.title}
+
+  {#if collectionsStore.loading}
+    <Card class="p-12 text-center text-muted">
+      <p class="m-0 text-base">Loading content models...</p>
+    </Card>
+  {:else if collectionsStore.list.length === 0}
+    <!-- Empty State -->
+    <Card class="p-12 text-center">
+      <div class="media-empty-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="3" y1="9" x2="21" y2="9"></line>
+          <line x1="9" y1="21" x2="9" y2="9"></line>
+        </svg>
+      </div>
+
+      <h3 class="text-lg font-semibold text-dark m-0 mb-1">No Content Schemas Created Yet</h3>
+      <p class="text-muted text-base m-0 mb-4" style="max-width: 480px; margin: 0 auto 20px auto;">
+        Design your first custom content model. You can add text, rich text, media, boolean toggles, dropdowns, and date fields.
+      </p>
+
+      <Button variant="primary" href="/schemas">
+        + Create Your First Schema
+      </Button>
+    </Card>
+  {:else}
+    <!-- Collections Grid -->
+    <div class="grid grid-cols-auto gap-4">
+      {#each collectionsStore.list as col (col.slug)}
+        <div class="schema-item-card p-4">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <div class="collection-avatar-badge" style="width: 28px; height: 28px; font-size: 13px;">
+                {col.name.charAt(0).toUpperCase()}
               </div>
-              {#if post.excerpt}
-                <div style="font-size: 11.5px; color: #71717a; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  {post.excerpt}
-                </div>
-              {/if}
-            </td>
-            <td style="white-space: nowrap;">
-              <code style="background-color: #f4f4f5; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #3f3f46; font-family: monospace; white-space: nowrap; display: inline-block;">
-                /{post.slug}
-              </code>
-            </td>
-            <td style="white-space: nowrap;">
-              {#if post.status === 'published'}
-                <span class="pill-tag-mint">
-                  Published
-                </span>
-              {:else}
-                <span class="pill-tag-shade">
-                  Draft
-                </span>
-              {/if}
-            </td>
-            <td style="white-space: nowrap; font-size: 12px; color: #71717a;">
-              {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-            </td>
-            <td style="text-align: right; white-space: nowrap;">
-              <div style="display: inline-flex; align-items: center; gap: 4px;">
-                {#if post.status === 'draft'}
-                  <button
-                    onclick={() => handleTogglePublish(post)}
-                    class="btn-sm-pill btn-aloe-sm"
-                    title="Publish immediately to public blog"
-                  >
-                    Publish
-                  </button>
-                {:else}
-                  <a
-                    href="http://localhost:4321/posts/{post.slug}"
-                    target="_blank"
-                    rel="noopener"
-                    class="btn-sm-pill btn-gray-sm"
-                    title="View live static site"
-                  >
-                    Live ↗
-                  </a>
-                  <button
-                    onclick={() => handleTogglePublish(post)}
-                    class="btn-sm-pill btn-gray-sm"
-                    title="Revert article to draft"
-                  >
-                    Unpublish
-                  </button>
-                {/if}
-                <a href="/edit/{post.id}" class="btn-sm-pill btn-gray-sm">
-                  Edit
-                </a>
-                <button
-                  onclick={() => handleDelete(post.id, post.title)}
-                  class="btn-sm-pill btn-danger-sm"
-                  title="Delete post"
-                >
-                  Delete
-                </button>
+              <div>
+                <h3 class="text-base font-semibold text-dark m-0">
+                  {col.name}
+                </h3>
+                <Badge variant="collection">/{col.slug}</Badge>
               </div>
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+            </div>
+
+            <Button variant="outline" size="sm" href="/content/{col.slug}/new">
+              + Add
+            </Button>
+          </div>
+
+          {#if col.description}
+            <p class="text-xs text-muted m-0 mb-3 truncate">
+              {col.description}
+            </p>
+          {/if}
+
+          <!-- Fields Preview Chips -->
+          <div class="flex flex-wrap gap-1 mb-4 flex-1">
+            {#each col.fields.slice(0, 4) as field}
+              <span class="schema-field-chip">
+                <span>{field.label}</span>
+                <span class="text-muted text-xs">({field.type})</span>
+              </span>
+            {/each}
+            {#if col.fields.length > 4}
+              <span class="schema-field-chip text-muted">
+                +{col.fields.length - 4} more
+              </span>
+            {/if}
+          </div>
+
+          <!-- Bottom Card Actions -->
+          <div class="flex items-center justify-between pt-3 border-t">
+            <a
+              href="/content/{col.slug}"
+              class="text-xs font-semibold text-dark flex items-center gap-1 hover:underline"
+            >
+              <span>Browse Records</span>
+              <span>→</span>
+            </a>
+
+            <div class="flex gap-2">
+              <a
+                href="/api"
+                class="text-xs text-muted hover:text-dark"
+                title="View REST API endpoint"
+              >
+                REST API
+              </a>
+              <span class="text-muted text-xs">•</span>
+              <a
+                href="/schemas"
+                class="text-xs text-muted hover:text-dark"
+                title="Edit collection schema definition"
+              >
+                Edit Model
+              </a>
+            </div>
+          </div>
+        </div>
+      {/each}
+    </div>
+  {/if}
+</div>
+
+<!-- API Integration Box -->
+<Card class="p-4">
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h3 class="text-sm font-semibold text-dark m-0 mb-1">
+        ⚡ Universal Edge Content Delivery API
+      </h3>
+      <p class="text-xs text-muted m-0">
+        Every schema you create immediately gets dedicated public and authenticated REST endpoints on Cloudflare Workers.
+      </p>
+    </div>
+
+    <Button variant="outline" size="sm" href="/api">
+      Explore API Endpoints
+    </Button>
   </div>
-{/if}
+</Card>

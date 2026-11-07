@@ -145,7 +145,7 @@
     </div>
     <h3 class="text-lg font-semibold m-0 mb-1">No media files yet</h3>
     <p class="text-muted text-base m-0 mb-4">
-      Upload images to use them as article covers or embed them in Markdown posts.
+      Upload images, graphics, and assets to attach them to your dynamic content records.
     </p>
     <label class="btn-primary-pill cursor-pointer text-sm inline-flex">
       <span>Upload First File</span>

@@ -71,10 +71,10 @@
 </script>
 
 <div class="flex flex-col min-h-screen">
-  <!-- Shopify Merchant Admin Header -->
+  <!-- Merchant Admin Header -->
   <header class="shopify-header">
     <div class="shopify-nav-inner">
-      <!-- Shopify-style Brand Lockup -->
+      <!-- Brand Lockup -->
       <a href="/" class="shopify-brand">
         <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="28" height="28" rx="8" fill="#000000" />
@@ -82,7 +82,7 @@
         </svg>
         <div class="flex flex-col">
           <span class="font-semibold text-sm">EdgeCMS</span>
-          <span class="text-xs text-muted">Cloudflare Commerce</span>
+          <span class="text-xs text-muted">Cloudflare Headless Engine</span>
         </div>
       </a>
 
@@ -104,9 +104,9 @@
             </span>
           </a>
 
-          <a href="http://localhost:4321" target="_blank" rel="noopener" class="btn-outline-pill">
-            <span>Live Blog</span>
-            <span class="text-xs text-muted">↗</span>
+          <a href="/api" class="btn-outline-pill" title="Explore Headless API">
+            <span>REST API</span>
+            <span class="text-xs text-muted">⚡</span>
           </a>
 
           <button
@@ -128,46 +128,78 @@
   <!-- Layout Body -->
   {#if currentUser && !isAuthPage}
     <div class="shopify-app-body">
-      <!-- Shopify Left Sidebar -->
+      <!-- Left Sidebar -->
       <aside class="shopify-sidebar">
         <div>
-          <!-- Quick Action: Create Article -->
+          <!-- Quick Action: Create New Schema -->
           <div class="mb-3">
             <a
-              href="/new"
+              href="/schemas"
               class="btn-primary-pill w-full justify-center"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
-              <span>Create Article</span>
+              <span>+ New Schema</span>
             </a>
           </div>
 
-          <!-- Section 1: Content -->
+          <!-- Section 1: Overview -->
           <div class="shopify-sidebar-section">
-            <h3 class="shopify-sidebar-heading">Content</h3>
+            <h3 class="shopify-sidebar-heading">Overview</h3>
             <a href="/" class="shopify-sidebar-link {page.url.pathname === '/' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
                 </svg>
-                <span>Articles</span>
+                <span>Dashboard</span>
               </div>
             </a>
+          </div>
 
-            <a href="/new" class="shopify-sidebar-link {page.url.pathname === '/new' ? 'active' : ''}">
+          <!-- Section 2: Dynamic Content Collections -->
+          <div class="shopify-sidebar-section">
+            <div class="flex items-center justify-between pr-2 mb-1">
+              <h3 class="shopify-sidebar-heading m-0">Collections</h3>
+              <a href="/schemas" class="text-xs text-muted" title="Build new content models">+ Schema</a>
+            </div>
+
+            {#if collectionsStore.list.length === 0}
+              <div class="px-2 py-1 text-xs text-muted">
+                No collections yet.
+              </div>
+            {:else}
+              {#each collectionsStore.list as col (col.slug)}
+                <a
+                  href="/content/{col.slug}"
+                  class="shopify-sidebar-link {page.url.pathname.startsWith('/content/' + col.slug) ? 'active' : ''}"
+                >
+                  <div class="shopify-sidebar-link-content">
+                    <div class="collection-avatar-badge">
+                      {col.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span>{col.name}</span>
+                  </div>
+                </a>
+              {/each}
+            {/if}
+          </div>
+
+          <!-- Section 3: Schema Modeler & Media -->
+          <div class="shopify-sidebar-section">
+            <h3 class="shopify-sidebar-heading">Models & Assets</h3>
+            <a href="/schemas" class="shopify-sidebar-link {page.url.pathname === '/schemas' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="9" y1="21" x2="9" y2="9"></line>
                 </svg>
-                <span>Write Draft</span>
+                <span>Schema Builder</span>
               </div>
             </a>
 
@@ -183,31 +215,9 @@
             </a>
           </div>
 
-          <!-- Section 1.5: Dynamic Collections -->
+          <!-- Section 4: Distribution & Settings -->
           <div class="shopify-sidebar-section">
-            <div class="flex items-center justify-between pr-2">
-              <h3 class="shopify-sidebar-heading m-0">Collections</h3>
-              <a href="/schemas" class="text-xs text-muted" title="Build new content models">+ Schema</a>
-            </div>
-
-            {#each collectionsStore.list as col (col.slug)}
-              <a
-                href="/content/{col.slug}"
-                class="shopify-sidebar-link {page.url.pathname.startsWith('/content/' + col.slug) ? 'active' : ''}"
-              >
-                <div class="shopify-sidebar-link-content">
-                  <div class="collection-avatar-badge">
-                    {col.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span>{col.name}</span>
-                </div>
-              </a>
-            {/each}
-          </div>
-
-          <!-- Section 2: Developer & Distribution -->
-          <div class="shopify-sidebar-section">
-            <h3 class="shopify-sidebar-heading">Distribution</h3>
+            <h3 class="shopify-sidebar-heading">System</h3>
             <a href="/api" class="shopify-sidebar-link {page.url.pathname === '/api' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -215,33 +225,6 @@
                   <polyline points="8 6 2 12 8 18"></polyline>
                 </svg>
                 <span>API Reference</span>
-              </div>
-            </a>
-
-            <a href="http://localhost:4321" target="_blank" rel="noopener" class="shopify-sidebar-link">
-              <div class="shopify-sidebar-link-content">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="2" y1="12" x2="22" y2="12"></line>
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                </svg>
-                <span>Storefront</span>
-              </div>
-              <span class="text-xs text-muted">↗</span>
-            </a>
-          </div>
-
-          <!-- Section 3: Settings & Schema -->
-          <div class="shopify-sidebar-section">
-            <h3 class="shopify-sidebar-heading">Models & Settings</h3>
-            <a href="/schemas" class="shopify-sidebar-link {page.url.pathname === '/schemas' ? 'active' : ''}">
-              <div class="shopify-sidebar-link-content">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="3" y1="9" x2="21" y2="9"></line>
-                  <line x1="9" y1="21" x2="9" y2="9"></line>
-                </svg>
-                <span>Content Modeler</span>
               </div>
             </a>
 
@@ -263,7 +246,7 @@
             <span class="status-dot-active"></span>
             <span>Cloudflare Edge</span>
           </div>
-          <span>D1 SQLite & R2 Active</span>
+          <span>D1 SQLite & R2 Storage</span>
         </div>
       </aside>
 
@@ -275,7 +258,7 @@
       </main>
     </div>
   {:else}
-    <!-- Auth Screen Container (Centered, No Sidebar) -->
+    <!-- Auth Screen Container -->
     <main class="auth-screen-container">
       {#if isCheckingAuth && !isAuthPage}
         <div class="text-center p-12 text-muted text-base">
@@ -287,23 +270,23 @@
     </main>
   {/if}
 
-  <!-- Clean Minimal Footer -->
+  <!-- Footer -->
   <footer class="app-global-footer">
     <div class="app-footer-inner">
       <div class="flex items-center gap-2">
         <span class="font-semibold text-sm">EdgeCMS</span>
         <span class="text-faint text-sm">•</span>
-        <span class="text-muted text-sm">Cloudflare Workers • D1 • R2 • SvelteKit • Astro</span>
+        <span class="text-muted text-sm">Cloudflare Headless CMS Engine</span>
       </div>
 
       <div class="flex gap-4 text-sm text-muted">
-        <a href="http://localhost:8787/api/posts" target="_blank">Feed</a>
-        <a href="http://localhost:4321" target="_blank">Public Front</a>
-        <a href="https://shopify.dev" target="_blank">Polaris DNA</a>
+        <a href="/schemas">Schemas</a>
+        <a href="/media">Media Library</a>
+        <a href="/api">REST Endpoints</a>
       </div>
     </div>
   </footer>
 
-  <!-- Universal Polaris Modal for Confirmations & Alerts -->
+  <!-- Universal Confirmation / Alert Modal -->
   <ConfirmModal />
 </div>

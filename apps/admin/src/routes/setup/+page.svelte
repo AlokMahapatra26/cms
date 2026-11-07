@@ -166,7 +166,7 @@
     <div style="margin-top: 24px; padding: 16px; background-color: #ffffff; border: 1px solid var(--color-hairline); border-radius: 12px; font-size: 12px; color: var(--color-shade-60); line-height: 1.5;">
       <strong style="color: #000000;">🔐 Secure by Design</strong>
       <p style="margin: 4px 0 0 0;">
-        This account will have full administrator permissions over articles, media, and settings. Credentials are encrypted via PBKDF2 with unique salts directly within Cloudflare D1 SQLite.
+        This account will have full administrator permissions over schemas, content collections, media, and settings. Credentials are encrypted via PBKDF2 with unique salts directly within Cloudflare D1 SQLite.
       </p>
     </div>
   {/if}

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Card, Button, Badge } from '$lib/components';
+
   let copied = $state<string | null>(null);
   let activeTab = $state<'fetch' | 'nextjs' | 'curl'>('fetch');
 
@@ -12,76 +14,103 @@
     }, 2000);
   }
 
-  const fetchSnippet = `// 1. Fetch all published storefront articles
-const posts = await fetch('${API_BASE}/api/posts')
-  .then(res => res.json());
+  const fetchSnippet = `// 1. Fetch dynamic collection records (e.g. 'products', 'articles', 'pages')
+const res = await fetch('${API_BASE}/api/content/products');
+const { items } = await res.json();
 
-// 2. Fetch single article by slug
-const post = await fetch('${API_BASE}/api/posts/nee-post')
-  .then(res => res.json());
+console.log(items);
 
-console.log(post.title, post.content);`;
+// 2. Fetch single record by ID
+const single = await fetch('${API_BASE}/api/content/products/rec_123');
+const { item } = await single.json();
 
-  const nextjsSnippet = `// app/blog/page.tsx (Next.js 14/15 App Router)
-export default async function BlogPage() {
-  const res = await fetch('${API_BASE}/api/posts', {
+console.log(item.data);`;
+
+  const nextjsSnippet = `// app/catalog/page.tsx (Next.js 14/15 App Router)
+export default async function CatalogPage() {
+  const res = await fetch('${API_BASE}/api/content/products', {
     next: { revalidate: 60 } // Cloudflare edge cache & revalidation
   });
-  const posts = await res.json();
+  const { items } = await res.json();
 
   return (
-    <main>
-      <h1>Storefront Articles</h1>
-      {posts.map((post) => (
-        <a key={post.id} href={\`/blog/\${post.slug}\`}>
-          <h2>{post.title}</h2>
-          <p>{post.excerpt}</p>
-        </a>
-      ))}
+    <main className="p-8">
+      <h1 className="text-2xl font-bold">Dynamic Catalog</h1>
+      <div className="grid grid-cols-3 gap-4 mt-6">
+        {items.map((entry) => (
+          <div key={entry.id} className="border p-4 rounded-lg">
+            <h2>{entry.data.name || entry.data.title}</h2>
+            <p className="text-gray-600">{entry.data.description}</p>
+          </div>
+        ))}
+      </div>
     </main>
   );
 }`;
 
-  const curlSnippet = `# 1. List all published articles (Public)
-curl -X GET ${API_BASE}/api/posts
+  const curlSnippet = `# 1. List all dynamic collection records (Public Edge)
+curl -X GET ${API_BASE}/api/content/products
 
-# 2. Get specific article by slug (Public)
-curl -X GET ${API_BASE}/api/posts/nee-post
+# 2. Get specific record by ID (Public Edge)
+curl -X GET ${API_BASE}/api/content/products/:id
 
 # 3. Authenticate Admin (Get Bearer Token)
 curl -X POST ${API_BASE}/api/auth/login \\
   -H "Content-Type: application/json" \\
   -d '{"email":"admin@example.com","password":"password123"}'
 
-# 4. Fetch All Drafts/Posts with Bearer Token
-curl -X GET ${API_BASE}/api/admin/posts \\
-  -H "Authorization: Bearer <YOUR_SESSION_TOKEN>"`;
+# 4. Fetch All Schemas (Admin)
+curl -X GET ${API_BASE}/api/admin/collections \\
+  -H "Authorization: Bearer <YOUR_SESSION_TOKEN>"
+
+# 5. Create Record in Collection (Admin)
+curl -X POST ${API_BASE}/api/admin/content/products \\
+  -H "Authorization: Bearer <YOUR_SESSION_TOKEN>" \\
+  -H "Content-Type: application/json" \\
+  -d '{"data": {"name": "Demo Product", "price": 49.99}, "published": true}'`;
 </script>
 
-<div style="margin-bottom: 16px;">
-  <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0 0 2px 0; letter-spacing: -0.01em;">
-    API Reference
-  </h1>
-  <p style="font-size: 12.5px; color: #71717a; margin: 0;">
-    Connect external storefronts, headless checkouts, and mobile apps to your Cloudflare edge CMS.
-  </p>
-</div>
+<svelte:head>
+  <title>API Reference - EdgeCMS Headless Engine</title>
+</svelte:head>
 
-<!-- Endpoints Table Card -->
-<div style="margin-bottom: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-    <h2 style="font-size: 15px; font-weight: 600; margin: 0;">Storefront Delivery Endpoints</h2>
-    <span class="pill-tag-mint">CORS Enabled</span>
+<!-- Header -->
+<div class="shopify-page-header">
+  <div>
+    <h1 class="shopify-page-title">Headless REST API</h1>
+    <p class="shopify-page-subtitle">
+      Query and distribute dynamic schema records, media assets, and collections worldwide.
+    </p>
   </div>
 
-  <div class="shopify-card">
+  <div class="flex items-center gap-2">
+    <span class="pill-tag-mint">
+      Edge Global: Online
+    </span>
+    <span class="field-badge">
+      Hono v4
+    </span>
+  </div>
+</div>
+
+<!-- Public Edge Endpoints -->
+<div class="mb-6">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h2 class="text-base font-semibold text-dark m-0">Public Delivery Endpoints</h2>
+      <p class="text-xs text-muted m-0">No API key required. High-speed cache on Cloudflare edge.</p>
+    </div>
+    <span class="pill-tag-mint">Public / CDN Cached</span>
+  </div>
+
+  <div class="shopify-table-container">
     <table class="shopify-table">
       <thead>
         <tr>
           <th style="width: 80px;">Method</th>
           <th>Endpoint</th>
           <th>Description</th>
-          <th style="text-align: right;">Action</th>
+          <th class="text-right">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -90,17 +119,17 @@ curl -X GET ${API_BASE}/api/admin/posts \\
             <span class="pill-tag-mint">GET</span>
           </td>
           <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/posts</code>
+            <code class="font-semibold text-dark text-sm">/api/content/:collectionSlug</code>
           </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Lists all published articles sorted by newest first.
+          <td class="text-muted text-sm">
+            Fetch published records for any custom collection (e.g. products, articles, pages).
           </td>
-          <td style="text-align: right;">
+          <td class="text-right">
             <button
               class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/posts`, 'posts')}
+              onclick={() => copyToClipboard(`${API_BASE}/api/content/:collectionSlug`, 'content-list')}
             >
-              {copied === 'posts' ? 'Copied!' : 'Copy URL'}
+              {copied === 'content-list' ? 'Copied!' : 'Copy URL'}
             </button>
           </td>
         </tr>
@@ -110,17 +139,17 @@ curl -X GET ${API_BASE}/api/admin/posts \\
             <span class="pill-tag-mint">GET</span>
           </td>
           <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/posts/:slug</code>
+            <code class="font-semibold text-dark text-sm">/api/content/:collectionSlug/:id</code>
           </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Fetches single article with complete Markdown body and media.
+          <td class="text-muted text-sm">
+            Retrieve a single published record by unique ID or slug.
           </td>
-          <td style="text-align: right;">
+          <td class="text-right">
             <button
               class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/posts/:slug`, 'slug')}
+              onclick={() => copyToClipboard(`${API_BASE}/api/content/:collectionSlug/:id`, 'content-single')}
             >
-              {copied === 'slug' ? 'Copied!' : 'Copy URL'}
+              {copied === 'content-single' ? 'Copied!' : 'Copy URL'}
             </button>
           </td>
         </tr>
@@ -130,12 +159,12 @@ curl -X GET ${API_BASE}/api/admin/posts \\
             <span class="pill-tag-mint">GET</span>
           </td>
           <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/media/*</code>
+            <code class="font-semibold text-dark text-sm">/api/media/*</code>
           </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Streams media assets stored directly in Cloudflare R2 bucket.
+          <td class="text-muted text-sm">
+            Stream media assets and graphics stored directly in Cloudflare R2 bucket.
           </td>
-          <td style="text-align: right;">
+          <td class="text-right">
             <button
               class="btn-sm-pill btn-gray-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/media/`, 'media')}
@@ -150,34 +179,37 @@ curl -X GET ${API_BASE}/api/admin/posts \\
 </div>
 
 <!-- Authenticated Management Endpoints -->
-<div style="margin-bottom: 32px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-    <h2 style="font-size: 18px; font-weight: 600; margin: 0;">Authenticated Admin Endpoints</h2>
-    <span class="pill-tag-mint" style="background-color: #000000; color: #ffffff;">Requires Bearer Token</span>
+<div class="mb-6">
+  <div class="flex justify-between items-center mb-3">
+    <div>
+      <h2 class="text-base font-semibold text-dark m-0">Authenticated Admin Endpoints</h2>
+      <p class="text-xs text-muted m-0">Manage schemas, write drafts, and upload files.</p>
+    </div>
+    <span class="pill-tag-gray">Requires Bearer Token</span>
   </div>
 
-  <div class="shopify-card">
+  <div class="shopify-table-container">
     <table class="shopify-table">
       <thead>
         <tr>
           <th style="width: 80px;">Method</th>
           <th>Endpoint</th>
           <th>Description</th>
-          <th style="text-align: right;">Action</th>
+          <th class="text-right">Action</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">POST</span>
+            <span class="pill-tag-gray">POST</span>
           </td>
           <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/auth/login</code>
+            <code class="font-semibold text-dark text-sm">/api/auth/login</code>
           </td>
-          <td style="color: #71717a; font-size: 14px;">
+          <td class="text-muted text-sm">
             Authenticate admin credentials and retrieve a 7-day session token.
           </td>
-          <td style="text-align: right;">
+          <td class="text-right">
             <button
               class="btn-sm-pill btn-gray-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/auth/login`, 'auth-login')}
@@ -188,72 +220,91 @@ curl -X GET ${API_BASE}/api/admin/posts \\
         </tr>
         <tr>
           <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">GET</span>
+            <span class="pill-tag-gray">GET</span>
           </td>
           <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/auth/me</code>
+            <code class="font-semibold text-dark text-sm">/api/admin/collections</code>
           </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Validate active session and return current user role & profile.
+          <td class="text-muted text-sm">
+            List all dynamic collection schema models and their field definitions.
           </td>
-          <td style="text-align: right;">
+          <td class="text-right">
             <button
               class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/auth/me`, 'auth-me')}
+              onclick={() => copyToClipboard(`${API_BASE}/api/admin/collections`, 'admin-collections')}
             >
-              {copied === 'auth-me' ? 'Copied!' : 'Copy URL'}
+              {copied === 'admin-collections' ? 'Copied!' : 'Copy URL'}
             </button>
           </td>
         </tr>
         <tr>
           <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">GET</span>
+            <span class="pill-tag-gray">POST</span>
           </td>
           <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/admin/posts</code>
+            <code class="font-semibold text-dark text-sm">/api/admin/collections</code>
           </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Fetch all articles including drafts and internal revisions.
+          <td class="text-muted text-sm">
+            Create a new collection model with dynamic field definitions.
           </td>
-          <td style="text-align: right;">
+          <td class="text-right">
             <button
               class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/posts`, 'admin-posts')}
+              onclick={() => copyToClipboard(`${API_BASE}/api/admin/collections`, 'admin-create-col')}
             >
-              {copied === 'admin-posts' ? 'Copied!' : 'Copy URL'}
+              {copied === 'admin-create-col' ? 'Copied!' : 'Copy URL'}
             </button>
           </td>
         </tr>
         <tr>
           <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">POST</span>
+            <span class="pill-tag-gray">GET</span>
           </td>
           <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/admin/posts</code>
+            <code class="font-semibold text-dark text-sm">/api/admin/content/:collectionSlug</code>
           </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Create new article draft or directly publish with markdown content.
+          <td class="text-muted text-sm">
+            Fetch all records in a collection including drafts and unpublished items.
           </td>
-          <td style="text-align: right;">
+          <td class="text-right">
             <button
               class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/posts`, 'admin-create')}
+              onclick={() => copyToClipboard(`${API_BASE}/api/admin/content/:collectionSlug`, 'admin-content-list')}
             >
-              {copied === 'admin-create' ? 'Copied!' : 'Copy URL'}
+              {copied === 'admin-content-list' ? 'Copied!' : 'Copy URL'}
             </button>
           </td>
         </tr>
         <tr>
           <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">POST</span>
+            <span class="pill-tag-gray">POST</span>
           </td>
           <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/admin/upload</code>
+            <code class="font-semibold text-dark text-sm">/api/admin/content/:collectionSlug</code>
           </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Direct multipart upload to Cloudflare R2 object storage.
+          <td class="text-muted text-sm">
+            Create a new record in a collection with custom dynamic fields payload.
           </td>
-          <td style="text-align: right;">
+          <td class="text-right">
+            <button
+              class="btn-sm-pill btn-gray-sm"
+              onclick={() => copyToClipboard(`${API_BASE}/api/admin/content/:collectionSlug`, 'admin-create-item')}
+            >
+              {copied === 'admin-create-item' ? 'Copied!' : 'Copy URL'}
+            </button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <span class="pill-tag-gray">POST</span>
+          </td>
+          <td>
+            <code class="font-semibold text-dark text-sm">/api/admin/upload</code>
+          </td>
+          <td class="text-muted text-sm">
+            Direct multipart file upload to Cloudflare R2 object storage.
+          </td>
+          <td class="text-right">
             <button
               class="btn-sm-pill btn-gray-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/admin/upload`, 'admin-upload')}
@@ -268,11 +319,11 @@ curl -X GET ${API_BASE}/api/admin/posts \\
 </div>
 
 <!-- Code Integration Card -->
-<div class="shopify-card" style="padding: 28px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+<Card class="p-6">
+  <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
     <div>
-      <h2 style="font-size: 18px; font-weight: 600; margin: 0 0 4px 0;">Storefront Integration Code</h2>
-      <p style="color: #71717a; font-size: 14px; margin: 0;">Drop into your storefront or frontend app.</p>
+      <h2 class="text-lg font-semibold text-dark m-0 mb-1">Frontend Integration Code</h2>
+      <p class="text-sm text-muted m-0">Drop directly into Next.js, Astro, Nuxt, or mobile apps.</p>
     </div>
 
     <!-- Segmented Tabs -->
@@ -281,13 +332,13 @@ curl -X GET ${API_BASE}/api/admin/posts \\
         class="shopify-segment-btn {activeTab === 'fetch' ? 'active' : ''}"
         onclick={() => (activeTab = 'fetch')}
       >
-        Fetch / JavaScript
+        Fetch / JS
       </button>
       <button
         class="shopify-segment-btn {activeTab === 'nextjs' ? 'active' : ''}"
         onclick={() => (activeTab = 'nextjs')}
       >
-        Next.js
+        Next.js App Router
       </button>
       <button
         class="shopify-segment-btn {activeTab === 'curl' ? 'active' : ''}"
@@ -298,138 +349,13 @@ curl -X GET ${API_BASE}/api/admin/posts \\
     </div>
   </div>
 
-  <div style="position: relative;">
-    <button
-      class="btn-sm-pill btn-aloe-sm"
-      style="position: absolute; top: 14px; right: 14px; font-size: 12px; padding: 6px 14px;"
-      onclick={() => {
-        const text = activeTab === 'fetch' ? fetchSnippet : activeTab === 'nextjs' ? nextjsSnippet : curlSnippet;
-        copyToClipboard(text, 'code');
-      }}
-    >
-      {copied === 'code' ? 'Copied Code!' : 'Copy Code'}
-    </button>
-
-    <pre style="background-color: #000000; color: #f4f4f5; padding: 24px; border-radius: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 0;">
-      <code>{activeTab === 'fetch' ? fetchSnippet : activeTab === 'nextjs' ? nextjsSnippet : curlSnippet}</code>
-    </pre>
+  <div class="relative">
+    {#if activeTab === 'fetch'}
+      <pre class="m-0 p-4 rounded-md text-sm text-dark bg-cream overflow-x-auto border"><code>{fetchSnippet}</code></pre>
+    {:else if activeTab === 'nextjs'}
+      <pre class="m-0 p-4 rounded-md text-sm text-dark bg-cream overflow-x-auto border"><code>{nextjsSnippet}</code></pre>
+    {:else if activeTab === 'curl'}
+      <pre class="m-0 p-4 rounded-md text-sm text-dark bg-cream overflow-x-auto border"><code>{curlSnippet}</code></pre>
+    {/if}
   </div>
-</div>
-
-<!-- Authenticated Management Endpoints -->
-<div style="margin-bottom: 32px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-    <h2 style="font-size: 18px; font-weight: 600; margin: 0;">Authenticated Admin Endpoints</h2>
-    <span class="pill-tag-mint" style="background-color: #000000; color: #ffffff;">Requires Bearer Token</span>
-  </div>
-
-  <div class="shopify-card">
-    <table class="shopify-table">
-      <thead>
-        <tr>
-          <th style="width: 80px;">Method</th>
-          <th>Endpoint</th>
-          <th>Description</th>
-          <th style="text-align: right;">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">POST</span>
-          </td>
-          <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/auth/login</code>
-          </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Authenticate admin credentials and retrieve a 7-day session token.
-          </td>
-          <td style="text-align: right;">
-            <button
-              class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/auth/login`, 'auth-login')}
-            >
-              {copied === 'auth-login' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">GET</span>
-          </td>
-          <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/auth/me</code>
-          </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Validate active session and return current user role & profile.
-          </td>
-          <td style="text-align: right;">
-            <button
-              class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/auth/me`, 'auth-me')}
-            >
-              {copied === 'auth-me' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">GET</span>
-          </td>
-          <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/admin/posts</code>
-          </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Fetch all articles including drafts and internal revisions.
-          </td>
-          <td style="text-align: right;">
-            <button
-              class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/posts`, 'admin-posts')}
-            >
-              {copied === 'admin-posts' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">POST</span>
-          </td>
-          <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/admin/posts</code>
-          </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Create new article draft or directly publish with markdown content.
-          </td>
-          <td style="text-align: right;">
-            <button
-              class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/posts`, 'admin-create')}
-            >
-              {copied === 'admin-create' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <span class="pill-tag-mint" style="background: #f4f4f5; color: #18181b;">POST</span>
-          </td>
-          <td>
-            <code style="font-family: monospace; font-size: 14px; font-weight: 600; color: #000000;">/api/admin/upload</code>
-          </td>
-          <td style="color: #71717a; font-size: 14px;">
-            Direct multipart upload to Cloudflare R2 object storage.
-          </td>
-          <td style="text-align: right;">
-            <button
-              class="btn-sm-pill btn-gray-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/upload`, 'admin-upload')}
-            >
-              {copied === 'admin-upload' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+</Card>

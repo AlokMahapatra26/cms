@@ -22,15 +22,15 @@
   let isExpanded = $state(false);
   let previewMode = $state<'google' | 'twitter' | 'social'>('google');
 
-  // Fallbacks: if custom SEO is not filled, preview how it dynamically falls back to article content
+  // Fallbacks: if custom SEO is not filled, preview how it dynamically falls back to record content
   const displayTitle = $derived(
-    meta_title?.trim() || title?.trim() || 'Untitled Article - EdgeBlog'
+    meta_title?.trim() || title?.trim() || 'Untitled Content - EdgeCMS'
   );
   const displayDescription = $derived(
-    meta_description?.trim() || excerpt?.trim() || 'No preview summary available for this post.'
+    meta_description?.trim() || excerpt?.trim() || 'No preview summary available for this record.'
   );
   const displayImage = $derived(og_image?.trim() || cover_image?.trim() || '');
-  const displaySlug = $derived(slug?.trim() || 'post-slug');
+  const displaySlug = $derived(slug?.trim() || 'item-slug');
 
   // Character counts and warnings
   const titleCount = $derived(meta_title ? meta_title.length : 0);
@@ -58,7 +58,7 @@
           Search Engine & Social Media Preview (SEO)
         </div>
         <div class="text-xs text-muted mt-1">
-          Customize how this article looks on Google, Twitter / X, and social shares
+          Customize how this content looks on Google, Twitter / X, and social shares
         </div>
       </div>
     </div>
@@ -102,7 +102,7 @@
             type="text"
             class="shopify-input"
             bind:value={meta_title}
-            placeholder={title || 'Defaults to article title...'}
+            placeholder={title || 'Defaults to content title...'}
           />
           <div class="field-hint">
             Recommended length: 50–60 characters. Search engines will truncate longer titles.
