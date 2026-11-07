@@ -3,3 +3,4 @@ ALTER TABLE posts ADD COLUMN meta_title TEXT;
 ALTER TABLE posts ADD COLUMN meta_description TEXT;
 ALTER TABLE posts ADD COLUMN og_image TEXT;
 ALTER TABLE posts ADD COLUMN canonical_url TEXT;
+
