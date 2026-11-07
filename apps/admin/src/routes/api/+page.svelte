@@ -14,33 +14,42 @@
     }, 2000);
   }
 
-  const fetchSnippet = `// 1. Fetch dynamic collection records (e.g. 'products', 'articles', 'pages')
-const res = await fetch('${API_BASE}/api/content/products');
-const { items } = await res.json();
+  const fetchSnippet = `// 1. Fetch paginated collection records (e.g. 'products', 'articles')
+const res = await fetch('${API_BASE}/api/content/products?page=1&limit=10&sort=created_at&order=desc');
+const { data, pagination } = await res.json();
 
-console.log(items);
+console.log('Records:', data);
+console.log(\`Showing page \${pagination.page} of \${pagination.totalPages} (\${pagination.total} total items)\`);
 
 // 2. Fetch single record by ID
-const single = await fetch('${API_BASE}/api/content/products/rec_123');
-const { item } = await single.json();
+const single = await fetch('${API_BASE}/api/content/products/3608c4ee-6351-4e90-9833-1d8cb5f0a9ad');
+const item = await single.json();
 
 console.log(item.data);`;
 
-  const nextjsSnippet = `// app/catalog/page.tsx (Next.js 14/15 App Router)
-export default async function CatalogPage() {
-  const res = await fetch('${API_BASE}/api/content/products', {
-    next: { revalidate: 60 } // Cloudflare edge cache & revalidation
-  });
-  const { items } = await res.json();
+  const nextjsSnippet = `// app/catalog/page.tsx (Next.js 14/15 App Router with Pagination)
+export default async function CatalogPage({
+  searchParams
+}: {
+  searchParams: Promise<{ page?: string; search?: string }>
+}) {
+  const { page = '1', search = '' } = await searchParams;
+  const res = await fetch(
+    \`${API_BASE}/api/content/products?page=\${page}&limit=12&search=\${encodeURIComponent(search)}\`,
+    { next: { revalidate: 60 } } // Edge cache & revalidation
+  );
+  const { data, pagination } = await res.json();
 
   return (
     <main className="p-8">
       <h1 className="text-2xl font-bold">Dynamic Catalog</h1>
+      <p className="text-gray-500">Total Items: {pagination.total}</p>
+
       <div className="grid grid-cols-3 gap-4 mt-6">
-        {items.map((entry) => (
+        {data.map((entry: any) => (
           <div key={entry.id} className="border p-4 rounded-lg">
             <h2>{entry.data.name || entry.data.title}</h2>
-            <p className="text-gray-600">{entry.data.description}</p>
+            <p className="text-gray-600">{entry.data.description || 'No description'}</p>
           </div>
         ))}
       </div>
@@ -48,26 +57,29 @@ export default async function CatalogPage() {
   );
 }`;
 
-  const curlSnippet = `# 1. List all dynamic collection records (Public Edge)
+  const curlSnippet = `# 1. Query with Pagination, Sorting & Keyword Search (Public Edge)
+curl -X GET "${API_BASE}/api/content/products?page=1&limit=10&sort=created_at&order=desc&search=keyword"
+
+# 2. Get unpaginated records array (Backwards-compatible)
 curl -X GET ${API_BASE}/api/content/products
 
-# 2. Get specific record by ID (Public Edge)
+# 3. Get specific record by ID (Public Edge)
 curl -X GET ${API_BASE}/api/content/products/:id
 
-# 3. Authenticate Admin (Get Bearer Token)
+# 4. Authenticate Admin (Get Bearer Token)
 curl -X POST ${API_BASE}/api/auth/login \\
   -H "Content-Type: application/json" \\
   -d '{"email":"admin@example.com","password":"password123"}'
 
-# 4. Fetch All Schemas (Admin)
-curl -X GET ${API_BASE}/api/admin/collections \\
+# 5. Admin Query with Status Filter & Pagination
+curl -X GET "${API_BASE}/api/admin/content/products?status=all&page=1&limit=20" \\
   -H "Authorization: Bearer <YOUR_SESSION_TOKEN>"
 
-# 5. Create Record in Collection (Admin)
+# 6. Create Record in Collection (Admin)
 curl -X POST ${API_BASE}/api/admin/content/products \\
   -H "Authorization: Bearer <YOUR_SESSION_TOKEN>" \\
   -H "Content-Type: application/json" \\
-  -d '{"data": {"name": "Demo Product", "price": 49.99}, "published": true}'`;
+  -d '{"data": {"title": "Demo Product", "price": 49.99}, "status": "published"}'`;
 </script>
 
 <svelte:head>
@@ -120,9 +132,12 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/content/:collectionSlug</code>
+            <div style="font-size: 11px; color: #71717a; margin-top: 2px;">
+              Query params: <code>?page</code>, <code>?limit</code>, <code>?sort</code>, <code>?order</code>, <code>?search</code>
+            </div>
           </td>
           <td class="text-muted text-sm">
-            Fetch published records for any custom collection (e.g. products, articles, pages).
+            Fetch published records with pagination, custom sorting, and keyword search.
           </td>
           <td class="text-right">
             <button

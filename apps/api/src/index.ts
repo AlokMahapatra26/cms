@@ -16,7 +16,9 @@ import type {
   UpdateCollectionInput,
   ContentItem,
   CreateContentItemInput,
-  UpdateContentItemInput
+  UpdateContentItemInput,
+  PaginationInfo,
+  PaginatedResponse
 } from '@cms/shared';
 import {
   generateSalt,
@@ -229,16 +231,72 @@ app.get('/api/auth/me', async (c) => {
 // No authentication required. Fast edge retrieval.
 // -------------------------------------------------------------
 
-// List published posts
+// List published posts (supports ?page, ?limit, ?paginate, ?search, ?sort, ?order)
 app.get('/api/posts', async (c) => {
-  const result = await c.env.DB.prepare(
-    `SELECT id, slug, title, excerpt, cover_image, status, created_at, updated_at 
-     FROM posts 
-     WHERE status = 'published' 
-     ORDER BY created_at DESC`
-  ).all<Post>();
+  const pageQuery = c.req.query('page');
+  const limitQuery = c.req.query('limit');
+  const paginateQuery = c.req.query('paginate');
+  const isPaginated = pageQuery !== undefined || limitQuery !== undefined || paginateQuery === 'true';
 
-  return c.json(result.results || []);
+  const page = Math.max(1, parseInt(pageQuery || '1', 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(limitQuery || '20', 10) || 20));
+  const offset = (page - 1) * limit;
+
+  const search = c.req.query('search')?.trim() || '';
+  const sort = c.req.query('sort')?.trim() || 'created_at';
+  const order = c.req.query('order')?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+  const conditions: string[] = ["status = 'published'"];
+  const params: any[] = [];
+
+  if (search) {
+    conditions.push('(title LIKE ? OR excerpt LIKE ? OR content LIKE ?)');
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+
+  const whereClause = conditions.join(' AND ');
+
+  const countRow = await c.env.DB.prepare(
+    `SELECT count(*) as count FROM posts WHERE ${whereClause}`
+  ).bind(...params).first<{ count: number }>();
+  const total = countRow?.count || 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  let orderCol = 'created_at';
+  if (sort === 'title' || sort === 'updated_at' || sort === 'created_at') {
+    orderCol = sort;
+  }
+
+  let sql = `SELECT id, slug, title, excerpt, cover_image, status, created_at, updated_at FROM posts WHERE ${whereClause} ORDER BY ${orderCol} ${order}`;
+  const queryParams = [...params];
+
+  if (isPaginated) {
+    sql += ` LIMIT ? OFFSET ?`;
+    queryParams.push(limit, offset);
+  }
+
+  const result = await c.env.DB.prepare(sql).bind(...queryParams).all<Post>();
+  const posts = result.results || [];
+
+  c.header('X-Total-Count', String(total));
+  c.header('X-Total-Pages', String(totalPages));
+  c.header('X-Current-Page', String(page));
+
+  if (isPaginated) {
+    return c.json<PaginatedResponse<Post>>({
+      data: posts,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
+  }
+
+  return c.json(posts);
 });
 
 // Get single published post by slug
@@ -866,18 +924,86 @@ app.delete('/api/admin/collections/:slug', async (c) => {
 // DYNAMIC CONTENT ITEMS (Records in collections)
 // -------------------------------------------------------------
 
-// List content items in collection
+// List content items in collection (supports ?page, ?limit, ?status, ?search, ?sort, ?order)
 app.get('/api/admin/content/:collectionSlug', async (c) => {
   try {
     const slug = c.req.param('collectionSlug');
-    const rows = await c.env.DB.prepare(
-      `SELECT * FROM content_items WHERE collection_slug = ? ORDER BY created_at DESC`
-    ).bind(slug).all();
+    const pageQuery = c.req.query('page');
+    const limitQuery = c.req.query('limit');
+    const paginateQuery = c.req.query('paginate');
+    const isPaginated = pageQuery !== undefined || limitQuery !== undefined || paginateQuery === 'true';
+
+    const page = Math.max(1, parseInt(pageQuery || '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(limitQuery || '20', 10) || 20));
+    const offset = (page - 1) * limit;
+
+    const status = c.req.query('status')?.toLowerCase(); // 'all', 'published', 'draft'
+    const search = c.req.query('search')?.trim() || '';
+    const sort = c.req.query('sort')?.trim() || 'created_at';
+    const order = c.req.query('order')?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    const conditions: string[] = ['collection_slug = ?'];
+    const params: any[] = [slug];
+
+    if (status && status !== 'all') {
+      conditions.push('status = ?');
+      params.push(status);
+    }
+
+    if (search) {
+      conditions.push('(data LIKE ? OR id LIKE ?)');
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    // 1. Total Count
+    const countRow = await c.env.DB.prepare(
+      `SELECT count(*) as count FROM content_items WHERE ${whereClause}`
+    ).bind(...params).first<{ count: number }>();
+    const total = countRow?.count || 0;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    // 2. Sorting clause
+    let orderClause = 'created_at DESC';
+    if (sort === 'created_at' || sort === 'updated_at' || sort === 'id' || sort === 'status') {
+      orderClause = `${sort} ${order}`;
+    } else if (/^[a-zA-Z0-9_]+$/.test(sort)) {
+      orderClause = `json_extract(data, '$.' || '${sort}') ${order}, created_at DESC`;
+    }
+
+    let sql = `SELECT * FROM content_items WHERE ${whereClause} ORDER BY ${orderClause}`;
+    const queryParams = [...params];
+
+    if (isPaginated) {
+      sql += ` LIMIT ? OFFSET ?`;
+      queryParams.push(limit, offset);
+    }
+
+    const rows = await c.env.DB.prepare(sql).bind(...queryParams).all();
 
     const items = rows.results.map((r: any) => ({
       ...r,
       data: JSON.parse(r.data || '{}')
     }));
+
+    c.header('X-Total-Count', String(total));
+    c.header('X-Total-Pages', String(totalPages));
+    c.header('X-Current-Page', String(page));
+
+    if (isPaginated) {
+      return c.json<PaginatedResponse<ContentItem>>({
+        data: items,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      });
+    }
 
     return c.json(items);
   } catch (err: any) {
@@ -997,13 +1123,57 @@ app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
 // PUBLIC DYNAMIC CONTENT API (For Frontends / Astro / Static Site Gen)
 // -------------------------------------------------------------
 
-// Public: Get published items of a collection
+// Public: Get published items of a collection (supports ?page, ?limit, ?paginate, ?search, ?sort, ?order)
 app.get('/api/content/:collectionSlug', async (c) => {
   try {
     const slug = c.req.param('collectionSlug');
-    const rows = await c.env.DB.prepare(
-      `SELECT * FROM content_items WHERE collection_slug = ? AND status = 'published' ORDER BY created_at DESC`
-    ).bind(slug).all();
+    const pageQuery = c.req.query('page');
+    const limitQuery = c.req.query('limit');
+    const paginateQuery = c.req.query('paginate');
+    const isPaginated = pageQuery !== undefined || limitQuery !== undefined || paginateQuery === 'true';
+
+    const page = Math.max(1, parseInt(pageQuery || '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(limitQuery || '20', 10) || 20));
+    const offset = (page - 1) * limit;
+
+    const search = c.req.query('search')?.trim() || '';
+    const sort = c.req.query('sort')?.trim() || 'created_at';
+    const order = c.req.query('order')?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    const conditions: string[] = ['collection_slug = ?', "status = 'published'"];
+    const params: any[] = [slug];
+
+    if (search) {
+      conditions.push('(data LIKE ? OR id LIKE ?)');
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    // 1. Total Count of matching published items
+    const countRow = await c.env.DB.prepare(
+      `SELECT count(*) as count FROM content_items WHERE ${whereClause}`
+    ).bind(...params).first<{ count: number }>();
+    const total = countRow?.count || 0;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    // 2. Sorting clause
+    let orderClause = 'created_at DESC';
+    if (sort === 'created_at' || sort === 'updated_at' || sort === 'id') {
+      orderClause = `${sort} ${order}`;
+    } else if (/^[a-zA-Z0-9_]+$/.test(sort)) {
+      orderClause = `json_extract(data, '$.' || '${sort}') ${order}, created_at DESC`;
+    }
+
+    let sql = `SELECT * FROM content_items WHERE ${whereClause} ORDER BY ${orderClause}`;
+    const queryParams = [...params];
+
+    if (isPaginated) {
+      sql += ` LIMIT ? OFFSET ?`;
+      queryParams.push(limit, offset);
+    }
+
+    const rows = await c.env.DB.prepare(sql).bind(...queryParams).all();
 
     const items = rows.results.map((r: any) => ({
       id: r.id,
@@ -1012,6 +1182,24 @@ app.get('/api/content/:collectionSlug', async (c) => {
       created_at: r.created_at,
       updated_at: r.updated_at
     }));
+
+    c.header('X-Total-Count', String(total));
+    c.header('X-Total-Pages', String(totalPages));
+    c.header('X-Current-Page', String(page));
+
+    if (isPaginated) {
+      return c.json<PaginatedResponse<any>>({
+        data: items,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      });
+    }
 
     return c.json(items);
   } catch (err: any) {

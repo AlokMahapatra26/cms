@@ -166,3 +166,18 @@ export interface UpdateContentItemInput {
   status?: 'draft' | 'published';
   data?: Record<string, any>;
 }
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationInfo;
+}
+
