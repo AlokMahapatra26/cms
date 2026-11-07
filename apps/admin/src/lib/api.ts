@@ -346,6 +346,26 @@ export async function fetchCollections(): Promise<Collection[]> {
   return res.json();
 }
 
+export async function syncCollections(): Promise<{ success: boolean; count: number; collections: any[] }> {
+  const res = await fetch(`${API_BASE}/api/admin/collections/sync`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' })
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to sync cms.config.ts');
+  }
+
+  return res.json();
+}
+
+
 export async function fetchCollection(slug: string): Promise<Collection> {
   const res = await fetch(`${API_BASE}/api/admin/collections/${slug}`, {
     headers: getAuthHeaders()

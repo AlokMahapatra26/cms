@@ -18,7 +18,8 @@ import type {
   CreateContentItemInput,
   UpdateContentItemInput,
   PaginationInfo,
-  PaginatedResponse
+  PaginatedResponse,
+  cmsConfig
 } from '@cms/shared';
 import {
   generateSalt,
@@ -764,19 +765,65 @@ app.get('/api/media/*', async (c) => {
 });
 
 // -------------------------------------------------------------
-// DYNAMIC SCHEMA BUILDER & CONTENT ENGINE API
+// CODE-FIRST SCHEMA ENGINE & COLLECTIONS API
+// Schemas are defined in cms.config.ts by developers & AI agents.
 // -------------------------------------------------------------
 
-// List all collections (Content Types)
+// Sync collections defined in cms.config.ts into Cloudflare D1
+app.post('/api/admin/collections/sync', async (c) => {
+  try {
+    const synced: any[] = [];
+    for (const col of cmsConfig.collections || []) {
+      const fieldsJson = JSON.stringify(col.fields || []);
+      const now = new Date().toISOString();
+      await c.env.DB.prepare(
+        `INSERT INTO collections (id, slug, name, description, icon, fields, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(slug) DO UPDATE SET
+           name = excluded.name,
+           description = excluded.description,
+           icon = excluded.icon,
+           fields = excluded.fields,
+           updated_at = excluded.updated_at`
+      ).bind(col.id || `col_${col.slug}`, col.slug, col.name, col.description || null, col.icon || 'schema', fieldsJson, now, now).run();
+      synced.push({ slug: col.slug, name: col.name, fieldsCount: col.fields.length });
+    }
+    return c.json({ success: true, count: synced.length, collections: synced });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to sync cms.config.ts' }, 500);
+  }
+});
+
+// List all collections (Auto-syncs from cms.config.ts)
 app.get('/api/admin/collections', async (c) => {
   try {
+    // 1. Auto-sync any code-first collection from cms.config.ts into D1
+    if (cmsConfig.collections && cmsConfig.collections.length > 0) {
+      for (const col of cmsConfig.collections) {
+        const fieldsJson = JSON.stringify(col.fields || []);
+        const now = new Date().toISOString();
+        await c.env.DB.prepare(
+          `INSERT INTO collections (id, slug, name, description, icon, fields, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(slug) DO UPDATE SET
+             name = excluded.name,
+             description = excluded.description,
+             icon = excluded.icon,
+             fields = excluded.fields,
+             updated_at = excluded.updated_at`
+        ).bind(col.id || `col_${col.slug}`, col.slug, col.name, col.description || null, col.icon || 'schema', fieldsJson, now, now).run();
+      }
+    }
+
+    // 2. Fetch all active collections from D1
     const rows = await c.env.DB.prepare(
       `SELECT * FROM collections ORDER BY name ASC`
     ).all();
 
     const collections = rows.results.map((r: any) => ({
       ...r,
-      fields: JSON.parse(r.fields || '[]')
+      fields: JSON.parse(r.fields || '[]'),
+      isCodeFirst: (cmsConfig.collections || []).some((c: any) => c.slug === r.slug)
     }));
 
     return c.json(collections);

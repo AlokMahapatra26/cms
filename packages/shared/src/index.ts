@@ -181,3 +181,9 @@ export interface PaginatedResponse<T> {
   pagination: PaginationInfo;
 }
 
+// Code-First Schema Builder API
+export * from './builder';
+export * from './config';
+
+
+
