@@ -2,30 +2,142 @@
    Collections & Schema Builder Components
    ========================================================================== */
 
+/* Schema Card Layout */
 .schema-item-card {
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-lg);
   background-color: #ffffff;
   display: flex;
   flex-direction: column;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  justify-content: space-between;
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.15s ease;
+  min-height: 180px;
 }
 
 .schema-item-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--color-shade-30);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.schema-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.schema-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.schema-card-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background-color: #000000;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.schema-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: #000000;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.schema-card-slug {
+  font-size: 11px;
+  color: var(--color-shade-50);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.schema-card-badge {
+  background-color: var(--color-shade-20);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-shade-60);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.schema-card-desc {
+  font-size: 12px;
+  color: var(--color-shade-50);
+  margin: 0 0 12px 0;
+  line-height: 1.45;
+}
+
+/* Fields Chips List */
+.schema-fields-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
 }
 
 .schema-field-chip {
-  background-color: var(--color-canvas-cream);
+  background-color: #fafafa;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-sm);
-  padding: 2px 7px;
-  font-size: 11px;
+  padding: 3px 8px;
+  font-size: 11.5px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  line-height: 1.2;
 }
 
+.schema-field-chip-key {
+  font-weight: 600;
+  color: #18181b;
+}
+
+.schema-field-chip-type {
+  color: var(--color-shade-40);
+  font-size: 10.5px;
+}
+
+/* Card Actions Footer */
+.schema-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.schema-card-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Schema Modal Dialog */
 .schema-modal-dialog {
   max-width: 620px;
   width: 100%;
@@ -71,4 +183,3 @@
   color: #ffffff;
   border-color: #000000;
 }
-

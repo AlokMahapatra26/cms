@@ -280,77 +280,81 @@
   </div>
 {:else}
   <!-- Collections Grid -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px;">
     {#each collections as col (col.slug)}
-      <div class="shopify-card schema-item-card">
-        <div style="padding: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="width: 32px; height: 32px; border-radius: 8px; background: #000000; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">
-                  {col.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h3 style="font-size: 14.5px; font-weight: 600; margin: 0; color: #000000; line-height: 1.2;">
-                    {col.name}
-                  </h3>
-                  <code style="font-size: 11px; color: #71717a;">/content/{col.slug}</code>
+      <div class="schema-item-card">
+        <div>
+          <!-- Header -->
+          <div class="schema-card-header">
+            <div class="schema-card-identity">
+              <div class="schema-card-avatar">
+                {col.name.charAt(0).toUpperCase()}
+              </div>
+              <div style="min-width: 0;">
+                <h3 class="schema-card-title">
+                  {col.name}
+                </h3>
+                <div class="schema-card-slug">
+                  <span>/content/{col.slug}</span>
                 </div>
               </div>
-
-              <span class="field-badge">
-                {col.fields?.length || 0} fields
-              </span>
             </div>
 
-            {#if col.description}
-              <p style="font-size: 12px; color: #52525b; margin: 0 0 12px 0; line-height: 1.4;">
-                {col.description}
-              </p>
-            {/if}
-
-            <!-- Fields Chips -->
-            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px;">
-              {#each col.fields || [] as field}
-                <span class="schema-field-chip" title="{field.label} ({field.type})">
-                  <span style="font-weight: 600;">{field.key}</span>
-                  <span style="color: #71717a; font-size: 10px;">({field.type})</span>
-                </span>
-              {/each}
-            </div>
+            <span class="schema-card-badge">
+              {col.fields?.length || 0} fields
+            </span>
           </div>
 
-          <!-- Actions -->
-          <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid #f4f4f5;">
-            <a
-              href="/content/{col.slug}"
-              class="btn-primary-pill"
-              style="font-size: 11.5px; padding: 4px 12px;"
-            >
-              <span>Manage Content</span>
-              <span style="font-size: 10px;">&rarr;</span>
-            </a>
+          {#if col.description}
+            <p class="schema-card-desc">
+              {col.description}
+            </p>
+          {/if}
 
-            <div style="display: flex; gap: 6px;">
-              <button
-                type="button"
-                class="btn-sm-pill btn-gray-sm"
-                style="font-size: 11px; padding: 4px 8px;"
-                title="Edit Schema Fields"
-                onclick={() => openEditModal(col)}
-              >
-                Edit Schema
-              </button>
-              <button
-                type="button"
-                class="btn-sm-pill btn-danger-sm"
-                style="font-size: 11px; padding: 4px 8px;"
-                title="Delete Schema"
-                onclick={() => handleDeleteModel(col)}
-              >
-                Delete
-              </button>
-            </div>
+          <!-- Fields Chips -->
+          <div class="schema-fields-list">
+            {#each col.fields || [] as field}
+              <span class="schema-field-chip" title="{field.label} ({field.type})">
+                <Icon name={field.type} size={11} class="text-muted" />
+                <span class="schema-field-chip-key">{field.key}</span>
+                <span class="schema-field-chip-type">({field.type})</span>
+              </span>
+            {/each}
+          </div>
+        </div>
+
+        <!-- Actions Footer -->
+        <div class="schema-card-footer">
+          <a
+            href="/content/{col.slug}"
+            class="btn-primary-pill"
+            style="font-size: 12px; padding: 6px 14px;"
+          >
+            <span>Manage Content</span>
+            <span style="font-size: 11px;">&rarr;</span>
+          </a>
+
+          <div class="schema-card-actions-group">
+            <button
+              type="button"
+              class="btn-outline-pill"
+              style="font-size: 11.5px; padding: 5px 11px;"
+              title="Edit Schema Fields"
+              onclick={() => openEditModal(col)}
+            >
+              <Icon name="edit" size={12} />
+              <span>Edit</span>
+            </button>
+            <button
+              type="button"
+              class="btn-danger-outline-pill"
+              style="font-size: 11.5px; padding: 5px 11px;"
+              title="Delete Schema"
+              onclick={() => handleDeleteModel(col)}
+            >
+              <Icon name="trash" size={12} />
+              <span>Delete</span>
+            </button>
           </div>
         </div>
       </div>

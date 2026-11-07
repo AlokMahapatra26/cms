@@ -18,6 +18,7 @@
   text-decoration: none;
   transition: all 0.15s ease;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .btn-primary-pill:hover {
@@ -73,6 +74,7 @@
   text-decoration: none;
   transition: all 0.15s ease;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .btn-outline-pill:hover {
@@ -99,6 +101,7 @@
   justify-content: center;
   gap: 6px;
   transition: background-color 0.15s ease;
+  white-space: nowrap;
 }
 
 .btn-danger-pill:hover {
@@ -107,6 +110,36 @@
 }
 
 .btn-danger-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-danger-outline-pill {
+  background-color: #ffffff;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #fee2e2;
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.btn-danger-outline-pill:hover {
+  background-color: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+.btn-danger-outline-pill:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
