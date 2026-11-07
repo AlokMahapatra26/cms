@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { getMe, logout, getToken, getSetupStatus } from '$lib/api';
+  import { collectionsStore } from '$lib/collections.svelte';
   import type { User } from '@cms/shared';
   import ConfirmModal from '$lib/ConfirmModal.svelte';
 
@@ -42,6 +43,7 @@
       // Validate session with backend
       const user = await getMe();
       currentUser = user;
+      collectionsStore.load();
 
       // If authenticated and visiting /login or /setup, redirect to dashboard
       if (isAuthPage) {
@@ -182,6 +184,28 @@
             </a>
           </div>
 
+          <!-- Section 1.5: Dynamic Collections -->
+          <div class="shopify-sidebar-section">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding-right: 6px;">
+              <h3 class="shopify-sidebar-heading" style="margin-bottom: 0;">Collections</h3>
+              <a href="/schemas" style="font-size: 10.5px; color: #71717a; text-decoration: none;" title="Build new content models">+ Schema</a>
+            </div>
+
+            {#each collectionsStore.list as col (col.slug)}
+              <a
+                href="/content/{col.slug}"
+                class="shopify-sidebar-link {page.url.pathname.startsWith('/content/' + col.slug) ? 'active' : ''}"
+              >
+                <div class="shopify-sidebar-link-content">
+                  <div style="width: 15px; height: 15px; border-radius: 4px; background: #000000; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-weight: 700;">
+                    {col.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span>{col.name}</span>
+                </div>
+              </a>
+            {/each}
+          </div>
+
           <!-- Section 2: Developer & Distribution -->
           <div class="shopify-sidebar-section">
             <h3 class="shopify-sidebar-heading">Distribution</h3>
@@ -208,9 +232,20 @@
             </a>
           </div>
 
-          <!-- Section 3: Settings -->
+          <!-- Section 3: Settings & Schema -->
           <div class="shopify-sidebar-section">
-            <h3 class="shopify-sidebar-heading">Settings</h3>
+            <h3 class="shopify-sidebar-heading">Models & Settings</h3>
+            <a href="/schemas" class="shopify-sidebar-link {page.url.pathname === '/schemas' ? 'active' : ''}">
+              <div class="shopify-sidebar-link-content">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                <span>Content Modeler</span>
+              </div>
+            </a>
+
             <a href="/settings" class="shopify-sidebar-link {page.url.pathname === '/settings' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

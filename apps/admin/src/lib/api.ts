@@ -9,7 +9,13 @@ import type {
   SetupInput,
   AuthResponse,
   UpdateProfileInput,
-  ChangePasswordInput
+  ChangePasswordInput,
+  Collection,
+  CreateCollectionInput,
+  UpdateCollectionInput,
+  ContentItem,
+  CreateContentItemInput,
+  UpdateContentItemInput
 } from '@cms/shared';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8787';
@@ -320,4 +326,189 @@ export async function renameMedia(oldKey: string, newName: string): Promise<Medi
     ...item,
     url: item.url.startsWith('http') ? item.url : `${API_BASE}${item.url}`
   };
+}
+
+// -------------------------------------------------------------
+// DYNAMIC SCHEMA / COLLECTIONS API
+// -------------------------------------------------------------
+
+export async function fetchCollections(): Promise<Collection[]> {
+  const res = await fetch(`${API_BASE}/api/admin/collections`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) throw new Error('Failed to fetch collections');
+  return res.json();
+}
+
+export async function fetchCollection(slug: string): Promise<Collection> {
+  const res = await fetch(`${API_BASE}/api/admin/collections/${slug}`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) throw new Error('Failed to fetch collection');
+  return res.json();
+}
+
+export async function createCollection(input: CreateCollectionInput): Promise<Collection> {
+  const res = await fetch(`${API_BASE}/api/admin/collections`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to create collection');
+  }
+
+  return res.json();
+}
+
+export async function updateCollection(slug: string, input: UpdateCollectionInput): Promise<Collection> {
+  const res = await fetch(`${API_BASE}/api/admin/collections/${slug}`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to update collection');
+  }
+
+  return res.json();
+}
+
+export async function deleteCollection(slug: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/admin/collections/${slug}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to delete collection');
+  }
+}
+
+// -------------------------------------------------------------
+// DYNAMIC CONTENT ITEMS API
+// -------------------------------------------------------------
+
+export async function fetchContentItems(collectionSlug: string): Promise<ContentItem[]> {
+  const res = await fetch(`${API_BASE}/api/admin/content/${collectionSlug}`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) throw new Error('Failed to fetch content items');
+  return res.json();
+}
+
+export async function fetchContentItem(collectionSlug: string, id: string): Promise<ContentItem> {
+  const res = await fetch(`${API_BASE}/api/admin/content/${collectionSlug}/${id}`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) throw new Error('Failed to fetch content item');
+  return res.json();
+}
+
+export async function createContentItem(
+  collectionSlug: string,
+  input: CreateContentItemInput
+): Promise<ContentItem> {
+  const res = await fetch(`${API_BASE}/api/admin/content/${collectionSlug}`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to create content item');
+  }
+
+  return res.json();
+}
+
+export async function updateContentItem(
+  collectionSlug: string,
+  id: string,
+  input: UpdateContentItemInput
+): Promise<ContentItem> {
+  const res = await fetch(`${API_BASE}/api/admin/content/${collectionSlug}/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to update content item');
+  }
+
+  return res.json();
+}
+
+export async function deleteContentItem(collectionSlug: string, id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/admin/content/${collectionSlug}/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to delete content item');
+  }
 }

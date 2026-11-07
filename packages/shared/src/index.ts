@@ -95,3 +95,74 @@ export interface ChangePasswordInput {
   new_password: string;
 }
 
+
+// -------------------------------------------------------------
+// DYNAMIC SCHEMA & CONTENT TYPES (Headless CMS Engine)
+// -------------------------------------------------------------
+
+export type FieldType =
+  | 'text'
+  | 'longtext'
+  | 'richtext'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | 'media'
+  | 'select';
+
+export interface FieldDefinition {
+  id: string;
+  key: string;
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  placeholder?: string;
+  options?: string[]; // for select dropdown
+  description?: string;
+}
+
+export interface Collection {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  icon?: string | null;
+  fields: FieldDefinition[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCollectionInput {
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  fields: FieldDefinition[];
+}
+
+export interface UpdateCollectionInput {
+  name?: string;
+  slug?: string;
+  description?: string;
+  icon?: string;
+  fields?: FieldDefinition[];
+}
+
+export interface ContentItem {
+  id: string;
+  collection_slug: string;
+  status: 'draft' | 'published';
+  data: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateContentItemInput {
+  status?: 'draft' | 'published';
+  data: Record<string, any>;
+}
+
+export interface UpdateContentItemInput {
+  status?: 'draft' | 'published';
+  data?: Record<string, any>;
+}

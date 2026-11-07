@@ -10,7 +10,13 @@ import type {
   AuthResponse,
   UpdateProfileInput,
   ChangePasswordInput,
-  RenameMediaInput
+  RenameMediaInput,
+  Collection,
+  CreateCollectionInput,
+  UpdateCollectionInput,
+  ContentItem,
+  CreateContentItemInput,
+  UpdateContentItemInput
 } from '@cms/shared';
 import {
   generateSalt,
@@ -697,6 +703,344 @@ app.get('/api/media/*', async (c) => {
   headers.set('cache-control', 'public, max-age=31536000, immutable');
 
   return new Response(object.body, { headers });
+});
+
+// -------------------------------------------------------------
+// DYNAMIC SCHEMA BUILDER & CONTENT ENGINE API
+// -------------------------------------------------------------
+
+// List all collections (Content Types)
+app.get('/api/admin/collections', async (c) => {
+  try {
+    const rows = await c.env.DB.prepare(
+      `SELECT * FROM collections ORDER BY name ASC`
+    ).all();
+
+    const collections = rows.results.map((r: any) => ({
+      ...r,
+      fields: JSON.parse(r.fields || '[]')
+    }));
+
+    return c.json(collections);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to fetch collections' }, 500);
+  }
+});
+
+// Get single collection by slug
+app.get('/api/admin/collections/:slug', async (c) => {
+  try {
+    const slug = c.req.param('slug');
+    const row = await c.env.DB.prepare(
+      `SELECT * FROM collections WHERE slug = ?`
+    ).bind(slug).first<any>();
+
+    if (!row) {
+      return c.json({ error: 'Collection not found' }, 404);
+    }
+
+    return c.json({
+      ...row,
+      fields: JSON.parse(row.fields || '[]')
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to fetch collection' }, 500);
+  }
+});
+
+// Create a new collection schema
+app.post('/api/admin/collections', async (c) => {
+  try {
+    const body = await c.req.json<CreateCollectionInput>();
+    const name = body.name?.trim();
+    let slug = body.slug?.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
+
+    if (!name || !slug) {
+      return c.json({ error: 'Collection name and slug are required' }, 400);
+    }
+
+    // Check slug uniqueness
+    const existing = await c.env.DB.prepare(
+      `SELECT id FROM collections WHERE slug = ?`
+    ).bind(slug).first();
+
+    if (existing) {
+      return c.json({ error: `A collection with slug "${slug}" already exists` }, 409);
+    }
+
+    const id = `col_${Date.now()}`;
+    const now = new Date().toISOString();
+    const description = body.description?.trim() || null;
+    const icon = body.icon?.trim() || 'box';
+    const fields = JSON.stringify(body.fields || []);
+
+    await c.env.DB.prepare(
+      `INSERT INTO collections (id, slug, name, description, icon, fields, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, slug, name, description, icon, fields, now, now).run();
+
+    return c.json({
+      id,
+      slug,
+      name,
+      description,
+      icon,
+      fields: body.fields || [],
+      created_at: now,
+      updated_at: now
+    }, 201);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to create collection' }, 500);
+  }
+});
+
+// Update an existing collection schema
+app.put('/api/admin/collections/:slug', async (c) => {
+  try {
+    const currentSlug = c.req.param('slug');
+    const existing = await c.env.DB.prepare(
+      `SELECT * FROM collections WHERE slug = ?`
+    ).bind(currentSlug).first<any>();
+
+    if (!existing) {
+      return c.json({ error: 'Collection not found' }, 404);
+    }
+
+    const body = await c.req.json<UpdateCollectionInput>();
+    const name = body.name?.trim() || existing.name;
+    const description = body.description !== undefined ? (body.description?.trim() || null) : existing.description;
+    const icon = body.icon !== undefined ? (body.icon?.trim() || 'box') : existing.icon;
+    const fields = body.fields !== undefined ? JSON.stringify(body.fields) : existing.fields;
+    const now = new Date().toISOString();
+
+    let newSlug = existing.slug;
+    if (body.slug && body.slug.trim() !== existing.slug) {
+      newSlug = body.slug.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
+      // check collision
+      const collision = await c.env.DB.prepare(
+        `SELECT id FROM collections WHERE slug = ? AND id != ?`
+      ).bind(newSlug, existing.id).first();
+
+      if (collision) {
+        return c.json({ error: `A collection with slug "${newSlug}" already exists` }, 409);
+      }
+
+      // cascade update content items collection_slug
+      await c.env.DB.prepare(
+        `UPDATE content_items SET collection_slug = ? WHERE collection_slug = ?`
+      ).bind(newSlug, currentSlug).run();
+    }
+
+    await c.env.DB.prepare(
+      `UPDATE collections SET name = ?, slug = ?, description = ?, icon = ?, fields = ?, updated_at = ? WHERE id = ?`
+    ).bind(name, newSlug, description, icon, fields, now, existing.id).run();
+
+    return c.json({
+      id: existing.id,
+      slug: newSlug,
+      name,
+      description,
+      icon,
+      fields: JSON.parse(fields),
+      created_at: existing.created_at,
+      updated_at: now
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to update collection' }, 500);
+  }
+});
+
+// Delete a collection schema and its items
+app.delete('/api/admin/collections/:slug', async (c) => {
+  try {
+    const slug = c.req.param('slug');
+    await c.env.DB.prepare(`DELETE FROM content_items WHERE collection_slug = ?`).bind(slug).run();
+    await c.env.DB.prepare(`DELETE FROM collections WHERE slug = ?`).bind(slug).run();
+    return c.json({ success: true, slug });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to delete collection' }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// DYNAMIC CONTENT ITEMS (Records in collections)
+// -------------------------------------------------------------
+
+// List content items in collection
+app.get('/api/admin/content/:collectionSlug', async (c) => {
+  try {
+    const slug = c.req.param('collectionSlug');
+    const rows = await c.env.DB.prepare(
+      `SELECT * FROM content_items WHERE collection_slug = ? ORDER BY created_at DESC`
+    ).bind(slug).all();
+
+    const items = rows.results.map((r: any) => ({
+      ...r,
+      data: JSON.parse(r.data || '{}')
+    }));
+
+    return c.json(items);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to list content items' }, 500);
+  }
+});
+
+// Get single content item by ID
+app.get('/api/admin/content/:collectionSlug/:id', async (c) => {
+  try {
+    const { collectionSlug, id } = c.req.param();
+    const row = await c.env.DB.prepare(
+      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ?`
+    ).bind(collectionSlug, id).first<any>();
+
+    if (!row) {
+      return c.json({ error: 'Content item not found' }, 404);
+    }
+
+    return c.json({
+      ...row,
+      data: JSON.parse(row.data || '{}')
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to fetch content item' }, 500);
+  }
+});
+
+// Create content item in collection
+app.post('/api/admin/content/:collectionSlug', async (c) => {
+  try {
+    const slug = c.req.param('collectionSlug');
+    const body = await c.req.json<CreateContentItemInput>();
+
+    // Check collection exists
+    const collection = await c.env.DB.prepare(
+      `SELECT id FROM collections WHERE slug = ?`
+    ).bind(slug).first();
+
+    if (!collection) {
+      return c.json({ error: `Collection "${slug}" not found` }, 404);
+    }
+
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const status = body.status || 'draft';
+    const data = JSON.stringify(body.data || {});
+
+    await c.env.DB.prepare(
+      `INSERT INTO content_items (id, collection_slug, status, data, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(id, slug, status, data, now, now).run();
+
+    return c.json({
+      id,
+      collection_slug: slug,
+      status,
+      data: body.data || {},
+      created_at: now,
+      updated_at: now
+    }, 201);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to create content item' }, 500);
+  }
+});
+
+// Update content item in collection
+app.put('/api/admin/content/:collectionSlug/:id', async (c) => {
+  try {
+    const { collectionSlug, id } = c.req.param();
+    const existing = await c.env.DB.prepare(
+      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ?`
+    ).bind(collectionSlug, id).first<any>();
+
+    if (!existing) {
+      return c.json({ error: 'Content item not found' }, 404);
+    }
+
+    const body = await c.req.json<UpdateContentItemInput>();
+    const now = new Date().toISOString();
+    const status = body.status ?? existing.status;
+    const existingData = JSON.parse(existing.data || '{}');
+    const updatedData = body.data !== undefined ? { ...existingData, ...body.data } : existingData;
+
+    await c.env.DB.prepare(
+      `UPDATE content_items SET status = ?, data = ?, updated_at = ? WHERE id = ?`
+    ).bind(status, JSON.stringify(updatedData), now, id).run();
+
+    return c.json({
+      id,
+      collection_slug: collectionSlug,
+      status,
+      data: updatedData,
+      created_at: existing.created_at,
+      updated_at: now
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to update content item' }, 500);
+  }
+});
+
+// Delete content item in collection
+app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
+  try {
+    const { collectionSlug, id } = c.req.param();
+    await c.env.DB.prepare(
+      `DELETE FROM content_items WHERE collection_slug = ? AND id = ?`
+    ).bind(collectionSlug, id).run();
+
+    return c.json({ success: true, id });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to delete content item' }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// PUBLIC DYNAMIC CONTENT API (For Frontends / Astro / Static Site Gen)
+// -------------------------------------------------------------
+
+// Public: Get published items of a collection
+app.get('/api/content/:collectionSlug', async (c) => {
+  try {
+    const slug = c.req.param('collectionSlug');
+    const rows = await c.env.DB.prepare(
+      `SELECT * FROM content_items WHERE collection_slug = ? AND status = 'published' ORDER BY created_at DESC`
+    ).bind(slug).all();
+
+    const items = rows.results.map((r: any) => ({
+      id: r.id,
+      collection_slug: r.collection_slug,
+      data: JSON.parse(r.data || '{}'),
+      created_at: r.created_at,
+      updated_at: r.updated_at
+    }));
+
+    return c.json(items);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to fetch published content' }, 500);
+  }
+});
+
+// Public: Get single published item
+app.get('/api/content/:collectionSlug/:id', async (c) => {
+  try {
+    const { collectionSlug, id } = c.req.param();
+    const row = await c.env.DB.prepare(
+      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ? AND status = 'published'`
+    ).bind(collectionSlug, id).first<any>();
+
+    if (!row) {
+      return c.json({ error: 'Content item not found' }, 404);
+    }
+
+    return c.json({
+      id: row.id,
+      collection_slug: row.collection_slug,
+      data: JSON.parse(row.data || '{}'),
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to fetch content item' }, 500);
+  }
 });
 
 export default app;
