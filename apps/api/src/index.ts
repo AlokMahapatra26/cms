@@ -18,9 +18,9 @@ import type {
   CreateContentItemInput,
   UpdateContentItemInput,
   PaginationInfo,
-  PaginatedResponse,
-  cmsConfig
+  PaginatedResponse
 } from '@cms/shared';
+import { cmsConfig } from '@cms/shared';
 import {
   generateSalt,
   generateSessionToken,

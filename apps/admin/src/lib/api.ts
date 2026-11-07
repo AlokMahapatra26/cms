@@ -342,7 +342,10 @@ export async function fetchCollections(): Promise<Collection[]> {
     throw new Error('UNAUTHORIZED');
   }
 
-  if (!res.ok) throw new Error('Failed to fetch collections');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to fetch collections');
+  }
   return res.json();
 }
 
