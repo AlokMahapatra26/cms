@@ -575,38 +575,41 @@ ${fieldLines}
                 </div>
 
                 {#if modelFields.length === 0}
-                  <div style="text-align: center; padding: 24px; border: 1.5px dashed #e4e4e7; border-radius: 8px; color: #71717a; font-size: 12.5px;">
-                    No fields added yet. Configure a field on the right and click "Add Field".
+                  <div class="empty-fields-state">
+                    <p style="font-size: 12px; color: #71717a; margin: 0;">
+                      No fields added yet. Configure a field on the right and click "Add Field".
+                    </p>
                   </div>
                 {:else}
-                  <div class="schema-fields-list">
+                  <div class="schema-fields-scroll-list">
                     {#each modelFields as f (f.id)}
-                      <div class="schema-field-row">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                          <div style="width: 24px; height: 24px; border-radius: 4px; background: #f4f4f5; display: flex; align-items: center; justify-content: center; color: #18181b;">
+                      <div class="field-item-row">
+                        <div class="field-item-left">
+                          <div class="field-type-icon-box">
                             <Icon name={f.type} size={13} />
                           </div>
-                          <div>
-                            <div style="font-size: 12.5px; font-weight: 600; color: #18181b;">
-                              {f.label}
-                            </div>
-                            <div style="font-size: 11px; color: #71717a; font-family: monospace;">
-                              {f.key} • {f.type}
+                          <div class="field-item-details">
+                            <div class="field-item-title-row">
+                              <span class="field-item-label">{f.label}</span>
                               {#if f.required}
-                                <span style="color: #dc2626; font-weight: 600;">• Required</span>
+                                <span class="badge-required">Required</span>
                               {/if}
+                            </div>
+                            <div class="field-item-meta">
+                              <span class="field-item-key">{f.key}</span>
+                              <span class="meta-dot">•</span>
+                              <span class="field-item-type">{f.type}</span>
                             </div>
                           </div>
                         </div>
 
                         <button
                           type="button"
-                          class="btn-danger-outline-pill"
-                          style="font-size: 11px; padding: 2px 7px;"
+                          class="field-delete-btn"
                           onclick={() => removeField(f.id)}
                           title="Remove field"
                         >
-                          <Icon name="close" size={11} />
+                          <Icon name="trash" size={13} />
                         </button>
                       </div>
                     {/each}

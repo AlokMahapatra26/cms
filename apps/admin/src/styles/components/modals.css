@@ -113,9 +113,9 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 18px;
-  background-color: var(--color-canvas-cream);
+  gap: 10px;
+  padding: 14px 22px;
+  background-color: var(--color-shade-10);
   border-top: 1px solid var(--color-hairline);
 }
 
