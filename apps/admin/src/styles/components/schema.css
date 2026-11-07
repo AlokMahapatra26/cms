@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Collections & Schema Builder Components
+   Collections & Schema Builder Components (Scalable Studio)
    ========================================================================== */
 
 /* Schema Card Layout */
@@ -137,49 +137,292 @@
   gap: 6px;
 }
 
-/* Schema Modal Dialog */
+/* ==========================================================================
+   Scalable Schema Studio Modal
+   ========================================================================== */
 .schema-modal-dialog {
-  max-width: 620px;
-  width: 100%;
+  max-width: 980px;
+  width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.field-row {
+.modal-subtitle {
+  font-size: 12px;
+  color: var(--color-shade-50);
+  margin: 2px 0 0 0;
+}
+
+.schema-studio-form {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.schema-studio-scrollable {
+  padding: 18px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.schema-studio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .schema-studio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.schema-panel-card {
   background-color: #ffffff;
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-md);
-  padding: 8px 12px;
+  padding: 16px;
+}
+
+.schema-panel-card.builder-card {
+  background-color: #fafafa;
+  border-color: #e4e4e7;
+}
+
+.schema-panel-heading {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.01em;
+}
+
+.input-slug-prefix {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.slug-prefix {
+  position: absolute;
+  left: 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--color-shade-40);
+  pointer-events: none;
+}
+
+.input-with-prefix {
+  padding-left: 22px !important;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+/* Defined Fields Scrollable List */
+.schema-fields-scroll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.field-item-row {
+  background-color: #ffffff;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 9px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.add-field-card {
-  background-color: var(--color-canvas-cream);
-  border: 1px dashed var(--color-shade-30);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  margin-top: 10px;
+.field-item-row:hover {
+  border-color: var(--color-shade-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
-.field-type-btn {
-  background-color: #ffffff;
+.field-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.field-type-icon-box {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-shade-20);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
-  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #27272a;
+  flex-shrink: 0;
+}
+
+.field-item-details {
+  min-width: 0;
+}
+
+.field-item-title-row {
   display: flex;
   align-items: center;
   gap: 6px;
+  line-height: 1.2;
+}
+
+.field-item-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.badge-required {
+  font-size: 10px;
+  font-weight: 600;
+  color: #dc2626;
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.field-item-meta {
+  font-size: 11px;
+  color: var(--color-shade-50);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-item-key {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #52525b;
+}
+
+.meta-dot {
+  color: var(--color-shade-30);
+}
+
+.field-item-type {
+  text-transform: capitalize;
+  color: var(--color-shade-50);
+}
+
+.field-delete-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-shade-40);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.field-delete-btn:hover {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.empty-fields-state {
+  padding: 24px 16px;
+  text-align: center;
+  border: 1px dashed var(--color-hairline);
+  border-radius: var(--radius-md);
+  background-color: #fafafa;
+}
+
+/* Field Types Catalog Grid */
+.field-types-catalog {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.field-catalog-card {
+  background-color: #ffffff;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.1s ease;
+  transition: all 0.12s ease;
+  width: 100%;
 }
 
-.field-type-btn:hover {
+.field-catalog-card:hover {
   border-color: #000000;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
-.field-type-btn.active {
+.field-catalog-card.active {
   background-color: #000000;
   color: #ffffff;
   border-color: #000000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.field-catalog-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-shade-20);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #27272a;
+  flex-shrink: 0;
+  transition: all 0.12s ease;
+}
+
+.field-catalog-card.active .field-catalog-icon {
+  background-color: #27272a;
+  color: #ffffff;
+}
+
+.field-catalog-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.field-catalog-name {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.field-catalog-desc {
+  font-size: 10.5px;
+  color: var(--color-shade-50);
+  line-height: 1.2;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.field-catalog-card.active .field-catalog-desc {
+  color: #a1a1aa;
 }

@@ -27,7 +27,6 @@
   let modalError = $state<string | null>(null);
 
   // New Field Sub-Form State
-  let isAddingField = $state(false);
   let newFieldLabel = $state('');
   let newFieldKey = $state('');
   let newFieldType = $state<FieldType>('text');
@@ -36,14 +35,14 @@
   let newFieldOptions = $state('');
 
   const FIELD_TYPES: { type: FieldType; label: string; icon: string; desc: string }[] = [
-    { type: 'text', label: 'Single Line Text', icon: 'text', desc: 'Titles, names, short strings' },
-    { type: 'longtext', label: 'Long Text', icon: 'longtext', desc: 'Multi-line descriptions, bios' },
-    { type: 'richtext', label: 'Rich Text WYSIWYG', icon: 'richtext', desc: 'Formatted HTML with headings, lists' },
-    { type: 'number', label: 'Number', icon: 'number', desc: 'Prices, quantities, ratings' },
-    { type: 'media', label: 'Media (Cloudflare R2)', icon: 'media', desc: 'Photos, banners, graphics' },
-    { type: 'boolean', label: 'Boolean (Yes/No)', icon: 'boolean', desc: 'In stock, featured, active' },
-    { type: 'date', label: 'Date', icon: 'date', desc: 'Event date, expiry, milestones' },
-    { type: 'select', label: 'Dropdown Select', icon: 'select', desc: 'Single choice from list of options' }
+    { type: 'text', label: 'Short Text', icon: 'text', desc: 'Title, name, single-line' },
+    { type: 'longtext', label: 'Long Text', icon: 'longtext', desc: 'Description, bio, multi-line' },
+    { type: 'richtext', label: 'Rich Text', icon: 'richtext', desc: 'WYSIWYG formatted HTML' },
+    { type: 'number', label: 'Number', icon: 'number', desc: 'Price, quantity, rating' },
+    { type: 'media', label: 'Media Asset', icon: 'media', desc: 'Images & files on R2' },
+    { type: 'boolean', label: 'Boolean', icon: 'boolean', desc: 'Yes/No switch, active status' },
+    { type: 'date', label: 'Date', icon: 'date', desc: 'Calendar date, milestone' },
+    { type: 'select', label: 'Dropdown', icon: 'select', desc: 'Selection from choices' }
   ];
 
   async function loadData() {
@@ -95,7 +94,6 @@
       }
     ];
     modalError = null;
-    isAddingField = false;
     modalOpen = true;
   }
 
@@ -107,7 +105,6 @@
     modelIcon = col.icon || 'box';
     modelFields = JSON.parse(JSON.stringify(col.fields || []));
     modalError = null;
-    isAddingField = false;
     modalOpen = true;
   }
 
@@ -144,7 +141,6 @@
     newFieldRequired = false;
     newFieldPlaceholder = '';
     newFieldOptions = '';
-    isAddingField = false;
     modalError = null;
   }
 
@@ -382,9 +378,14 @@
           <div class="modal-icon-badge primary">
             <Icon name="schema" size={16} />
           </div>
-          <h3 class="modal-title">
-            {editingSlug ? `Edit Schema: ${modelName}` : 'Create New Content Model'}
-          </h3>
+          <div>
+            <h3 class="modal-title">
+              {editingSlug ? `Edit Schema: ${modelName}` : 'Create Content Model'}
+            </h3>
+            <p class="modal-subtitle">
+              Configure collection attributes, API identifier, and dynamic fields
+            </p>
+          </div>
         </div>
 
         <button
@@ -397,201 +398,219 @@
         </button>
       </div>
 
-      <!-- Form Body -->
-      <form onsubmit={handleSaveModel} style="display: flex; flex-direction: column; overflow-y: auto; max-height: calc(85vh - 120px);">
-        <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+      <!-- Form Body (Two-Column Scalable Studio) -->
+      <form onsubmit={handleSaveModel} class="schema-studio-form">
+        <div class="schema-studio-scrollable">
           {#if modalError}
-            <div class="error-banner">
-              {modalError}
+            <div class="error-banner" style="margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+              <Icon name="warning" size={15} />
+              <span>{modalError}</span>
             </div>
           {/if}
 
-          <!-- Name & Slug -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div>
-              <label for="model-name" class="form-label">Collection Name *</label>
-              <input
-                id="model-name"
-                type="text"
-                class="shopify-input"
-                bind:value={modelName}
-                oninput={autoSlugModel}
-                placeholder="e.g. Products, Testimonials, FAQs"
-                required
-              />
-            </div>
-            <div>
-              <label for="model-slug" class="form-label">API Identifier (Slug) *</label>
-              <input
-                id="model-slug"
-                type="text"
-                class="shopify-input"
-                bind:value={modelSlug}
-                placeholder="e.g. products"
-                required
-              />
-            </div>
-          </div>
-
-          <!-- Description -->
-          <div>
-            <label for="model-desc" class="form-label">Description (Optional)</label>
-            <input
-              id="model-desc"
-              type="text"
-              class="shopify-input"
-              bind:value={modelDescription}
-              placeholder="e.g. Store catalog with pricing and media"
-            />
-          </div>
-
-          <!-- Fields Builder -->
-          <div style="border-top: 1px solid #f4f4f5; padding-top: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-              <div>
-                <span style="font-size: 13px; font-weight: 600; color: #000000;">Fields Schema</span>
-                <span style="font-size: 11.5px; color: #71717a; margin-left: 6px;">({modelFields.length} defined)</span>
-              </div>
-
-              {#if !isAddingField}
-                <button
-                  type="button"
-                  class="btn-sm-pill btn-gray-sm"
-                  style="font-size: 11.5px; padding: 3px 10px;"
-                  onclick={() => { isAddingField = true; modalError = null; }}
-                >
-                  + Add Field
-                </button>
-              {/if}
-            </div>
-
-            <!-- Existing Fields List -->
-            <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;">
-              {#each modelFields as field (field.id)}
-                <div class="field-row">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="display: inline-flex; align-items: center; color: #52525b;">
-                      <Icon name={field.type} size={15} />
-                    </span>
-                    <div>
-                      <div style="font-size: 12.5px; font-weight: 600; color: #000000; line-height: 1.2;">
-                        {field.label}
-                      </div>
-                      <div style="font-size: 11px; color: #71717a;">
-                        <code>{field.key}</code> • <span style="text-transform: capitalize;">{field.type}</span>
-                        {#if field.required}
-                          <span style="color: #dc2626; font-weight: 600;">• Required</span>
-                        {/if}
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    class="btn-sm-pill btn-danger-sm"
-                    style="font-size: 11px; padding: 2px 7px;"
-                    title="Delete Field"
-                    onclick={() => removeField(field.id)}
-                  >
-                    &times;
-                  </button>
-                </div>
-              {/each}
-            </div>
-
-            <!-- Add New Field Sub-Card -->
-            {#if isAddingField}
-              <div class="add-field-card">
-                <div style="font-size: 12.5px; font-weight: 600; margin-bottom: 10px; color: #000000;">
-                  Add New Field
-                </div>
-
-                <!-- Field Type Selector -->
-                <div style="margin-bottom: 10px;">
-                  <span style="font-size: 11.5px; font-weight: 600; color: #52525b; display: block; margin-bottom: 6px;">Select Type:</span>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px;">
-                    {#each FIELD_TYPES as ft}
-                      <button
-                        type="button"
-                        class="field-type-btn {newFieldType === ft.type ? 'active' : ''}"
-                        onclick={() => (newFieldType = ft.type)}
-                      >
-                        <Icon name={ft.icon} size={14} />
-                        <span style="font-size: 11.5px; font-weight: 500;">{ft.label}</span>
-                      </button>
-                    {/each}
-                  </div>
-                </div>
+          <div class="schema-studio-grid">
+            <!-- Left Column: Collection Settings & Defined Fields -->
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <!-- Panel 1: Collection Attributes -->
+              <div class="schema-panel-card">
+                <h4 class="schema-panel-heading">Collection Details</h4>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                   <div>
-                    <label for="nf-label" class="form-label">Field Label *</label>
+                    <label for="model-name" class="form-label">Name *</label>
                     <input
-                      id="nf-label"
+                      id="model-name"
                       type="text"
                       class="shopify-input"
-                      bind:value={newFieldLabel}
-                      oninput={autoSlugField}
-                      placeholder="e.g. Price, Rating, Bio"
+                      bind:value={modelName}
+                      oninput={autoSlugModel}
+                      placeholder="e.g. Products, FAQs"
+                      required
                     />
                   </div>
                   <div>
-                    <label for="nf-key" class="form-label">Field Key (API JSON Property) *</label>
-                    <input
-                      id="nf-key"
-                      type="text"
-                      class="shopify-input"
-                      bind:value={newFieldKey}
-                      placeholder="e.g. price, rating"
-                    />
+                    <label for="model-slug" class="form-label">API Identifier (Slug) *</label>
+                    <div class="input-slug-prefix">
+                      <span class="slug-prefix">/</span>
+                      <input
+                        id="model-slug"
+                        type="text"
+                        class="shopify-input input-with-prefix"
+                        bind:value={modelSlug}
+                        placeholder="products"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {#if newFieldType === 'select'}
-                  <div style="margin-bottom: 10px;">
-                    <label for="nf-options" class="form-label">Dropdown Options (Comma-separated)</label>
-                    <input
-                      id="nf-options"
-                      type="text"
-                      class="shopify-input"
-                      bind:value={newFieldOptions}
-                      placeholder="e.g. Small, Medium, Large, Extra Large"
-                    />
-                  </div>
-                {/if}
-
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;">
-                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer;">
-                    <input type="checkbox" bind:checked={newFieldRequired} />
-                    <span>Mark as required field</span>
-                  </label>
-
-                  <div style="display: flex; gap: 6px;">
-                    <button
-                      type="button"
-                      class="btn-outline-pill"
-                      style="font-size: 11.5px; padding: 4px 10px;"
-                      onclick={() => (isAddingField = false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      class="btn-primary-pill"
-                      style="font-size: 11.5px; padding: 4px 12px;"
-                      disabled={!newFieldLabel.trim() || !newFieldKey.trim()}
-                      onclick={addFieldToModel}
-                    >
-                      Save Field
-                    </button>
-                  </div>
+                <div>
+                  <label for="model-desc" class="form-label">Description (Optional)</label>
+                  <input
+                    id="model-desc"
+                    type="text"
+                    class="shopify-input"
+                    bind:value={modelDescription}
+                    placeholder="e.g. Store catalog with pricing and media"
+                  />
                 </div>
               </div>
-            {/if}
+
+              <!-- Panel 2: Defined Fields List -->
+              <div class="schema-panel-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <div>
+                    <h4 class="schema-panel-heading" style="margin: 0;">Fields Schema</h4>
+                    <span style="font-size: 11.5px; color: #71717a;">{modelFields.length} field{modelFields.length === 1 ? '' : 's'} defined</span>
+                  </div>
+
+                  <span class="pill-tag-mint">
+                    {modelFields.length} active
+                  </span>
+                </div>
+
+                {#if modelFields.length === 0}
+                  <div class="empty-fields-state">
+                    <div style="color: #71717a; margin-bottom: 6px;">
+                      <Icon name="schema" size={24} />
+                    </div>
+                    <div style="font-size: 13px; font-weight: 600; color: #000000; margin-bottom: 2px;">
+                      No fields added yet
+                    </div>
+                    <p style="font-size: 12px; color: #71717a; margin: 0;">
+                      Select a field type on the right to configure and add properties to this model.
+                    </p>
+                  </div>
+                {:else}
+                  <div class="schema-fields-scroll-list">
+                    {#each modelFields as field (field.id)}
+                      <div class="field-item-row">
+                        <div class="field-item-left">
+                          <div class="field-type-icon-box">
+                            <Icon name={field.type} size={15} />
+                          </div>
+                          <div class="field-item-details">
+                            <div class="field-item-title-row">
+                              <span class="field-item-label">{field.label}</span>
+                              {#if field.required}
+                                <span class="badge-required">Required</span>
+                              {/if}
+                            </div>
+                            <div class="field-item-meta">
+                              <code class="field-item-key">{field.key}</code>
+                              <span class="meta-dot">&bull;</span>
+                              <span class="field-item-type">{field.type}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          class="field-delete-btn"
+                          title="Delete {field.label} field"
+                          onclick={() => removeField(field.id)}
+                        >
+                          <Icon name="trash" size={13} />
+                        </button>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            </div>
+
+            <!-- Right Column: Field Configurator / Builder -->
+            <div class="schema-panel-card builder-card">
+              <div style="margin-bottom: 12px;">
+                <h4 class="schema-panel-heading" style="margin: 0 0 2px 0;">Add New Field</h4>
+                <p style="font-size: 11.5px; color: #71717a; margin: 0;">
+                  Pick a data type and configure its API property settings
+                </p>
+              </div>
+
+              <!-- Field Types Grid (8 types, single-line, clean cards) -->
+              <div style="margin-bottom: 12px;">
+                <div class="form-label" style="display: block; margin-bottom: 6px;">Data Type:</div>
+                <div class="field-types-catalog">
+                  {#each FIELD_TYPES as ft}
+                    <button
+                      type="button"
+                      class="field-catalog-card {newFieldType === ft.type ? 'active' : ''}"
+                      onclick={() => (newFieldType = ft.type)}
+                    >
+                      <div class="field-catalog-icon">
+                        <Icon name={ft.icon} size={14} />
+                      </div>
+                      <div class="field-catalog-info">
+                        <span class="field-catalog-name">{ft.label}</span>
+                        <span class="field-catalog-desc">{ft.desc}</span>
+                      </div>
+                    </button>
+                  {/each}
+                </div>
+              </div>
+
+              <!-- Field Inputs -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div>
+                  <label for="nf-label" class="form-label">Field Label *</label>
+                  <input
+                    id="nf-label"
+                    type="text"
+                    class="shopify-input"
+                    bind:value={newFieldLabel}
+                    oninput={autoSlugField}
+                    placeholder="e.g. Price, Rating, Bio"
+                  />
+                </div>
+                <div>
+                  <label for="nf-key" class="form-label">Field Key (API Property) *</label>
+                  <input
+                    id="nf-key"
+                    type="text"
+                    class="shopify-input"
+                    bind:value={newFieldKey}
+                    placeholder="e.g. price, rating"
+                  />
+                </div>
+              </div>
+
+              {#if newFieldType === 'select'}
+                <div style="margin-bottom: 10px;">
+                  <label for="nf-options" class="form-label">Dropdown Options (Comma separated)</label>
+                  <input
+                    id="nf-options"
+                    type="text"
+                    class="shopify-input"
+                    bind:value={newFieldOptions}
+                    placeholder="e.g. In Stock, Pre-order, Sold Out"
+                  />
+                </div>
+              {/if}
+
+              <!-- Options & Add Action -->
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid #e4e4e7;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; cursor: pointer; color: #18181b;">
+                  <input type="checkbox" bind:checked={newFieldRequired} />
+                  <span>Mark as required field</span>
+                </label>
+
+                <button
+                  type="button"
+                  class="btn-primary-pill"
+                  style="font-size: 12px; padding: 6px 15px;"
+                  disabled={!newFieldLabel.trim() || !newFieldKey.trim()}
+                  onclick={addFieldToModel}
+                >
+                  <Icon name="plus" size={12} />
+                  <span>Add Field</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Sticky Modal Footer -->
         <div class="modal-footer">
           <button
             type="button"
@@ -605,7 +624,7 @@
           <button
             type="submit"
             class="btn-primary-pill"
-            style="font-size: 12px; padding: 6px 18px;"
+            style="font-size: 12px; padding: 6px 20px;"
             disabled={saving || !modelName.trim() || !modelSlug.trim()}
           >
             {saving ? 'Saving...' : editingSlug ? 'Update Schema' : 'Create Content Model'}
