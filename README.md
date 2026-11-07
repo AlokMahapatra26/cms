@@ -73,17 +73,19 @@ pnpm migrate:local
 ```
 
 ### 3. Run Development Servers
-You can start all three apps or run them in separate terminals:
+Start all services (Cloudflare API, Admin Dashboard & Web Storefront) together with a **single command**:
 
 ```bash
-# Terminal 1: Hono Worker (Port 8787)
-pnpm dev:api
+pnpm dev
+```
 
-# Terminal 2: SvelteKit Admin (Port 5173)
-pnpm dev:admin
+Or run specific services as needed:
 
-# Terminal 3: Astro Storefront (Port 4321)
-pnpm dev:web
+```bash
+pnpm dev:cms   # Hono Worker API + SvelteKit Admin
+pnpm dev:api   # Hono Worker API only (Port 8787)
+pnpm dev:admin # SvelteKit Admin only (Port 5173)
+pnpm dev:web   # Astro Storefront only (Port 4321)
 ```
 
 Open `http://localhost:5173` in your browser. Since it's a fresh installation, you will automatically be greeted by the **Setup Wizard** to create your primary administrator account.
