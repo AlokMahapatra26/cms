@@ -112,3 +112,4 @@ export interface CMSConfig {
 export function defineConfig(config: CMSConfig): CMSConfig {
   return config;
 }
+
