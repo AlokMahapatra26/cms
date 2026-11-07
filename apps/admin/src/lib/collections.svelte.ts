@@ -28,3 +28,4 @@ class CollectionsStore {
 }
 
 export const collectionsStore = new CollectionsStore();
+

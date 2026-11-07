@@ -178,47 +178,5 @@
   {/if}
 </div>
 
-<style>
-  .dynamic-field-group {
-    display: flex;
-    flex-direction: column;
-  }
 
-  .field-label {
-    font-size: 12.5px;
-    font-weight: 600;
-    color: #27272a;
-  }
 
-  .media-preview-box {
-    background-color: #fbfbf5;
-    border: 1px solid #e4e4e7;
-    border-radius: 8px;
-    padding: 10px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .media-thumb {
-    width: 44px;
-    height: 44px;
-    border-radius: 6px;
-    object-fit: cover;
-    border: 1px solid #e4e4e7;
-    flex-shrink: 0;
-  }
-
-  .media-upload-box {
-    border: 1.5px dashed #d4d4d8;
-    border-radius: 8px;
-    padding: 16px;
-    text-align: center;
-    background-color: #fbfbf5;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-</style>

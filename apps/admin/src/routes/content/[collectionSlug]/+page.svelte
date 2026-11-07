@@ -298,21 +298,5 @@
   </div>
 {/if}
 
-<style>
-  .collection-badge {
-    background-color: #f4f4f5;
-    color: #71717a;
-    font-size: 11px;
-    font-family: monospace;
-    padding: 1px 6px;
-    border-radius: 4px;
-  }
 
-  .status-toggle-btn {
-    background: transparent;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    font-family: inherit;
-  }
-</style>
+
