@@ -85,7 +85,7 @@
     </div>
 
     <div class="info-callout">
-      <strong class="text-dark">Smart sync:</strong> Renaming this asset updates its Cloudflare R2 path and automatically updates references across all blog posts.
+      <strong class="text-dark">Smart sync:</strong> Renaming this asset updates its Cloudflare R2 path and automatically updates references across all content records.
     </div>
   </form>
 

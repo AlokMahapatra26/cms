@@ -8,6 +8,7 @@
   } from '$lib/api';
   import { collectionsStore } from '$lib/collections.svelte';
   import { modal } from '$lib/modal.svelte';
+  import { Icon } from '$lib/components';
   import type { Collection, FieldDefinition, FieldType } from '@cms/shared';
 
   let collections = $state<Collection[]>([]);
@@ -35,14 +36,14 @@
   let newFieldOptions = $state('');
 
   const FIELD_TYPES: { type: FieldType; label: string; icon: string; desc: string }[] = [
-    { type: 'text', label: 'Single Line Text', icon: '📝', desc: 'Titles, names, short strings' },
-    { type: 'longtext', label: 'Long Text', icon: '📄', desc: 'Multi-line descriptions, bios' },
-    { type: 'richtext', label: 'Rich Text WYSIWYG', icon: '✨', desc: 'Formatted HTML with headings, lists' },
-    { type: 'number', label: 'Number', icon: '🔢', desc: 'Prices, quantities, ratings' },
-    { type: 'media', label: 'Media (Cloudflare R2)', icon: '🖼️', desc: 'Photos, banners, graphics' },
-    { type: 'boolean', label: 'Boolean (Yes/No)', icon: '🔘', desc: 'In stock, featured, active' },
-    { type: 'date', label: 'Date', icon: '📅', desc: 'Event date, expiry, milestones' },
-    { type: 'select', label: 'Dropdown Select', icon: '📋', desc: 'Single choice from list of options' }
+    { type: 'text', label: 'Single Line Text', icon: 'text', desc: 'Titles, names, short strings' },
+    { type: 'longtext', label: 'Long Text', icon: 'longtext', desc: 'Multi-line descriptions, bios' },
+    { type: 'richtext', label: 'Rich Text WYSIWYG', icon: 'richtext', desc: 'Formatted HTML with headings, lists' },
+    { type: 'number', label: 'Number', icon: 'number', desc: 'Prices, quantities, ratings' },
+    { type: 'media', label: 'Media (Cloudflare R2)', icon: 'media', desc: 'Photos, banners, graphics' },
+    { type: 'boolean', label: 'Boolean (Yes/No)', icon: 'boolean', desc: 'In stock, featured, active' },
+    { type: 'date', label: 'Date', icon: 'date', desc: 'Event date, expiry, milestones' },
+    { type: 'select', label: 'Dropdown Select', icon: 'select', desc: 'Single choice from list of options' }
   ];
 
   async function loadData() {
@@ -249,10 +250,7 @@
     style="font-size: 12.5px; padding: 6px 16px;"
     onclick={openCreateModal}
   >
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
+    <Icon name="plus" size={13} />
     <span>New Content Model</span>
   </button>
 </div>
@@ -269,8 +267,8 @@
   </div>
 {:else if collections.length === 0}
   <div class="shopify-card" style="padding: 56px 20px; text-align: center;">
-    <div style="width: 48px; height: 48px; border-radius: 12px; background: #f4f4f5; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-      <span style="font-size: 22px;">📦</span>
+    <div style="width: 48px; height: 48px; border-radius: 12px; background: #f4f4f5; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #71717a;">
+      <Icon name="schema" size={24} />
     </div>
     <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 6px 0;">No custom schemas yet</h3>
     <p style="color: #71717a; font-size: 13px; max-width: 420px; margin: 0 auto 18px auto;">
@@ -378,11 +376,7 @@
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">
           <div class="modal-icon-badge primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="3" y1="9" x2="21" y2="9"></line>
-              <line x1="9" y1="21" x2="9" y2="9"></line>
-            </svg>
+            <Icon name="schema" size={16} />
           </div>
           <h3 class="modal-title">
             {editingSlug ? `Edit Schema: ${modelName}` : 'Create New Content Model'}
@@ -395,10 +389,7 @@
           onclick={() => { if (!saving) modalOpen = false; }}
           title="Close dialog"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
+          <Icon name="close" size={14} />
         </button>
       </div>
 
@@ -475,8 +466,8 @@
               {#each modelFields as field (field.id)}
                 <div class="field-row">
                   <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 14px;">
-                      {FIELD_TYPES.find((t) => t.type === field.type)?.icon || '📌'}
+                    <span style="display: inline-flex; align-items: center; color: #52525b;">
+                      <Icon name={field.type} size={15} />
                     </span>
                     <div>
                       <div style="font-size: 12.5px; font-weight: 600; color: #000000; line-height: 1.2;">
@@ -521,7 +512,7 @@
                         class="field-type-btn {newFieldType === ft.type ? 'active' : ''}"
                         onclick={() => (newFieldType = ft.type)}
                       >
-                        <span style="font-size: 13px;">{ft.icon}</span>
+                        <Icon name={ft.icon} size={14} />
                         <span style="font-size: 11.5px; font-weight: 500;">{ft.label}</span>
                       </button>
                     {/each}

@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { fetchCollection, createContentItem } from '$lib/api';
+  import { Icon } from '$lib/components';
   import DynamicFieldInput from '$lib/DynamicFieldInput.svelte';
   import type { Collection } from '@cms/shared';
 
@@ -68,8 +69,9 @@
 
 <div style="margin-bottom: 16px;">
   <div style="margin-bottom: 4px;">
-    <a href="/content/{collectionSlug}" style="font-size: 12px; color: #71717a; text-decoration: none;">
-      &larr; Back to {collection?.name || 'collection'}
+    <a href="/content/{collectionSlug}" style="font-size: 12px; color: #71717a; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+      <Icon name="arrow-left" size={13} />
+      <span>Back to {collection?.name || 'collection'}</span>
     </a>
   </div>
   <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0; letter-spacing: -0.01em;">

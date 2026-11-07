@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Icon } from '$lib/components';
+
   let {
     title = '',
     slug = '',
@@ -47,11 +49,7 @@
   >
     <div class="flex items-center gap-2">
       <div class="seo-icon-pill">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="2" y1="12" x2="22" y2="12"></line>
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-        </svg>
+        <Icon name="globe" size={16} />
       </div>
       <div class="text-left">
         <div class="text-sm font-semibold text-dark">
@@ -67,19 +65,11 @@
       <span class="seo-status-pill">
         {meta_title || meta_description ? 'Customized' : 'Auto-synced'}
       </span>
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+      <Icon
+        name="chevron-down"
+        size={16}
         class="seo-chevron-icon {isExpanded ? 'rotated' : ''}"
-      >
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
+      />
     </div>
   </button>
 
@@ -198,11 +188,8 @@
         {#if previewMode === 'google'}
           <div class="google-card">
             <div class="google-citation">
-              <div class="google-favicon">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="2" y1="12" x2="22" y2="12"></line>
-                </svg>
+              <div class="google-favicon" style="display: flex; align-items: center; justify-content: center;">
+                <Icon name="globe" size={12} />
               </div>
               <div class="flex flex-col">
                 <span class="text-xs font-medium text-dark">EdgeBlog</span>
@@ -237,11 +224,7 @@
                 />
               {:else}
                 <div class="image-placeholder">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
-                  </svg>
+                  <Icon name="media" size={24} />
                   <span>No social preview image specified</span>
                 </div>
               {/if}
@@ -268,11 +251,7 @@
                 />
               {:else}
                 <div class="image-placeholder">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
-                  </svg>
+                  <Icon name="media" size={24} />
                   <span>No social preview image specified</span>
                 </div>
               {/if}

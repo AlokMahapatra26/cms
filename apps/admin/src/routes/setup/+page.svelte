@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { setupAdmin, getSetupStatus } from '$lib/api';
+  import { Icon } from '$lib/components';
 
   let name = $state('');
   let email = $state('');
@@ -90,9 +91,7 @@
     <div class="shopify-card" style="padding: 28px;">
       {#if error}
         <div style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm-.75-4a.75.75 0 0 1 1.5 0v.5a.75.75 0 0 1-1.5 0v-.5zm.75-7.5a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 8 3.5z" clip-rule="evenodd" />
-          </svg>
+          <Icon name="warning" size={16} />
           <span>{error}</span>
         </div>
       {/if}
@@ -164,7 +163,10 @@
 
     <!-- Onboarding note -->
     <div style="margin-top: 24px; padding: 16px; background-color: #ffffff; border: 1px solid var(--color-hairline); border-radius: 12px; font-size: 12px; color: var(--color-shade-60); line-height: 1.5;">
-      <strong style="color: #000000;">🔐 Secure by Design</strong>
+      <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #000000; margin-bottom: 4px;">
+        <Icon name="lock" size={14} />
+        <span>Secure by Design</span>
+      </div>
       <p style="margin: 4px 0 0 0;">
         This account will have full administrator permissions over schemas, content collections, media, and settings. Credentials are encrypted via PBKDF2 with unique salts directly within Cloudflare D1 SQLite.
       </p>

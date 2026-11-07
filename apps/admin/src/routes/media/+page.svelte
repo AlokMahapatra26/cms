@@ -4,6 +4,7 @@
   import { fetchMediaItems, uploadMedia, deleteMedia } from '$lib/api';
   import { modal } from '$lib/modal.svelte';
   import RenameModal from '$lib/RenameModal.svelte';
+  import { Icon } from '$lib/components';
   import type { MediaItem } from '@cms/shared';
 
   let items = $state<MediaItem[]>([]);
@@ -106,12 +107,8 @@
   </div>
 
   <div>
-    <label class="btn-primary-pill cursor-pointer text-xs py-2 px-3">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-        <polyline points="17 8 12 3 7 8"></polyline>
-        <line x1="12" y1="3" x2="12" y2="15"></line>
-      </svg>
+    <label class="btn-primary-pill cursor-pointer text-xs py-2 px-3 inline-flex items-center gap-1.5">
+      <Icon name="upload" size={14} />
       <span>{uploading ? 'Uploading to R2...' : 'Upload Media'}</span>
       <input
         type="file"
@@ -136,18 +133,15 @@
   </div>
 {:else if items.length === 0}
   <div class="shopify-card p-12 text-center">
-    <div class="media-empty-icon">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-        <polyline points="21 15 16 10 5 21"></polyline>
-      </svg>
+    <div class="media-empty-icon" style="color: #71717a; display: inline-flex; align-items: center; justify-content: center;">
+      <Icon name="media" size={24} />
     </div>
     <h3 class="text-lg font-semibold m-0 mb-1">No media files yet</h3>
     <p class="text-muted text-base m-0 mb-4">
       Upload images, graphics, and assets to attach them to your dynamic content records.
     </p>
-    <label class="btn-primary-pill cursor-pointer text-sm inline-flex">
+    <label class="btn-primary-pill cursor-pointer text-sm inline-flex items-center gap-1.5">
+      <Icon name="upload" size={14} />
       <span>Upload First File</span>
       <input type="file" accept="image/*" onchange={handleUpload} class="hidden" />
     </label>
@@ -195,18 +189,16 @@
                 renameModalOpen = true;
               }}
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-              </svg>
+              <Icon name="edit" size={11} />
             </button>
             <a
               href={item.url}
               target="_blank"
               rel="noopener"
-              class="btn-sm-pill btn-gray-sm"
+              class="btn-sm-pill btn-gray-sm inline-flex items-center justify-center"
               title="Open full image in new tab"
             >
-              ↗
+              <Icon name="external" size={11} />
             </a>
             <button
               class="btn-sm-pill btn-danger-sm"
@@ -217,10 +209,7 @@
               {#if deletingKey === item.key}
                 ...
               {:else}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
+                <Icon name="trash" size={11} />
               {/if}
             </button>
           </div>

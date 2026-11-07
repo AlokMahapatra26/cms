@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { fetchCollection, fetchContentItem, updateContentItem, deleteContentItem } from '$lib/api';
   import { modal } from '$lib/modal.svelte';
+  import { Icon } from '$lib/components';
   import DynamicFieldInput from '$lib/DynamicFieldInput.svelte';
   import type { Collection, ContentItem } from '@cms/shared';
 
@@ -101,8 +102,9 @@
 
 <div style="margin-bottom: 16px;">
   <div style="margin-bottom: 4px;">
-    <a href="/content/{collectionSlug}" style="font-size: 12px; color: #71717a; text-decoration: none;">
-      &larr; Back to {collection?.name || 'collection'}
+    <a href="/content/{collectionSlug}" style="font-size: 12px; color: #71717a; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+      <Icon name="arrow-left" size={13} />
+      <span>Back to {collection?.name || 'collection'}</span>
     </a>
   </div>
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">

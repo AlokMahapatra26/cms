@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import { fetchCollection, fetchContentItems, deleteContentItem, updateContentItem } from '$lib/api';
   import { modal } from '$lib/modal.svelte';
+  import { Icon } from '$lib/components';
   import type { Collection, ContentItem } from '@cms/shared';
 
   const collectionSlug = $derived(page.params.collectionSlug);
@@ -120,21 +121,19 @@
     <a
       href="/schemas"
       class="btn-outline-pill"
-      style="font-size: 12px; padding: 5px 12px;"
+      style="font-size: 12px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;"
       title="Edit schema fields"
     >
-      ⚙️ Schema
+      <Icon name="settings" size={13} />
+      <span>Schema</span>
     </a>
 
     <a
       href="/content/{collectionSlug}/new"
       class="btn-primary-pill"
-      style="font-size: 12px; padding: 6px 15px;"
+      style="font-size: 12px; padding: 6px 15px; display: inline-flex; align-items: center; gap: 6px;"
     >
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-      </svg>
+      <Icon name="plus" size={12} />
       <span>New {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}</span>
     </a>
   </div>
@@ -189,8 +188,8 @@
   </div>
 {:else if items.length === 0}
   <div class="shopify-card" style="padding: 56px 20px; text-align: center;">
-    <div style="width: 48px; height: 48px; border-radius: 12px; background: #f4f4f5; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-      <span style="font-size: 22px;">📋</span>
+    <div style="width: 48px; height: 48px; border-radius: 12px; background: #f4f4f5; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #71717a;">
+      <Icon name="collection" size={24} />
     </div>
     <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 6px 0;">No records in this collection yet</h3>
     <p style="color: #71717a; font-size: 13px; max-width: 420px; margin: 0 auto 18px auto;">
@@ -230,8 +229,14 @@
                     </span>
                   </div>
                 {:else if col.type === 'boolean'}
-                  <span style="font-size: 12px; font-weight: 500; color: {item.data?.[col.key] ? '#15803d' : '#71717a'};">
-                    {item.data?.[col.key] ? '✓ Yes' : '✗ No'}
+                  <span style="font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; color: {item.data?.[col.key] ? '#15803d' : '#71717a'};">
+                    {#if item.data?.[col.key]}
+                      <Icon name="check" size={12} />
+                      <span>Yes</span>
+                    {:else}
+                      <Icon name="close" size={12} />
+                      <span>No</span>
+                    {/if}
                   </span>
                 {:else if col.type === 'media'}
                   {#if item.data?.[col.key]}

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { FieldDefinition } from '@cms/shared';
   import { uploadMedia } from '$lib/api';
+  import { Icon } from '$lib/components';
   import RichTextEditor from '$lib/RichTextEditor.svelte';
 
   let {
@@ -153,7 +154,8 @@
       </div>
     {:else}
       <div class="media-upload-box">
-        <label class="btn-outline-pill cursor-pointer text-sm">
+        <label class="btn-outline-pill cursor-pointer text-sm inline-flex items-center gap-1.5">
+          <Icon name="upload" size={13} />
           <span>{uploadingMedia ? 'Uploading to R2...' : 'Select or Upload Media'}</span>
           <input
             type="file"

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { login, getSetupStatus, getToken } from '$lib/api';
+  import { Icon } from '$lib/components';
 
   let email = $state('');
   let password = $state('');
@@ -73,9 +74,7 @@
     <div class="shopify-card" style="padding: 28px;">
       {#if error}
         <div style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm-.75-4a.75.75 0 0 1 1.5 0v.5a.75.75 0 0 1-1.5 0v-.5zm.75-7.5a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 8 3.5z" clip-rule="evenodd" />
-          </svg>
+          <Icon name="warning" size={16} />
           <span>{error}</span>
         </div>
       {/if}
@@ -122,10 +121,7 @@
 
     <!-- Security notice -->
     <div style="margin-top: 24px; text-align: center; font-size: 12px; color: var(--color-shade-50); display: flex; align-items: center; justify-content: center; gap: 6px;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-      </svg>
+      <Icon name="lock" size={14} />
       <span>Protected by Cloudflare edge session tokens & Web Crypto PBKDF2</span>
     </div>
   {/if}

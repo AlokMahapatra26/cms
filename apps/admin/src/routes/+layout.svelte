@@ -7,6 +7,7 @@
   import { collectionsStore } from '$lib/collections.svelte';
   import type { User } from '@cms/shared';
   import ConfirmModal from '$lib/ConfirmModal.svelte';
+  import { Icon } from '$lib/components';
 
   let { children } = $props();
 
@@ -106,7 +107,7 @@
 
           <a href="/api" class="btn-outline-pill" title="Explore Headless API">
             <span>REST API</span>
-            <span class="text-xs text-muted">⚡</span>
+            <Icon name="api" size={13} class="text-muted" />
           </a>
 
           <button
@@ -133,10 +134,7 @@
         <div>
           <!-- Section 1: Dynamic Content Collections -->
           <div class="shopify-sidebar-section">
-            <div class="flex items-center justify-between pr-2 mb-1">
-              <h3 class="shopify-sidebar-heading m-0">Collections</h3>
-              <a href="/schemas" class="text-xs text-muted" title="Build new content models">+ Schema</a>
-            </div>
+            <h3 class="shopify-sidebar-heading">Collections</h3>
 
             {#if collectionsStore.list.length === 0}
               <div class="px-2 py-1 text-xs text-muted">
@@ -159,51 +157,37 @@
             {/if}
           </div>
 
-          <!-- Section 3: Schema Modeler & Media -->
+          <!-- Section 2: Schema Modeler & Media -->
           <div class="shopify-sidebar-section">
             <h3 class="shopify-sidebar-heading">Models & Assets</h3>
             <a href="/schemas" class="shopify-sidebar-link {page.url.pathname === '/schemas' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="3" y1="9" x2="21" y2="9"></line>
-                  <line x1="9" y1="21" x2="9" y2="9"></line>
-                </svg>
+                <Icon name="schema" size={16} />
                 <span>Schema Builder</span>
               </div>
             </a>
 
             <a href="/media" class="shopify-sidebar-link {page.url.pathname === '/media' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
+                <Icon name="media" size={16} />
                 <span>Media Library</span>
               </div>
             </a>
           </div>
 
-          <!-- Section 4: Distribution & Settings -->
+          <!-- Section 3: Distribution & Settings -->
           <div class="shopify-sidebar-section">
             <h3 class="shopify-sidebar-heading">System</h3>
             <a href="/api" class="shopify-sidebar-link {page.url.pathname === '/api' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="16 18 22 12 16 6"></polyline>
-                  <polyline points="8 6 2 12 8 18"></polyline>
-                </svg>
+                <Icon name="api" size={16} />
                 <span>API Reference</span>
               </div>
             </a>
 
             <a href="/settings" class="shopify-sidebar-link {page.url.pathname === '/settings' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
+                <Icon name="settings" size={16} />
                 <span>Credentials</span>
               </div>
             </a>

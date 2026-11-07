@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { getMe, updateProfile, changePassword } from '$lib/api';
+  import { Icon } from '$lib/components';
   import type { User } from '@cms/shared';
 
   let user = $state<User | null>(null);
@@ -141,18 +142,14 @@
 
       {#if profileSuccess}
         <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.739a.75.75 0 0 1 1.04-.208z" clip-rule="evenodd" />
-          </svg>
+          <Icon name="check" size={16} />
           <span>{profileSuccess}</span>
         </div>
       {/if}
 
       {#if profileError}
         <div style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm-.75-4a.75.75 0 0 1 1.5 0v.5a.75.75 0 0 1-1.5 0v-.5zm.75-7.5a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 8 3.5z" clip-rule="evenodd" />
-          </svg>
+          <Icon name="warning" size={16} />
           <span>{profileError}</span>
         </div>
       {/if}
@@ -211,18 +208,14 @@
 
       {#if passwordSuccess}
         <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.739a.75.75 0 0 1 1.04-.208z" clip-rule="evenodd" />
-          </svg>
+          <Icon name="check" size={16} />
           <span>{passwordSuccess}</span>
         </div>
       {/if}
 
       {#if passwordError}
         <div style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14zm-.75-4a.75.75 0 0 1 1.5 0v.5a.75.75 0 0 1-1.5 0v-.5zm.75-7.5a.75.75 0 0 0-.75.75v4.5a.75.75 0 0 0 1.5 0v-4.5A.75.75 0 0 0 8 3.5z" clip-rule="evenodd" />
-          </svg>
+          <Icon name="warning" size={16} />
           <span>{passwordError}</span>
         </div>
       {/if}
@@ -292,10 +285,7 @@
   <!-- Security callout -->
   <div style="margin-top: 28px; padding: 20px; background-color: #ffffff; border: 1px solid var(--color-hairline); border-radius: 12px; font-size: 13px; color: var(--color-shade-60); display: flex; align-items: flex-start; gap: 12px;">
     <div style="background-color: var(--color-aloe); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #043e1d;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-      </svg>
+      <Icon name="lock" size={15} />
     </div>
     <div style="line-height: 1.5;">
       <strong style="color: #000000; display: block; margin-bottom: 2px;">Cloudflare Edge Web Crypto Encryption</strong>
