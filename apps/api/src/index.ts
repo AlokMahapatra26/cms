@@ -233,6 +233,7 @@ app.get('/api/auth/me', async (c) => {
 // -------------------------------------------------------------
 
 // List published posts (supports ?page, ?limit, ?paginate, ?search, ?sort, ?order)
+// Reads dynamically from 'articles' collection in content_items with seamless fallback to legacy posts
 app.get('/api/posts', async (c) => {
   const pageQuery = c.req.query('page');
   const limitQuery = c.req.query('limit');
@@ -247,6 +248,80 @@ app.get('/api/posts', async (c) => {
   const sort = c.req.query('sort')?.trim() || 'created_at';
   const order = c.req.query('order')?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
+  // 1. Check if we have articles in the dynamic content_items collection
+  const articleCountRow = await c.env.DB.prepare(
+    `SELECT count(*) as count FROM content_items WHERE collection_slug = 'articles' AND status = 'published'`
+  ).first<{ count: number }>();
+
+  if (articleCountRow && articleCountRow.count > 0) {
+    const conditions: string[] = ["collection_slug = 'articles'", "status = 'published'"];
+    const params: any[] = [];
+
+    if (search) {
+      conditions.push('(data LIKE ? OR id LIKE ?)');
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    const whereClause = conditions.join(' AND ');
+    const countRow = await c.env.DB.prepare(
+      `SELECT count(*) as count FROM content_items WHERE ${whereClause}`
+    ).bind(...params).first<{ count: number }>();
+    const total = countRow?.count || 0;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    let orderClause = `created_at ${order}`;
+    if (sort === 'title' || sort === 'slug') {
+      orderClause = `json_extract(data, '$.' || '${sort}') ${order}, created_at ${order}`;
+    } else if (sort === 'updated_at' || sort === 'created_at') {
+      orderClause = `${sort} ${order}`;
+    }
+
+    let sql = `SELECT * FROM content_items WHERE ${whereClause} ORDER BY ${orderClause}`;
+    const queryParams = [...params];
+
+    if (isPaginated) {
+      sql += ` LIMIT ? OFFSET ?`;
+      queryParams.push(limit, offset);
+    }
+
+    const rows = await c.env.DB.prepare(sql).bind(...queryParams).all();
+    const posts: Post[] = rows.results.map((r: any) => {
+      const data = JSON.parse(r.data || '{}');
+      return {
+        id: r.id,
+        slug: data.slug || r.id,
+        title: data.title || 'Untitled',
+        excerpt: data.excerpt || '',
+        content: data.content || '',
+        cover_image: data.cover_image || null,
+        status: r.status,
+        created_at: r.created_at,
+        updated_at: r.updated_at
+      };
+    });
+
+    c.header('X-Total-Count', String(total));
+    c.header('X-Total-Pages', String(totalPages));
+    c.header('X-Current-Page', String(page));
+
+    if (isPaginated) {
+      return c.json<PaginatedResponse<Post>>({
+        data: posts,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      });
+    }
+
+    return c.json(posts);
+  }
+
+  // Fallback to legacy posts table if articles collection is empty
   const conditions: string[] = ["status = 'published'"];
   const params: any[] = [];
 
@@ -300,9 +375,40 @@ app.get('/api/posts', async (c) => {
   return c.json(posts);
 });
 
-// Get single published post by slug
+// Get single published post by slug (checks articles collection first, then legacy posts)
 app.get('/api/posts/:slug', async (c) => {
   const slug = c.req.param('slug');
+
+  // 1. Check articles collection in content_items
+  const articleRow = await c.env.DB.prepare(
+    `SELECT * FROM content_items 
+     WHERE collection_slug = 'articles' 
+       AND (json_extract(data, '$.slug') = ? OR id = ?) 
+       AND status = 'published'`
+  )
+    .bind(slug, slug)
+    .first<any>();
+
+  if (articleRow) {
+    const data = JSON.parse(articleRow.data || '{}');
+    return c.json<Post>({
+      id: articleRow.id,
+      slug: data.slug || articleRow.id,
+      title: data.title || 'Untitled',
+      excerpt: data.excerpt || '',
+      content: data.content || '',
+      cover_image: data.cover_image || null,
+      status: articleRow.status,
+      created_at: articleRow.created_at,
+      updated_at: articleRow.updated_at,
+      meta_title: data.meta_title || null,
+      meta_description: data.meta_description || null,
+      og_image: data.og_image || null,
+      canonical_url: data.canonical_url || null
+    });
+  }
+
+  // 2. Fallback to legacy posts table
   const post = await c.env.DB.prepare(
     `SELECT * FROM posts WHERE slug = ? AND status = 'published'`
   )
