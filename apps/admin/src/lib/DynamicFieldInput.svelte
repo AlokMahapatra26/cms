@@ -59,6 +59,11 @@
       type="text"
       class="shopify-input"
       bind:value={value}
+      oninput={(e) => {
+        if (field.key === 'slug') {
+          value = (e.currentTarget.value || '').toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '');
+        }
+      }}
       placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`}
       required={field.required}
     />

@@ -12,9 +12,21 @@
   let collection = $state<Collection | null>(null);
   let formData = $state<Record<string, any>>({});
   let status = $state<'draft' | 'published'>('draft');
+  let slugTouched = $state(false);
   let loading = $state(true);
   let submitting = $state(false);
   let error = $state<string | null>(null);
+
+  $effect(() => {
+    if (!slugTouched && 'title' in formData && 'slug' in formData) {
+      formData.slug = String(formData.title || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+  });
 
   async function loadCollection() {
     loading = true;

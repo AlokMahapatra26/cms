@@ -9,20 +9,29 @@ export async function getStaticPaths() {
     const res = await fetch(`${API_BASE}/api/posts`);
     if (!res.ok) return [];
     const posts: Post[] = await res.json();
-    return posts.map((post) => ({
-      params: { slug: post.slug }
-    }));
+    const paths = [];
+    for (const post of posts) {
+      if (!post.slug) continue;
+      paths.push({ params: { slug: post.slug } });
+      const encoded = encodeURIComponent(post.slug);
+      if (encoded !== post.slug) {
+        paths.push({ params: { slug: encoded } });
+      }
+    }
+    return paths;
   } catch (err) {
     return [];
   }
 }
 
-const { slug } = Astro.params;
+const rawSlug = Astro.params.slug;
+const slug = decodeURIComponent(rawSlug || '');
 const API_BASE = import.meta.env.PUBLIC_API_URL || 'http://localhost:8787';
 let post: Post | null = null;
 
 try {
-  const res = await fetch(`${API_BASE}/api/posts/${slug}`);
+  const safeSlug = encodeURIComponent(slug || '');
+  const res = await fetch(`${API_BASE}/api/posts/${safeSlug}`);
   if (res.ok) {
     post = await res.json();
   }
