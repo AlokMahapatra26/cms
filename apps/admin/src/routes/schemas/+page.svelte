@@ -470,12 +470,23 @@ ${fieldLines}
   </div>
 {/if}
 
-<!-- VISUAL SCHEMA BUILDER STUDIO MODAL (Scalable 980px 2-Column) -->
+<!-- VISUAL SCHEMA BUILDER STUDIO MODAL (Scalable 980px 2-Column Popup) -->
 {#if modalOpen}
-  <div class="schema-studio-modal" role="dialog" aria-modal="true">
-    <div class="schema-studio-backdrop" onclick={() => (modalOpen = false)} role="presentation"></div>
-
-    <div class="schema-studio-window">
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <div
+    class="modal-backdrop"
+    onclick={(e) => {
+      if (e.target === e.currentTarget) modalOpen = false;
+    }}
+    role="presentation"
+  >
+    <div
+      class="modal-dialog schema-modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      onclick={(e) => e.stopPropagation()}
+    >
       <!-- Sticky Modal Header -->
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -504,7 +515,7 @@ ${fieldLines}
 
       <!-- Studio Form -->
       <form onsubmit={handleSaveModel} style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
-        <div class="modal-body">
+        <div class="modal-body" style="overflow-y: auto; max-height: calc(85vh - 130px); padding: 18px 22px;">
           {#if modalError}
             <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 10px 14px; color: #b91c1c; margin-bottom: 16px; font-size: 12.5px;">
               {modalError}
@@ -722,51 +733,61 @@ ${fieldLines}
 
 <!-- TYPESCRIPT DEFINITION MODAL -->
 {#if codeModalOpen}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="modal-backdrop"
-    onclick={() => (codeModalOpen = false)}
+    onclick={(e) => {
+      if (e.target === e.currentTarget) codeModalOpen = false;
+    }}
     role="presentation"
-  ></div>
-
-  <div class="modal-card" style="max-width: 620px; z-index: 1001;">
-    <div class="modal-header">
-      <div>
-        <h3 class="modal-title">TypeScript Definition</h3>
-        <p class="modal-subtitle">Code for {codeModalTitle}</p>
+  >
+    <div
+      class="modal-dialog"
+      style="max-width: 620px;"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      onclick={(e) => e.stopPropagation()}
+    >
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">TypeScript Definition</h3>
+          <p class="modal-subtitle">Code for {codeModalTitle}</p>
+        </div>
+        <button
+          type="button"
+          class="modal-close-btn"
+          onclick={() => (codeModalOpen = false)}
+          aria-label="Close"
+        >
+          <Icon name="close" size={14} />
+        </button>
       </div>
-      <button
-        type="button"
-        class="modal-close-btn"
-        onclick={() => (codeModalOpen = false)}
-        aria-label="Close"
-      >
-        <Icon name="close" size={14} />
-      </button>
-    </div>
 
-    <div class="modal-body" style="padding: 16px 20px;">
-      <pre style="background: #18181b; color: #f4f4f5; padding: 14px 16px; border-radius: 8px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; margin: 0 0 12px 0;"><code>{codeModalSnippet}</code></pre>
-      <p style="font-size: 12px; color: #71717a; margin: 0;">
-        Place this in <code>cms.config.ts</code> to version control this schema in Git.
-      </p>
-    </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <pre style="background: #18181b; color: #f4f4f5; padding: 14px 16px; border-radius: 8px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; margin: 0 0 12px 0;"><code>{codeModalSnippet}</code></pre>
+        <p style="font-size: 12px; color: #71717a; margin: 0;">
+          Place this in <code>cms.config.ts</code> to version control this schema in Git.
+        </p>
+      </div>
 
-    <div class="modal-footer">
-      <button
-        type="button"
-        class="btn-outline-pill"
-        onclick={() => (codeModalOpen = false)}
-      >
-        Close
-      </button>
-      <button
-        type="button"
-        class="btn-primary-pill"
-        onclick={copyCode}
-      >
-        <Icon name="check" size={12} />
-        <span>{copied ? 'Copied to Clipboard!' : 'Copy TypeScript Code'}</span>
-      </button>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn-outline-pill"
+          onclick={() => (codeModalOpen = false)}
+        >
+          Close
+        </button>
+        <button
+          type="button"
+          class="btn-primary-pill"
+          onclick={copyCode}
+        >
+          <Icon name="check" size={12} />
+          <span>{copied ? 'Copied to Clipboard!' : 'Copy TypeScript Code'}</span>
+        </button>
+      </div>
     </div>
   </div>
 {/if}
