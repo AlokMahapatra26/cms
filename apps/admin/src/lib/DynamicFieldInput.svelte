@@ -1,7 +1,7 @@
 <script lang="ts">
+  import type { FieldDefinition } from '@cms/shared';
   import { uploadMedia } from '$lib/api';
   import RichTextEditor from '$lib/RichTextEditor.svelte';
-  import type { FieldDefinition } from '@cms/shared';
 
   let {
     field,
@@ -22,10 +22,10 @@
     mediaError = null;
 
     try {
-      const res = await uploadMedia(target.files[0]);
-      value = res.url;
+      const item = await uploadMedia(target.files[0]);
+      value = item.url;
     } catch (err: any) {
-      mediaError = err.message || 'R2 upload failed';
+      mediaError = err.message || 'Media upload failed';
     } finally {
       uploadingMedia = false;
       target.value = '';
@@ -34,21 +34,21 @@
 </script>
 
 <div class="dynamic-field-group">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+  <div class="flex justify-between items-center mb-1">
     <label for="field-{field.key}" class="field-label">
       {field.label}
       {#if field.required}
-        <span style="color: #dc2626;">*</span>
+        <span class="text-danger">*</span>
       {/if}
     </label>
 
-    <span style="font-size: 10.5px; color: #71717a; text-transform: uppercase; letter-spacing: 0.04em;">
+    <span class="text-xs text-muted uppercase tracking-wide">
       {field.type}
     </span>
   </div>
 
   {#if field.description}
-    <p style="font-size: 11.5px; color: #71717a; margin: 0 0 6px 0;">{field.description}</p>
+    <p class="text-xs text-muted m-0 mb-1">{field.description}</p>
   {/if}
 
   <!-- 1. Text -->
@@ -87,13 +87,13 @@
 
   <!-- 4. Boolean (Toggle / Checkbox) -->
   {:else if field.type === 'boolean'}
-    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 0;">
+    <label class="flex items-center gap-2 cursor-pointer py-1">
       <input
         type="checkbox"
         bind:checked={value}
-        style="width: 16px; height: 16px; accent-color: #000000;"
+        class="checkbox-input"
       />
-      <span style="font-size: 13px; font-weight: 500; color: #27272a;">
+      <span class="text-sm font-medium text-dark">
         {value ? 'Yes / Enabled' : 'No / Disabled'}
       </span>
     </label>
@@ -126,18 +126,18 @@
   {:else if field.type === 'media'}
     {#if value}
       <div class="media-preview-box">
-        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+        <div class="flex items-center gap-3 min-w-0">
           <img
             src={value}
             alt={field.label}
             class="media-thumb"
             onerror={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
           />
-          <div style="min-width: 0;">
-            <div style="font-size: 12px; font-weight: 600; color: #000000; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <div class="min-w-0">
+            <div class="text-xs font-semibold text-dark truncate">
               {value.split('/').pop()}
             </div>
-            <div style="font-size: 10.5px; color: #71717a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <div class="text-xs text-muted truncate">
               {value}
             </div>
           </div>
@@ -146,7 +146,6 @@
         <button
           type="button"
           class="btn-sm-pill btn-danger-sm"
-          style="font-size: 11px; padding: 3px 8px;"
           onclick={() => (value = null)}
         >
           Remove
@@ -154,29 +153,26 @@
       </div>
     {:else}
       <div class="media-upload-box">
-        <label class="btn-outline-pill" style="cursor: pointer; font-size: 12px; padding: 5px 14px;">
+        <label class="btn-outline-pill cursor-pointer text-sm">
           <span>{uploadingMedia ? 'Uploading to R2...' : 'Select or Upload Media'}</span>
           <input
             type="file"
             accept="image/*"
             onchange={handleMediaUpload}
             disabled={uploadingMedia}
-            style="display: none;"
+            class="hidden"
           />
         </label>
         {#if mediaError}
-          <span style="color: #dc2626; font-size: 11px; margin-top: 4px;">{mediaError}</span>
+          <span class="text-danger text-xs mt-1">{mediaError}</span>
         {/if}
       </div>
     {/if}
 
   <!-- 8. Rich Text Editor -->
   {:else if field.type === 'richtext'}
-    <div style="border: 1px solid #e4e4e7; border-radius: 8px; overflow: hidden;">
+    <div class="border rounded-md overflow-hidden">
       <RichTextEditor bind:content={value} placeholder={field.placeholder} />
     </div>
   {/if}
 </div>
-
-
-

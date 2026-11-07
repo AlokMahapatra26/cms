@@ -272,14 +272,14 @@
     </button>
 
     <!-- Insert Image to R2 -->
-    <label class="toolbar-btn" style="cursor: pointer;" title="Upload & Insert Image from R2">
+    <label class="toolbar-btn cursor-pointer" title="Upload & Insert Image from R2">
       <span>{isUploadingImage ? 'Uploading...' : '🖼️ Image'}</span>
       <input
         type="file"
         accept="image/*"
         onchange={handleImageUpload}
         disabled={isUploadingImage}
-        style="display: none;"
+        class="hidden"
       />
     </label>
 
@@ -320,8 +320,7 @@
         type="url"
         bind:value={linkInputUrl}
         placeholder="https://example.com"
-        class="shopify-input"
-        style="padding: 4px 8px; font-size: 12px; height: 28px;"
+        class="shopify-input shopify-input-compact"
         onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyLink(); } }}
       />
       <button type="button" class="btn-sm-pill btn-aloe-sm" onclick={applyLink}>

@@ -1,0 +1,161 @@
+/* ==========================================================================
+   Form Controls, Inputs, and Dynamic Fields
+   ========================================================================== */
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-shade-70);
+  margin-bottom: 6px;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--color-shade-50);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.char-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.char-count.warn {
+  color: #ef4444;
+}
+
+.shopify-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #000000;
+  background-color: #ffffff;
+  border: 1px solid var(--color-shade-30);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.shopify-input:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 1px #000000;
+}
+
+.shopify-input::placeholder {
+  color: var(--color-shade-40);
+}
+
+.shopify-input:disabled {
+  background-color: var(--color-shade-10);
+  color: var(--color-shade-50);
+  cursor: not-allowed;
+}
+
+.shopify-actions-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+/* Segmented Control */
+.shopify-segmented {
+  display: inline-flex;
+  background-color: var(--color-shade-20);
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  gap: 2px;
+}
+
+.shopify-segment-btn {
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-shade-60);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.shopify-segment-btn:hover {
+  color: #000000;
+}
+
+.shopify-segment-btn.active {
+  background-color: #ffffff;
+  color: #000000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+
+/* Dynamic Field Group */
+.dynamic-field-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #27272a;
+}
+
+.media-preview-box {
+  background-color: var(--color-canvas-cream);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.media-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--color-hairline);
+  flex-shrink: 0;
+}
+
+.media-upload-box {
+  border: 1.5px dashed var(--color-shade-30);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+  background-color: var(--color-canvas-cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.checkbox-input {
+  width: 16px;
+  height: 16px;
+  accent-color: #000000;
+  cursor: pointer;
+}
+
+
+.shopify-input-compact {
+  padding: 4px 8px;
+  font-size: 12px;
+  height: 28px;
+}

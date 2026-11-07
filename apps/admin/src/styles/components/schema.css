@@ -1,0 +1,73 @@
+/* ==========================================================================
+   Collections & Schema Builder Components
+   ========================================================================== */
+
+.schema-item-card {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.schema-item-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.schema-field-chip {
+  background-color: var(--color-canvas-cream);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  padding: 2px 7px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.schema-modal-dialog {
+  max-width: 620px;
+  width: 100%;
+}
+
+.field-row {
+  background-color: #ffffff;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.add-field-card {
+  background-color: var(--color-canvas-cream);
+  border: 1px dashed var(--color-shade-30);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-top: 10px;
+}
+
+.field-type-btn {
+  background-color: #ffffff;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.1s ease;
+}
+
+.field-type-btn:hover {
+  border-color: #000000;
+}
+
+.field-type-btn.active {
+  background-color: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}

@@ -1,0 +1,22 @@
+/* ==========================================================================
+   EdgeCMS Unified Design System - Master Index
+   ========================================================================== */
+
+/* 1. Design Tokens & Variables */
+@import './tokens.css';
+
+/* 2. Base & Reset */
+@import './base.css';
+
+/* 3. Utility Classes (replaces inline styles) */
+@import './utilities.css';
+
+/* 4. Component Styles */
+@import './components/buttons.css';
+@import './components/modals.css';
+@import './components/forms.css';
+@import './components/cards.css';
+@import './components/tables.css';
+@import './components/schema.css';
+@import './components/editor.css';
+@import './components/seo.css';

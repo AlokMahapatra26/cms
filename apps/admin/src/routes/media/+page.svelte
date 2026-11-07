@@ -95,18 +95,18 @@
 </svelte:head>
 
 <!-- Header -->
-<div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+<div class="shopify-page-header">
   <div>
-    <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0 0 2px 0; letter-spacing: -0.01em;">
+    <h1 class="shopify-page-title">
       Media Library
     </h1>
-    <p style="font-size: 12.5px; color: #71717a; margin: 0;">
+    <p class="shopify-page-subtitle">
       Assets, cover images, and graphics stored globally on Cloudflare R2.
     </p>
   </div>
 
   <div>
-    <label class="btn-primary-pill" style="cursor: pointer; font-size: 12px; padding: 6px 14px;">
+    <label class="btn-primary-pill cursor-pointer text-xs py-2 px-3">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
         <polyline points="17 8 12 3 7 8"></polyline>
@@ -118,51 +118,51 @@
         accept="image/*"
         onchange={handleUpload}
         disabled={uploading}
-        style="display: none;"
+        class="hidden"
       />
     </label>
   </div>
 </div>
 
 {#if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 12px; padding: 16px; color: #b91c1c; margin-bottom: 24px;">
+  <div class="error-banner mb-6">
     {error}
   </div>
 {/if}
 
 {#if loading}
-  <div class="shopify-card" style="padding: 48px; text-align: center; color: #71717a;">
-    <p style="margin: 0; font-size: 14px;">Fetching R2 bucket storage...</p>
+  <div class="shopify-card p-12 text-center text-muted">
+    <p class="m-0 text-base">Fetching R2 bucket storage...</p>
   </div>
 {:else if items.length === 0}
-  <div class="shopify-card" style="padding: 60px 24px; text-align: center;">
-    <div style="width: 52px; height: 52px; border-radius: 12px; background: #f4f4f5; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+  <div class="shopify-card p-12 text-center">
+    <div class="media-empty-icon">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
         <circle cx="8.5" cy="8.5" r="1.5"></circle>
         <polyline points="21 15 16 10 5 21"></polyline>
       </svg>
     </div>
-    <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 6px 0;">No media files yet</h3>
-    <p style="color: #71717a; font-size: 14px; margin: 0 0 20px 0;">
+    <h3 class="text-lg font-semibold m-0 mb-1">No media files yet</h3>
+    <p class="text-muted text-base m-0 mb-4">
       Upload images to use them as article covers or embed them in Markdown posts.
     </p>
-    <label class="btn-primary-pill" style="cursor: pointer; font-size: 13px; padding: 8px 18px; display: inline-flex;">
+    <label class="btn-primary-pill cursor-pointer text-sm inline-flex">
       <span>Upload First File</span>
-      <input type="file" accept="image/*" onchange={handleUpload} style="display: none;" />
+      <input type="file" accept="image/*" onchange={handleUpload} class="hidden" />
     </label>
   </div>
 {:else}
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px;">
+  <div class="grid grid-cols-auto gap-3">
     {#each items as item (item.key)}
-      <div class="shopify-card" style="overflow: hidden; display: flex; flex-direction: column;">
+      <div class="shopify-card media-card">
         <!-- Thumbnail with fallback for non-images -->
-        <div style="height: 110px; background-color: #f4f4f5; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #a1a1aa; font-size: 11px; font-weight: 600;">
-          <span style="position: absolute;">FILE</span>
+        <div class="media-thumb-container">
+          <span class="absolute">FILE</span>
           <img
             src={item.url}
             alt={item.key}
-            style="width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 1;"
+            class="media-thumb-img"
             onerror={(e) => {
               (e.currentTarget as HTMLElement).style.display = 'none';
             }}
@@ -170,27 +170,25 @@
         </div>
 
         <!-- Details -->
-        <div style="padding: 10px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="p-2 flex-1 flex flex-col justify-between">
           <div>
-            <div style="font-size: 12px; font-weight: 600; color: #000000; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px;" title={item.key}>
+            <div class="text-sm font-semibold text-dark truncate mb-1" title={item.key}>
               {item.key.replace('uploads/', '')}
             </div>
-            <div style="font-size: 10.5px; color: #71717a; margin-bottom: 8px;">
+            <div class="text-xs text-muted mb-2">
               {formatBytes(item.size)}
             </div>
           </div>
 
-          <div style="display: flex; gap: 4px; align-items: center;">
+          <div class="flex gap-1 items-center">
             <button
-              class="btn-sm-pill btn-gray-sm"
-              style="flex: 1; justify-content: center; font-size: 11px; padding: 2.5px 6px; white-space: nowrap;"
+              class="btn-sm-pill btn-gray-sm flex-1 justify-center whitespace-nowrap"
               onclick={() => copyUrl(item.url, item.key)}
             >
               {copiedKey === item.key ? 'Copied!' : 'Copy URL'}
             </button>
             <button
               class="btn-sm-pill btn-gray-sm"
-              style="font-size: 11px; padding: 2.5px 6px;"
               title="Rename asset"
               onclick={() => {
                 renameTargetItem = item;
@@ -206,14 +204,12 @@
               target="_blank"
               rel="noopener"
               class="btn-sm-pill btn-gray-sm"
-              style="font-size: 11px; padding: 2.5px 6px;"
               title="Open full image in new tab"
             >
               ↗
             </a>
             <button
               class="btn-sm-pill btn-danger-sm"
-              style="font-size: 11px; padding: 2.5px 7px;"
               title="Delete asset from Cloudflare R2"
               disabled={deletingKey === item.key}
               onclick={() => handleDeleteMedia(item.key, item.key.replace('uploads/', ''))}
@@ -246,4 +242,3 @@
     items = items.map((i) => (i.key === renameTargetItem?.key ? updatedItem : i));
   }}
 />
-

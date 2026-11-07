@@ -1,0 +1,98 @@
+/* ==========================================================================
+   Cards, Callouts & Containers
+   ========================================================================== */
+
+.shopify-card {
+  background-color: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-card);
+  padding: 18px 20px;
+  position: relative;
+}
+
+.shopify-card.compact {
+  padding: 12px 14px;
+}
+
+.shopify-card.elevated {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.squircle-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-hairline);
+  object-fit: cover;
+  background-color: var(--color-shade-20);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-shade-40);
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Callouts & Banners */
+.error-banner {
+  background-color: var(--color-danger-bg);
+  border: 1px solid #fee2e2;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: #b91c1c;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.info-callout {
+  background-color: var(--color-canvas-cream);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 11.5px;
+  color: var(--color-shade-50);
+  line-height: 1.45;
+}
+
+
+/* Media Library Card Styles */
+.media-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.media-thumb-container {
+  height: 110px;
+  background-color: var(--color-shade-20);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-shade-40);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.media-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+}
+
+.media-empty-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg);
+  background: var(--color-shade-20);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}

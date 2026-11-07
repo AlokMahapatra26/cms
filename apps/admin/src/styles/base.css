@@ -1,0 +1,259 @@
+/* ==========================================================================
+   Base & Reset Styles
+   ========================================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-canvas-cream);
+  color: var(--color-ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "ss03";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ==========================================================================
+   App Shell & Navigation
+   ========================================================================== */
+
+.shopify-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--color-hairline);
+  padding: 10px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.shopify-nav-inner {
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shopify-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  color: #000000;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.shopify-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--color-shade-20);
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.shopify-user-pill:hover {
+  background-color: var(--color-shade-30);
+}
+
+.shopify-app-body {
+  display: flex;
+  min-height: calc(100vh - 51px);
+  width: 100%;
+}
+
+.shopify-sidebar {
+  width: 200px;
+  min-width: 200px;
+  background-color: #ffffff;
+  border-right: 1px solid var(--color-hairline);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 10px;
+  position: sticky;
+  top: 51px;
+  height: calc(100vh - 51px);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.shopify-sidebar-section {
+  margin-bottom: 16px;
+}
+
+.shopify-sidebar-heading {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-shade-50);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 8px 6px 8px;
+  margin: 0;
+}
+
+.shopify-sidebar-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--color-shade-70);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  margin-bottom: 2px;
+}
+
+.shopify-sidebar-link:hover {
+  background-color: var(--color-shade-20);
+  color: #000000;
+}
+
+.shopify-sidebar-link.active {
+  background-color: var(--color-shade-20);
+  color: #000000;
+  font-weight: 600;
+}
+
+.shopify-sidebar-link-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shopify-content-area {
+  flex: 1;
+  min-width: 0;
+  background-color: var(--color-canvas-cream);
+  padding: 20px 24px 60px 24px;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+
+.shopify-content-inner {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.shopify-page-header {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.shopify-page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 2px 0;
+  letter-spacing: -0.01em;
+}
+
+.shopify-page-subtitle {
+  font-size: 12.5px;
+  color: var(--color-shade-50);
+  margin: 0;
+}
+
+
+/* App Layout Helpers */
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.user-avatar-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #000000;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.collection-avatar-badge {
+  width: 15px;
+  height: 15px;
+  border-radius: var(--radius-xs);
+  background: #000000;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.sidebar-status-box {
+  padding: 10px;
+  background-color: var(--color-canvas-cream);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  font-size: 10.5px;
+  color: var(--color-shade-50);
+}
+
+.status-dot-active {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #10b981;
+}
+
+.auth-screen-container {
+  max-width: 600px;
+  width: 100%;
+  margin: 32px auto 80px auto;
+  padding: 0 20px;
+  flex: 1;
+}
+
+.app-global-footer {
+  background-color: #ffffff;
+  border-top: 1px solid var(--color-hairline);
+  padding: 24px;
+  margin-top: auto;
+}
+
+.app-footer-inner {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}

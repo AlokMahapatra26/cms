@@ -9,43 +9,43 @@
     og_image = $bindable(''),
     canonical_url = $bindable('')
   }: {
-    title: string;
-    slug: string;
-    excerpt: string;
-    cover_image: string;
-    meta_title: string;
-    meta_description: string;
-    og_image: string;
-    canonical_url: string;
+    title?: string;
+    slug?: string;
+    excerpt?: string;
+    cover_image?: string;
+    meta_title?: string;
+    meta_description?: string;
+    og_image?: string;
+    canonical_url?: string;
   } = $props();
 
-  let previewMode = $state<'google' | 'twitter' | 'social'>('google');
   let isExpanded = $state(false);
+  let previewMode = $state<'google' | 'twitter' | 'social'>('google');
 
-  // Derived effective values for live preview
-  const displayTitle = $derived(meta_title.trim() || title.trim() || 'Article Title');
-  const displayDescription = $derived(
-    meta_description.trim() ||
-    excerpt.trim() ||
-    'Read this post on our edge-native storefront running on Cloudflare Workers and D1.'
+  // Fallbacks: if custom SEO is not filled, preview how it dynamically falls back to article content
+  const displayTitle = $derived(
+    meta_title?.trim() || title?.trim() || 'Untitled Article - EdgeBlog'
   );
-  const displayImage = $derived(og_image.trim() || cover_image.trim() || '');
-  const displaySlug = $derived(slug.trim() || 'article-slug');
+  const displayDescription = $derived(
+    meta_description?.trim() || excerpt?.trim() || 'No preview summary available for this post.'
+  );
+  const displayImage = $derived(og_image?.trim() || cover_image?.trim() || '');
+  const displaySlug = $derived(slug?.trim() || 'post-slug');
 
-  // Character counters
-  const titleCount = $derived(meta_title.length);
-  const descCount = $derived(meta_description.length);
+  // Character counts and warnings
+  const titleCount = $derived(meta_title ? meta_title.length : 0);
+  const descCount = $derived(meta_description ? meta_description.length : 0);
 </script>
 
-<div class="shopify-card seo-card">
-  <!-- Card Header / Collapsible Toggle -->
+<div class="seo-card">
+  <!-- Accordion Trigger Header -->
   <button
     type="button"
     class="seo-header-btn"
     onclick={() => (isExpanded = !isExpanded)}
     aria-expanded={isExpanded}
   >
-    <div style="display: flex; align-items: center; gap: 10px;">
+    <div class="flex items-center gap-2">
       <div class="seo-icon-pill">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
@@ -53,17 +53,17 @@
           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
         </svg>
       </div>
-      <div style="text-align: left;">
-        <div style="font-size: 13.5px; font-weight: 600; color: #000000; line-height: 1.2;">
+      <div class="text-left">
+        <div class="text-sm font-semibold text-dark">
           Search Engine & Social Media Preview (SEO)
         </div>
-        <div style="font-size: 11.5px; color: #71717a; margin-top: 2px;">
+        <div class="text-xs text-muted mt-1">
           Customize how this article looks on Google, Twitter / X, and social shares
         </div>
       </div>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 10px;">
+    <div class="flex items-center gap-2">
       <span class="seo-status-pill">
         {meta_title || meta_description ? 'Customized' : 'Auto-synced'}
       </span>
@@ -76,7 +76,7 @@
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
-        style="transition: transform 0.2s ease; transform: {isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'}; color: #71717a;"
+        class="seo-chevron-icon {isExpanded ? 'rotated' : ''}"
       >
         <polyline points="6 9 12 15 18 9"></polyline>
       </svg>
@@ -89,7 +89,7 @@
       <div class="seo-inputs-grid">
         <!-- Meta Title -->
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div class="flex justify-between items-center mb-1">
             <label for="meta-title" class="seo-label">
               Search Meta Title
             </label>
@@ -111,7 +111,7 @@
 
         <!-- Meta Description -->
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div class="flex justify-between items-center mb-1">
             <label for="meta-desc" class="seo-label">
               Search Meta Description
             </label>
@@ -132,9 +132,9 @@
         </div>
 
         <!-- OG Image & Canonical -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label for="og-image" class="seo-label" style="margin-bottom: 6px; display: block;">
+            <label for="og-image" class="seo-label block mb-1">
               Social Share Image (OG Image)
             </label>
             <input
@@ -147,7 +147,7 @@
           </div>
 
           <div>
-            <label for="canonical" class="seo-label" style="margin-bottom: 6px; display: block;">
+            <label for="canonical" class="seo-label block mb-1">
               Canonical URL (Optional)
             </label>
             <input
@@ -164,7 +164,7 @@
       <!-- Live Preview Section -->
       <div class="seo-preview-section">
         <div class="seo-preview-header">
-          <span style="font-size: 12px; font-weight: 600; color: #000000; text-transform: uppercase; letter-spacing: 0.04em;">
+          <span class="text-xs font-semibold text-dark uppercase tracking-wide">
             Live SERP & Social Card Preview
           </span>
 
@@ -204,9 +204,9 @@
                   <line x1="2" y1="12" x2="22" y2="12"></line>
                 </svg>
               </div>
-              <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 12px; color: #202124; font-weight: 500; line-height: 1.2;">EdgeBlog</span>
-                <span style="font-size: 11px; color: #4d5156; line-height: 1.2;">https://example.com › posts › {displaySlug}</span>
+              <div class="flex flex-col">
+                <span class="text-xs font-medium text-dark">EdgeBlog</span>
+                <span class="text-xs text-muted">https://example.com › posts › {displaySlug}</span>
               </div>
             </div>
 
@@ -215,7 +215,7 @@
             </div>
 
             <div class="google-snippet">
-              <span style="color: #70757a; font-weight: 400; margin-right: 4px;">
+              <span class="text-muted font-normal mr-1">
                 {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} —
               </span>
               {displayDescription}
@@ -229,22 +229,23 @@
               {#if displayImage}
                 <img
                   src={displayImage}
-                  alt="Social share preview"
+                  alt="Twitter preview card"
                   class="twitter-image"
-                  onerror={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                  onerror={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                  }}
                 />
               {:else}
                 <div class="image-placeholder">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="1.8">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                     <circle cx="8.5" cy="8.5" r="1.5"></circle>
                     <polyline points="21 15 16 10 5 21"></polyline>
                   </svg>
-                  <span>1200 x 630 Recommended Social Banner</span>
+                  <span>No social preview image specified</span>
                 </div>
               {/if}
             </div>
-
             <div class="twitter-content">
               <div class="twitter-domain">example.com</div>
               <div class="twitter-title">{displayTitle}</div>
@@ -252,29 +253,30 @@
             </div>
           </div>
 
-        <!-- Facebook / LinkedIn Share Preview -->
-        {:else}
+        <!-- Generic Social / Facebook Open Graph Card -->
+        {:else if previewMode === 'social'}
           <div class="facebook-card">
             <div class="facebook-image-container">
               {#if displayImage}
                 <img
                   src={displayImage}
-                  alt="Social preview"
+                  alt="Social preview card"
                   class="facebook-image"
-                  onerror={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
+                  onerror={(e) => {
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                  }}
                 />
               {:else}
                 <div class="image-placeholder">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="1.8">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                     <circle cx="8.5" cy="8.5" r="1.5"></circle>
                     <polyline points="21 15 16 10 5 21"></polyline>
                   </svg>
-                  <span>OpenGraph Image (1200 x 630)</span>
+                  <span>No social preview image specified</span>
                 </div>
               {/if}
             </div>
-
             <div class="facebook-content">
               <div class="facebook-domain">EXAMPLE.COM</div>
               <div class="facebook-title">{displayTitle}</div>
@@ -286,6 +288,3 @@
     </div>
   {/if}
 </div>
-
-
-

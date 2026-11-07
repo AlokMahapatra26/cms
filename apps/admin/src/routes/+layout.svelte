@@ -70,24 +70,24 @@
   }
 </script>
 
-<div style="min-height: 100vh; display: flex; flex-direction: column; background-color: #fbfbf5;">
+<div class="flex flex-col min-h-screen">
   <!-- Shopify Merchant Admin Header -->
   <header class="shopify-header">
-    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin: 0 auto;">
+    <div class="shopify-nav-inner">
       <!-- Shopify-style Brand Lockup -->
       <a href="/" class="shopify-brand">
         <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="28" height="28" rx="8" fill="#000000" />
           <path d="M14 6C12.3431 6 11 7.34315 11 9H9C8.44772 9 8 9.44772 8 10V20C8 20.5523 8.44772 21 9 21H19C19.5523 21 20 20.5523 20 20V10C20 9.44772 19.5523 9 19 9H17C17 7.34315 15.6569 6 14 6ZM14 7.5C14.8284 7.5 15.5 8.17157 15.5 9H12.5C12.5 8.17157 13.1716 7.5 14 7.5ZM9.5 10.5H18.5V19.5H9.5V10.5Z" fill="#C1FBD4" />
         </svg>
-        <div style="display: flex; flex-direction: column;">
-          <span style="font-weight: 600; font-size: 14px; line-height: 1.2;">EdgeCMS</span>
-          <span style="font-size: 10.5px; color: #71717a; font-weight: 400;">Cloudflare Commerce</span>
+        <div class="flex flex-col">
+          <span class="font-semibold text-sm">EdgeCMS</span>
+          <span class="text-xs text-muted">Cloudflare Commerce</span>
         </div>
       </a>
 
       <!-- Right Action Controls -->
-      <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="flex items-center gap-2">
         {#if currentUser}
           <!-- User Profile Chip (Clickable link to Settings) -->
           <a
@@ -95,30 +95,29 @@
             class="shopify-user-pill"
             title="Edit credentials & settings"
           >
-            <div style="width: 20px; height: 20px; border-radius: 50%; background: #000000; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700;">
+            <div class="user-avatar-badge">
               {currentUser.name.charAt(0).toUpperCase()}
             </div>
-            <span style="font-weight: 500; font-size: 12px;">{currentUser.name}</span>
-            <span style="background-color: var(--color-aloe); color: #043e1d; font-size: 9.5px; font-weight: 700; text-transform: uppercase; padding: 1px 6px; border-radius: 9999px; letter-spacing: 0.04em;">
+            <span class="font-medium text-sm">{currentUser.name}</span>
+            <span class="pill-tag-mint">
               {currentUser.role}
             </span>
           </a>
 
-          <a href="http://localhost:4321" target="_blank" rel="noopener" class="btn-outline-pill" style="font-size: 12px; padding: 4px 11px;">
+          <a href="http://localhost:4321" target="_blank" rel="noopener" class="btn-outline-pill">
             <span>Live Blog</span>
-            <span style="font-size: 10px; opacity: 0.6;">↗</span>
+            <span class="text-xs text-muted">↗</span>
           </a>
 
           <button
             onclick={handleLogout}
             class="btn-outline-pill"
-            style="font-size: 12px; padding: 4px 11px; color: #71717a; border-color: #d4d4d8;"
             title="Sign out"
           >
             Sign out
           </button>
         {:else if !isAuthPage}
-          <a href="/login" class="btn-primary-pill" style="font-size: 12.5px; padding: 5px 14px;">
+          <a href="/login" class="btn-primary-pill">
             Sign In
           </a>
         {/if}
@@ -133,11 +132,10 @@
       <aside class="shopify-sidebar">
         <div>
           <!-- Quick Action: Create Article -->
-          <div style="margin-bottom: 14px;">
+          <div class="mb-3">
             <a
               href="/new"
-              class="btn-primary-pill"
-              style="width: 100%; justify-content: center; padding: 7px 12px; font-size: 12.5px; box-sizing: border-box;"
+              class="btn-primary-pill w-full justify-center"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -166,7 +164,7 @@
             <a href="/new" class="shopify-sidebar-link {page.url.pathname === '/new' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
                 <span>Write Draft</span>
@@ -187,9 +185,9 @@
 
           <!-- Section 1.5: Dynamic Collections -->
           <div class="shopify-sidebar-section">
-            <div style="display: flex; align-items: center; justify-content: space-between; padding-right: 6px;">
-              <h3 class="shopify-sidebar-heading" style="margin-bottom: 0;">Collections</h3>
-              <a href="/schemas" style="font-size: 10.5px; color: #71717a; text-decoration: none;" title="Build new content models">+ Schema</a>
+            <div class="flex items-center justify-between pr-2">
+              <h3 class="shopify-sidebar-heading m-0">Collections</h3>
+              <a href="/schemas" class="text-xs text-muted" title="Build new content models">+ Schema</a>
             </div>
 
             {#each collectionsStore.list as col (col.slug)}
@@ -198,7 +196,7 @@
                 class="shopify-sidebar-link {page.url.pathname.startsWith('/content/' + col.slug) ? 'active' : ''}"
               >
                 <div class="shopify-sidebar-link-content">
-                  <div style="width: 15px; height: 15px; border-radius: 4px; background: #000000; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-weight: 700;">
+                  <div class="collection-avatar-badge">
                     {col.name.charAt(0).toUpperCase()}
                   </div>
                   <span>{col.name}</span>
@@ -229,7 +227,7 @@
                 </svg>
                 <span>Storefront</span>
               </div>
-              <span style="font-size: 10px; opacity: 0.6;">↗</span>
+              <span class="text-xs text-muted">↗</span>
             </a>
           </div>
 
@@ -260,9 +258,9 @@
         </div>
 
         <!-- Sidebar Footer Status -->
-        <div style="padding: 10px; background-color: #fbfbf5; border: 1px solid var(--color-hairline); border-radius: 8px; font-size: 10.5px; color: #71717a;">
-          <div style="display: flex; align-items: center; gap: 5px; font-weight: 600; color: #000000; margin-bottom: 2px;">
-            <span style="display: inline-block; width: 5px; height: 5px; border-radius: 50%; background-color: #10b981;"></span>
+        <div class="sidebar-status-box">
+          <div class="flex items-center gap-1 font-semibold text-dark mb-1">
+            <span class="status-dot-active"></span>
             <span>Cloudflare Edge</span>
           </div>
           <span>D1 SQLite & R2 Active</span>
@@ -278,9 +276,9 @@
     </div>
   {:else}
     <!-- Auth Screen Container (Centered, No Sidebar) -->
-    <main style="max-width: 600px; width: 100%; margin: 32px auto 80px auto; padding: 0 20px; flex: 1;">
+    <main class="auth-screen-container">
       {#if isCheckingAuth && !isAuthPage}
-        <div style="text-align: center; padding: 60px; color: var(--color-shade-50); font-size: 14px;">
+        <div class="text-center p-12 text-muted text-base">
           Loading dashboard...
         </div>
       {:else}
@@ -290,18 +288,18 @@
   {/if}
 
   <!-- Clean Minimal Footer -->
-  <footer style="background-color: #ffffff; border-top: 1px solid #e4e4e7; padding: 24px; margin-top: auto;">
-    <div style="max-width: 1360px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-weight: 600; font-size: 13px;">EdgeCMS</span>
-        <span style="color: #a1a1aa; font-size: 13px;">•</span>
-        <span style="color: #71717a; font-size: 13px;">Cloudflare Workers • D1 • R2 • SvelteKit • Astro</span>
+  <footer class="app-global-footer">
+    <div class="app-footer-inner">
+      <div class="flex items-center gap-2">
+        <span class="font-semibold text-sm">EdgeCMS</span>
+        <span class="text-faint text-sm">•</span>
+        <span class="text-muted text-sm">Cloudflare Workers • D1 • R2 • SvelteKit • Astro</span>
       </div>
 
-      <div style="display: flex; gap: 20px; font-size: 13px; color: #71717a;">
-        <a href="http://localhost:8787/api/posts" target="_blank" style="color: inherit;">Feed</a>
-        <a href="http://localhost:4321" target="_blank" style="color: inherit;">Public Front</a>
-        <a href="https://shopify.dev" target="_blank" style="color: inherit;">Polaris DNA</a>
+      <div class="flex gap-4 text-sm text-muted">
+        <a href="http://localhost:8787/api/posts" target="_blank">Feed</a>
+        <a href="http://localhost:4321" target="_blank">Public Front</a>
+        <a href="https://shopify.dev" target="_blank">Polaris DNA</a>
       </div>
     </div>
   </footer>
