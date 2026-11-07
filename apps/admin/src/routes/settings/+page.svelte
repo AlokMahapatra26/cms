@@ -281,16 +281,5 @@
     </div>
 
   </div>
-
-  <!-- Security callout -->
-  <div style="margin-top: 28px; padding: 20px; background-color: #ffffff; border: 1px solid var(--color-hairline); border-radius: 12px; font-size: 13px; color: var(--color-shade-60); display: flex; align-items: flex-start; gap: 12px;">
-    <div style="background-color: var(--color-aloe); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #043e1d;">
-      <Icon name="lock" size={15} />
-    </div>
-    <div style="line-height: 1.5;">
-      <strong style="color: #000000; display: block; margin-bottom: 2px;">Cloudflare Edge Web Crypto Encryption</strong>
-      Passwords are never stored in plaintext. They are salted with 16 cryptographically random bytes and derived with PBKDF2 SHA-256 (100,000 rounds) directly inside Cloudflare Workers before writing to Cloudflare D1.
-    </div>
-  </div>
 {/if}
 

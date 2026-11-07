@@ -227,17 +227,7 @@
   <!-- Footer -->
   <footer class="app-global-footer">
     <div class="app-footer-inner">
-      <div class="flex items-center gap-2">
-        <span class="font-semibold text-sm">EdgeCMS</span>
-        <span class="text-faint text-sm">•</span>
-        <span class="text-muted text-sm">Cloudflare Headless CMS Engine</span>
-      </div>
-
-      <div class="flex gap-4 text-sm text-muted">
-        <a href="/schemas">Schemas</a>
-        <a href="/media">Media Library</a>
-        <a href="/api">REST Endpoints</a>
-      </div>
+      <span>EdgeCMS</span>
     </div>
   </footer>
 
