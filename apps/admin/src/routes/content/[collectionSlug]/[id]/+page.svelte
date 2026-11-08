@@ -100,30 +100,26 @@
   <title>Edit {collection?.name ? collection.name.replace(/s$/, '') : 'Item'} - EdgeCMS</title>
 </svelte:head>
 
-<div style="margin-bottom: 16px;">
-  <div style="margin-bottom: 4px;">
-    <a href="/content/{collectionSlug}" style="font-size: 12px; color: #71717a; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+<div style="margin-bottom: 20px;">
+  <div style="margin-bottom: 6px;">
+    <a href="/content/{collectionSlug}" style="font-size: 12.5px; color: #71717a; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
       <Icon name="arrow-left" size={13} />
-      <span>Back to {collection?.name || 'collection'}</span>
+      <span>{collection?.name || 'Back'}</span>
     </a>
   </div>
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-    <div>
-      <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0; letter-spacing: -0.01em;">
-        Edit {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}
-      </h1>
-      <p style="color: #71717a; font-size: 12.5px; margin: 2px 0 0 0;">
-        Update dynamic fields in Cloudflare D1 database.
-      </p>
-    </div>
+    <h1 style="font-size: 18px; font-weight: 600; color: #09090b; margin: 0; letter-spacing: -0.015em;">
+      Edit {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}
+    </h1>
 
     <button
       type="button"
-      class="btn-sm-pill btn-danger-sm"
-      style="font-size: 11.5px; padding: 4px 10px;"
+      class="btn-danger-outline-pill"
+      style="font-size: 12px; padding: 4px 10px;"
       onclick={handleDelete}
     >
-      Delete Record
+      <Icon name="trash" size={12} />
+      <span>Delete</span>
     </button>
   </div>
 </div>

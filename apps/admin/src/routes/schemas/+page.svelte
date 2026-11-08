@@ -312,13 +312,13 @@ ${fieldLines}
 </svelte:head>
 
 <!-- Header & Controls -->
-<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+<div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
   <div>
-    <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0 0 3px 0; letter-spacing: -0.01em;">
-      Schema Builder
+    <h1 style="font-size: 18px; font-weight: 600; color: #09090b; margin: 0 0 3px 0; letter-spacing: -0.015em;">
+      Schemas
     </h1>
     <p style="font-size: 13px; color: #71717a; margin: 0;">
-      Create schemas visually or sync code-first definitions from <code>cms.config.ts</code>.
+      Define and manage your content models and database schemas.
     </p>
   </div>
 
@@ -326,19 +326,19 @@ ${fieldLines}
     <button
       type="button"
       class="btn-outline-pill"
-      style="font-size: 12px; padding: 6px 14px;"
+      style="font-size: 12px; padding: 5px 12px; color: #52525b;"
       onclick={handleSync}
       disabled={syncing}
       title="Re-read cms.config.ts and sync collections to database"
     >
       <Icon name="check" size={12} />
-      <span>{syncing ? 'Syncing...' : 'Sync cms.config.ts'}</span>
+      <span>{syncing ? 'Syncing...' : 'Sync Config'}</span>
     </button>
 
     <button
       type="button"
       class="btn-primary-pill"
-      style="font-size: 12px; padding: 6px 16px;"
+      style="font-size: 12px; padding: 6px 14px;"
       onclick={openCreateModal}
     >
       <Icon name="plus" size={12} />
@@ -382,39 +382,34 @@ ${fieldLines}
       <div class="shopify-card" style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
           <!-- Card Header -->
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="width: 34px; height: 34px; border-radius: 8px; background: #000000; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px;">
-                <Icon name={col.icon || 'schema'} size={16} />
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 9px;">
+              <div style="width: 30px; height: 30px; border-radius: 6px; background: #f4f4f5; color: #18181b; display: flex; align-items: center; justify-content: center;">
+                <Icon name={col.icon || 'schema'} size={15} />
               </div>
-              <div>
-                <h3 style="font-size: 15px; font-weight: 600; color: #000000; margin: 0; line-height: 1.3;">
-                  {col.name}
-                </h3>
-                <span style="font-size: 11px; color: #71717a; font-family: monospace;">
-                  /content/{col.slug}
-                </span>
-              </div>
+              <h3 style="font-size: 14.5px; font-weight: 600; color: #09090b; margin: 0;">
+                {col.name}
+              </h3>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <span class="field-badge" style="font-size: 11px;">
-                {col.fields?.length || 0} fields
-              </span>
-            </div>
+            <span style="font-size: 12px; color: #71717a;">
+              {col.fields?.length || 0} fields
+            </span>
           </div>
 
           <!-- Description -->
-          <p style="font-size: 12px; color: #52525b; margin: 0 0 12px 0; line-height: 1.4; min-height: 28px;">
-            {col.description || 'No description specified in schema.'}
-          </p>
+          {#if col.description}
+            <p style="font-size: 12.5px; color: #52525b; margin: 0 0 12px 0; line-height: 1.4;">
+              {col.description}
+            </p>
+          {/if}
 
           <!-- Fields Badges -->
           <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 16px;">
             {#each (col.fields || []) as field}
               <span class="field-badge" title="{field.label} ({field.type})">
-                <strong style="color: #000000;">{field.key}</strong>
-                <span style="opacity: 0.6; font-size: 10px;">({field.type})</span>
+                <strong style="color: #18181b;">{field.key}</strong>
+                <span style="opacity: 0.6; font-size: 10.5px;">({field.type})</span>
               </span>
             {/each}
           </div>
@@ -489,18 +484,13 @@ ${fieldLines}
     >
       <!-- Sticky Modal Header -->
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div style="width: 32px; height: 32px; border-radius: 8px; background: #000000; color: #ffffff; display: flex; align-items: center; justify-content: center;">
-            <Icon name="schema" size={16} />
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <div style="width: 28px; height: 28px; border-radius: 6px; background: #f4f4f5; color: #18181b; display: flex; align-items: center; justify-content: center;">
+            <Icon name="schema" size={14} />
           </div>
-          <div>
-            <h3 class="modal-title">
-              {editingSlug ? `Edit Schema: ${modelName}` : 'Create New Collection Schema'}
-            </h3>
-            <p class="modal-subtitle">
-              {editingSlug ? 'Update collection settings and field definitions' : 'Define API identifier and custom dynamic fields'}
-            </p>
-          </div>
+          <h3 class="modal-title" style="font-size: 14.5px;">
+            {editingSlug ? `Edit Schema — ${modelName}` : 'New Schema'}
+          </h3>
         </div>
 
         <button
@@ -620,16 +610,10 @@ ${fieldLines}
 
             <!-- Right Column: Field Configurator / Builder -->
             <div class="schema-panel-card builder-card">
-              <div style="margin-bottom: 12px;">
-                <h4 class="schema-panel-heading" style="margin: 0 0 2px 0;">Add New Field</h4>
-                <p style="font-size: 11.5px; color: #71717a; margin: 0;">
-                  Pick a data type and configure its API property settings
-                </p>
-              </div>
+              <h4 class="schema-panel-heading" style="margin-bottom: 8px;">Field Type</h4>
 
               <!-- Field Types Grid (8 types, clean cards) -->
               <div style="margin-bottom: 12px;">
-                <div class="form-label" style="display: block; margin-bottom: 6px;">Data Type:</div>
                 <div class="field-types-catalog">
                   {#each FIELD_TYPES as ft}
                     <button

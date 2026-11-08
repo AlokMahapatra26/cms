@@ -37,7 +37,7 @@ code {
 .shopify-header {
   background-color: #ffffff;
   border-bottom: 1px solid var(--color-hairline);
-  padding: 10px 20px;
+  padding: 10px 24px;
   position: sticky;
   top: 0;
   z-index: 50;
@@ -54,10 +54,10 @@ code {
 .shopify-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-weight: 600;
-  font-size: 15px;
-  color: #000000;
+  font-size: 14.5px;
+  color: #09090b;
   text-decoration: none;
   letter-spacing: -0.02em;
 }
@@ -65,53 +65,52 @@ code {
 .shopify-user-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background-color: var(--color-shade-20);
-  padding: 3px 8px;
-  border-radius: var(--radius-pill);
-  font-size: 12px;
+  gap: 8px;
+  background-color: transparent;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
   text-decoration: none;
   color: inherit;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .shopify-user-pill:hover {
-  background-color: var(--color-shade-30);
+  background-color: var(--color-shade-20);
 }
 
 .shopify-app-body {
   display: flex;
-  min-height: calc(100vh - 51px);
+  min-height: calc(100vh - 49px);
   width: 100%;
 }
 
 .shopify-sidebar {
-  width: 200px;
-  min-width: 200px;
+  width: 220px;
+  min-width: 220px;
   background-color: #ffffff;
   border-right: 1px solid var(--color-hairline);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 14px 10px;
+  padding: 18px 12px;
   position: sticky;
-  top: 51px;
-  height: calc(100vh - 51px);
+  top: 49px;
+  height: calc(100vh - 49px);
   overflow-y: auto;
   box-sizing: border-box;
 }
 
 .shopify-sidebar-section {
-  margin-bottom: 16px;
+  margin-bottom: 22px;
 }
 
 .shopify-sidebar-heading {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--color-shade-50);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 0 8px 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-shade-40);
+  letter-spacing: 0.04em;
+  padding: 0 10px 8px 10px;
   margin: 0;
 }
 
@@ -119,50 +118,50 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: 7px 10px;
   border-radius: var(--radius-sm);
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--color-shade-70);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-shade-60);
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
   margin-bottom: 2px;
 }
 
 .shopify-sidebar-link:hover {
-  background-color: var(--color-shade-20);
-  color: #000000;
+  background-color: #f9f9fb;
+  color: #09090b;
 }
 
 .shopify-sidebar-link.active {
   background-color: var(--color-shade-20);
-  color: #000000;
-  font-weight: 600;
+  color: #09090b;
+  font-weight: 500;
 }
 
 .shopify-sidebar-link-content {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .shopify-content-area {
   flex: 1;
   min-width: 0;
   background-color: var(--color-canvas-cream);
-  padding: 20px 24px 60px 24px;
+  padding: 28px 36px 64px 36px;
   box-sizing: border-box;
   overflow-x: auto;
 }
 
 .shopify-content-inner {
   width: 100%;
-  max-width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
 .shopify-page-header {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -171,11 +170,11 @@ code {
 }
 
 .shopify-page-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-  color: #000000;
+  color: #09090b;
   margin: 0 0 2px 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 .shopify-page-subtitle {
@@ -217,43 +216,30 @@ code {
 }
 
 .sidebar-status-box {
-  padding: 10px;
-  background-color: var(--color-canvas-cream);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
-  font-size: 10.5px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
   color: var(--color-shade-50);
 }
 
 .status-dot-active {
   display: inline-block;
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: #10b981;
 }
 
 .auth-screen-container {
-  max-width: 600px;
+  max-width: 520px;
   width: 100%;
-  margin: 32px auto 80px auto;
+  margin: 48px auto 80px auto;
   padding: 0 20px;
   flex: 1;
 }
 
 .app-global-footer {
-  background-color: #ffffff;
-  border-top: 1px solid var(--color-hairline);
-  padding: 16px 20px;
-  margin-top: auto;
-}
-
-.app-footer-inner {
-  max-width: 1360px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 12px;
-  color: var(--color-shade-50);
+  display: none;
 }

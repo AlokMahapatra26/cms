@@ -77,48 +77,48 @@
     <div class="shopify-nav-inner">
       <!-- Brand Lockup -->
       <a href="/schemas" class="shopify-brand">
-        <svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="8" fill="#000000" />
-          <path d="M14 6C12.3431 6 11 7.34315 11 9H9C8.44772 9 8 9.44772 8 10V20C8 20.5523 8.44772 21 9 21H19C19.5523 21 20 20.5523 20 20V10C20 9.44772 19.5523 9 19 9H17C17 7.34315 15.6569 6 14 6ZM14 7.5C14.8284 7.5 15.5 8.17157 15.5 9H12.5C12.5 8.17157 13.1716 7.5 14 7.5ZM9.5 10.5H18.5V19.5H9.5V10.5Z" fill="#C1FBD4" />
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="24" height="24" rx="6" fill="#09090b" />
+          <path d="M7 12H17M7 7H17M7 17H13" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        <div class="flex flex-col">
-          <span class="font-semibold text-sm">EdgeCMS</span>
-          <span class="text-xs text-muted">Cloudflare Headless Engine</span>
-        </div>
+        <span style="font-weight: 600; font-size: 14px; color: #09090b; letter-spacing: -0.02em;">EdgeCMS</span>
       </a>
 
       <!-- Right Action Controls -->
       <div class="flex items-center gap-2">
         {#if currentUser}
-          <!-- User Profile Chip (Clickable link to Settings) -->
+          <!-- User Profile Chip -->
           <a
             href="/settings"
             class="shopify-user-pill"
-            title="Edit credentials & settings"
+            title="Account Settings"
           >
             <div class="user-avatar-badge">
               {currentUser.name.charAt(0).toUpperCase()}
             </div>
-            <span class="font-medium text-sm">{currentUser.name}</span>
-            <span class="pill-tag-mint">
-              {currentUser.role}
-            </span>
+            <span class="font-medium text-xs text-dark">{currentUser.name}</span>
           </a>
 
-          <a href="/api" class="btn-outline-pill" title="Explore Headless API">
-            <span>REST API</span>
-            <Icon name="api" size={13} class="text-muted" />
+          <a
+            href="/api"
+            class="btn-outline-pill"
+            style="font-size: 11.5px; padding: 4px 10px; color: #52525b;"
+            title="Headless API"
+          >
+            <span>API</span>
+            <Icon name="external" size={11} />
           </a>
 
           <button
             onclick={handleLogout}
             class="btn-outline-pill"
+            style="font-size: 11.5px; padding: 4px 10px; color: #71717a;"
             title="Sign out"
           >
             Sign out
           </button>
         {:else if !isAuthPage}
-          <a href="/login" class="btn-primary-pill">
+          <a href="/login" class="btn-primary-pill" style="font-size: 12px; padding: 5px 14px;">
             Sign In
           </a>
         {/if}
@@ -138,7 +138,7 @@
 
             {#if collectionsStore.list.length === 0}
               <div class="px-2 py-1 text-xs text-muted">
-                No collections yet.
+                No collections yet
               </div>
             {:else}
               {#each collectionsStore.list as col (col.slug)}
@@ -147,9 +147,7 @@
                   class="shopify-sidebar-link {page.url.pathname.startsWith('/content/' + col.slug) ? 'active' : ''}"
                 >
                   <div class="shopify-sidebar-link-content">
-                    <div class="collection-avatar-badge">
-                      {col.name.charAt(0).toUpperCase()}
-                    </div>
+                    <Icon name={col.icon || 'collection'} size={14} />
                     <span>{col.name}</span>
                   </div>
                 </a>
@@ -159,36 +157,36 @@
 
           <!-- Section 2: Schema Modeler & Media -->
           <div class="shopify-sidebar-section">
-            <h3 class="shopify-sidebar-heading">Models & Assets</h3>
+            <h3 class="shopify-sidebar-heading">Studio</h3>
             <a href="/schemas" class="shopify-sidebar-link {page.url.pathname === '/schemas' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
-                <Icon name="schema" size={16} />
-                <span>Schema Builder</span>
+                <Icon name="schema" size={14} />
+                <span>Schemas</span>
               </div>
             </a>
 
             <a href="/media" class="shopify-sidebar-link {page.url.pathname === '/media' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
-                <Icon name="media" size={16} />
-                <span>Media Library</span>
+                <Icon name="media" size={14} />
+                <span>Media</span>
               </div>
             </a>
           </div>
 
           <!-- Section 3: Distribution & Settings -->
           <div class="shopify-sidebar-section">
-            <h3 class="shopify-sidebar-heading">System</h3>
+            <h3 class="shopify-sidebar-heading">Settings</h3>
             <a href="/api" class="shopify-sidebar-link {page.url.pathname === '/api' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
-                <Icon name="api" size={16} />
-                <span>API Reference</span>
+                <Icon name="api" size={14} />
+                <span>REST API</span>
               </div>
             </a>
 
             <a href="/settings" class="shopify-sidebar-link {page.url.pathname === '/settings' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
-                <Icon name="settings" size={16} />
-                <span>Credentials</span>
+                <Icon name="settings" size={14} />
+                <span>Account</span>
               </div>
             </a>
           </div>
@@ -196,11 +194,8 @@
 
         <!-- Sidebar Footer Status -->
         <div class="sidebar-status-box">
-          <div class="flex items-center gap-1 font-semibold text-dark mb-1">
-            <span class="status-dot-active"></span>
-            <span>Cloudflare Edge</span>
-          </div>
-          <span>D1 SQLite & R2 Storage</span>
+          <span class="status-dot-active"></span>
+          <span>Edge Online</span>
         </div>
       </aside>
 
@@ -215,21 +210,14 @@
     <!-- Auth Screen Container -->
     <main class="auth-screen-container">
       {#if isCheckingAuth && !isAuthPage}
-        <div class="text-center p-12 text-muted text-base">
-          Loading CMS...
+        <div class="text-center p-12 text-muted text-sm">
+          Loading...
         </div>
       {:else}
         {@render children()}
       {/if}
     </main>
   {/if}
-
-  <!-- Footer -->
-  <footer class="app-global-footer">
-    <div class="app-footer-inner">
-      <span>EdgeCMS</span>
-    </div>
-  </footer>
 
   <!-- Universal Confirmation / Alert Modal -->
   <ConfirmModal />

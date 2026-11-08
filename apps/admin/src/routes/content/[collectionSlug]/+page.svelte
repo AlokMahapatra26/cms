@@ -228,26 +228,23 @@
 </svelte:head>
 
 <!-- Header & Controls -->
-<div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
   <div>
-    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-      <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0; letter-spacing: -0.01em;">
-        {collection?.name || 'Collection'}
-      </h1>
-      <span class="collection-badge">
-        /content/{collectionSlug}
-      </span>
-    </div>
-    <p style="font-size: 12.5px; color: #71717a; margin: 0;">
-      {collection?.description || `Manage records for the ${collection?.name || ''} collection.`}
-    </p>
+    <h1 style="font-size: 18px; font-weight: 600; color: #09090b; margin: 0 0 3px 0; letter-spacing: -0.015em;">
+      {collection?.name || 'Collection'}
+    </h1>
+    {#if collection?.description}
+      <p style="font-size: 13px; color: #71717a; margin: 0;">
+        {collection.description}
+      </p>
+    {/if}
   </div>
 
   <div style="display: flex; align-items: center; gap: 8px;">
     <a
       href="/schemas"
       class="btn-outline-pill"
-      style="font-size: 12px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;"
+      style="font-size: 12px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px; color: #52525b;"
       title="Edit schema fields"
     >
       <Icon name="settings" size={13} />
@@ -257,7 +254,7 @@
     <a
       href="/content/{collectionSlug}/new"
       class="btn-primary-pill"
-      style="font-size: 12px; padding: 6px 15px; display: inline-flex; align-items: center; gap: 6px;"
+      style="font-size: 12px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;"
     >
       <Icon name="plus" size={12} />
       <span>New {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}</span>
@@ -265,10 +262,10 @@
   </div>
 </div>
 
-<!-- Toolbar: Filter Tabs + Search Box + JSON Feed -->
+<!-- Toolbar: Filter Tabs + Search Box -->
 {#if items.length > 0}
-  <div class="table-toolbar">
-    <div class="table-toolbar-left">
+  <div class="table-toolbar" style="margin-bottom: 14px;">
+    <div class="table-toolbar-left" style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
       <!-- Status Tabs -->
       <div class="shopify-segmented">
         <button
@@ -292,14 +289,14 @@
       </div>
 
       <!-- Instant Search Input -->
-      <div class="table-search-box">
+      <div class="table-search-box" style="max-width: 260px;">
         <span class="table-search-icon">
-          <Icon name="search" size={14} />
+          <Icon name="search" size={13} />
         </span>
         <input
           type="text"
           class="table-search-input"
-          placeholder="Search records..."
+          placeholder="Search..."
           bind:value={searchQuery}
         />
         {#if searchQuery}
@@ -310,23 +307,11 @@
             title="Clear search"
             aria-label="Clear search"
           >
-            <Icon name="close" size={12} />
+            <Icon name="close" size={11} />
           </button>
         {/if}
       </div>
     </div>
-
-    <!-- Right Controls: JSON Feed -->
-    <a
-      href="http://localhost:8787/api/content/{collectionSlug}"
-      target="_blank"
-      rel="noopener"
-      class="btn-outline-pill"
-      style="font-size: 11px; padding: 3px 8px; color: #71717a;"
-    >
-      <span>JSON Feed</span>
-      <span style="font-size: 9px; opacity: 0.6;">↗</span>
-    </a>
   </div>
 {/if}
 

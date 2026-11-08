@@ -79,53 +79,48 @@
   <title>New {collection?.name || 'Item'} - EdgeCMS</title>
 </svelte:head>
 
-<div style="margin-bottom: 16px;">
-  <div style="margin-bottom: 4px;">
-    <a href="/content/{collectionSlug}" style="font-size: 12px; color: #71717a; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+<div style="margin-bottom: 20px;">
+  <div style="margin-bottom: 6px;">
+    <a href="/content/{collectionSlug}" style="font-size: 12.5px; color: #71717a; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
       <Icon name="arrow-left" size={13} />
-      <span>Back to {collection?.name || 'collection'}</span>
+      <span>{collection?.name || 'Back'}</span>
     </a>
   </div>
-  <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0; letter-spacing: -0.01em;">
-    Create {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}
+  <h1 style="font-size: 18px; font-weight: 600; color: #09090b; margin: 0; letter-spacing: -0.015em;">
+    New {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}
   </h1>
-  <p style="color: #71717a; font-size: 12.5px; margin: 2px 0 0 0;">
-    Add a new dynamic record to the {collection?.name || ''} collection.
-  </p>
 </div>
 
 {#if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 12px 16px; color: #b91c1c; margin-bottom: 16px; font-size: 13px;">
-    <strong>Error:</strong> {error}
+  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 10px 14px; color: #b91c1c; margin-bottom: 16px; font-size: 12.5px;">
+    {error}
   </div>
 {/if}
 
 {#if loading}
-  <div class="shopify-card" style="padding: 48px; text-align: center; color: #71717a; font-size: 13.5px;">
-    Loading dynamic schema form...
+  <div class="shopify-card" style="padding: 40px; text-align: center; color: #71717a; font-size: 13px;">
+    Loading...
   </div>
 {:else if collection}
-  <div class="shopify-card" style="padding: 20px;">
-    <form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 16px;">
+  <div class="shopify-card" style="padding: 24px;">
+    <form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 18px;">
       <!-- Visibility / Status Toggle -->
       <div>
-        <div style="font-size: 12.5px; font-weight: 600; color: #27272a; margin-bottom: 6px;">
-          Visibility Status
-        </div>
+        <div class="form-label" style="margin-bottom: 6px;">Status</div>
         <div class="shopify-segmented">
           <button
             type="button"
             class="shopify-segment-btn {status === 'draft' ? 'active' : ''}"
             onclick={() => (status = 'draft')}
           >
-            Draft (Hidden)
+            Draft
           </button>
           <button
             type="button"
             class="shopify-segment-btn {status === 'published' ? 'active' : ''}"
             onclick={() => (status = 'published')}
           >
-            Published (Live)
+            Published
           </button>
         </div>
       </div>

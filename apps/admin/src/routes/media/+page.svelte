@@ -99,10 +99,10 @@
 <div class="shopify-page-header">
   <div>
     <h1 class="shopify-page-title">
-      Media Library
+      Media
     </h1>
     <p class="shopify-page-subtitle">
-      Assets, cover images, and graphics stored globally on Cloudflare R2.
+      Upload and manage images and assets.
     </p>
   </div>
 
