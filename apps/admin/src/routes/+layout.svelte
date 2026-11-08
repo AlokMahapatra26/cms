@@ -8,11 +8,13 @@
   import type { User } from '@cms/shared';
   import ConfirmModal from '$lib/ConfirmModal.svelte';
   import { Icon } from '$lib/components';
+  import { handleEnterNavigation } from '$lib/form-utils';
 
   let { children } = $props();
 
   let currentUser = $state<User | null>(null);
   let isCheckingAuth = $state(true);
+  let isDark = $state(false);
 
   const isAuthPage = $derived(
     page.url.pathname === '/login' || page.url.pathname === '/setup'
@@ -62,7 +64,21 @@
 
   onMount(() => {
     checkAuth();
+    if (typeof window !== 'undefined') {
+      isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    }
   });
+
+  function toggleTheme() {
+    isDark = !isDark;
+    if (isDark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  }
 
   async function handleLogout() {
     await logout();
@@ -71,17 +87,19 @@
   }
 </script>
 
+<svelte:window onkeydown={handleEnterNavigation} />
+
 <div class="flex flex-col min-h-screen">
-  <!-- Merchant Admin Header -->
+  <!-- Vercel Platform Header -->
   <header class="shopify-header">
     <div class="shopify-nav-inner">
       <!-- Brand Lockup -->
       <a href="/schemas" class="shopify-brand">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="6" fill="#09090b" />
-          <path d="M7 12H17M7 7H17M7 17H13" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="24" height="24" rx="5" fill="var(--color-ink)" />
+          <path d="M7 12H17M7 7H17M7 17H13" stroke="var(--color-canvas)" stroke-width="2" stroke-linecap="round"/>
         </svg>
-        <span style="font-weight: 600; font-size: 14px; color: #09090b; letter-spacing: -0.02em;">EdgeCMS</span>
+        <span>EdgeCMS</span>
       </a>
 
       <!-- Right Action Controls -->
@@ -96,13 +114,12 @@
             <div class="user-avatar-badge">
               {currentUser.name.charAt(0).toUpperCase()}
             </div>
-            <span class="font-medium text-xs text-dark">{currentUser.name}</span>
+            <span class="font-medium text-xs">{currentUser.name}</span>
           </a>
 
           <a
             href="/api"
-            class="btn-outline-pill"
-            style="font-size: 11.5px; padding: 4px 10px; color: #52525b;"
+            class="btn btn-secondary btn-sm"
             title="Headless API"
           >
             <span>API</span>
@@ -111,14 +128,13 @@
 
           <button
             onclick={handleLogout}
-            class="btn-outline-pill"
-            style="font-size: 11.5px; padding: 4px 10px; color: #71717a;"
+            class="btn btn-secondary btn-sm"
             title="Sign out"
           >
             Sign out
           </button>
         {:else if !isAuthPage}
-          <a href="/login" class="btn-primary-pill" style="font-size: 12px; padding: 5px 14px;">
+          <a href="/login" class="btn btn-primary btn-sm">
             Sign In
           </a>
         {/if}
@@ -192,10 +208,23 @@
           </div>
         </div>
 
-        <!-- Sidebar Footer Status -->
-        <div class="sidebar-status-box">
-          <span class="status-dot-active"></span>
-          <span>Edge Online</span>
+        <!-- Sidebar Footer Theme Toggle -->
+        <div class="sidebar-footer-theme">
+          <button
+            type="button"
+            class="sidebar-theme-toggle"
+            onclick={toggleTheme}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle theme"
+          >
+            <div class="sidebar-theme-left">
+              <Icon name={isDark ? "moon" : "sun"} size={13} />
+              <span>{isDark ? "Dark Mode" : "Light Mode"}</span>
+            </div>
+            <div class="theme-switch-track {isDark ? 'active' : ''}">
+              <div class="theme-switch-thumb"></div>
+            </div>
+          </button>
         </div>
       </aside>
 

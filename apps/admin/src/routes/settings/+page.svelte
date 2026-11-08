@@ -96,7 +96,7 @@
         current_password: currentPassword,
         new_password: newPassword
       });
-      passwordSuccess = 'Password updated successfully! Your new password is now active.';
+      passwordSuccess = 'Password updated successfully!';
       currentPassword = '';
       newPassword = '';
       confirmPassword = '';
@@ -109,54 +109,50 @@
 </script>
 
 <svelte:head>
-  <title>Account Settings & Credentials - EdgeCMS</title>
+  <title>Account Settings — EdgeCMS</title>
 </svelte:head>
 
-<div style="margin-bottom: 16px;">
-  <h1 style="font-size: 20px; font-weight: 600; color: #000000; margin: 0 0 2px 0; letter-spacing: -0.01em;">
-    Account & Credentials
-  </h1>
-  <p style="font-size: 12.5px; color: #71717a; margin: 0;">
-    Manage your administrator profile details, login email address, and security password.
-  </p>
+<div class="shopify-page-header">
+  <div>
+    <h1 class="shopify-page-title">
+      Account & Settings
+    </h1>
+    <p class="shopify-page-subtitle">
+      Manage administrator credentials and security settings.
+    </p>
+  </div>
 </div>
 
 {#if loadingUser}
-  <div class="shopify-card" style="padding: 36px; text-align: center; color: #71717a;">
-    <p style="margin: 0; font-size: 13px;">Loading user profile...</p>
+  <div class="shopify-card p-12 text-center text-muted text-sm">
+    Loading user profile...
   </div>
 {:else if user}
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+  <div class="grid grid-cols-2 gap-4">
     
     <!-- Profile Card -->
-    <div class="shopify-card" style="padding: 20px;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-        <div>
-          <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 2px 0;">Profile Credentials</h2>
-          <p style="font-size: 12px; color: #71717a; margin: 0;">Update your display name and login email.</p>
-        </div>
-        <span style="background-color: var(--color-aloe); color: #043e1d; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 9999px; letter-spacing: 0.04em;">
-          {user.role}
-        </span>
+    <div class="shopify-card">
+      <div class="mb-4">
+        <h2 class="text-base font-semibold m-0 mb-1">Profile Credentials</h2>
+        <p class="text-xs text-muted m-0">Update your display name and login email.</p>
       </div>
 
       {#if profileSuccess}
-        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <Icon name="check" size={16} />
+        <div class="info-callout mb-4 flex items-center gap-2 text-success">
+          <Icon name="check" size={14} />
           <span>{profileSuccess}</span>
         </div>
       {/if}
 
       {#if profileError}
-        <div style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <Icon name="warning" size={16} />
-          <span>{profileError}</span>
+        <div class="error-banner mb-4">
+          {profileError}
         </div>
       {/if}
 
-      <form onsubmit={handleProfileSubmit} style="display: flex; flex-direction: column; gap: 18px;">
+      <form onsubmit={handleProfileSubmit} class="flex flex-col gap-4">
         <div>
-          <label for="profile-name" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
+          <label for="profile-name" class="form-label">
             Full Name
           </label>
           <input
@@ -170,7 +166,7 @@
         </div>
 
         <div>
-          <label for="profile-email" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
+          <label for="profile-email" class="form-label">
             Email Address (Login ID)
           </label>
           <input
@@ -181,16 +177,15 @@
             required
             placeholder="admin@example.com"
           />
-          <p style="font-size: 12px; color: #71717a; margin: 4px 0 0 0;">
+          <p class="field-hint">
             This email is used to sign into EdgeCMS.
           </p>
         </div>
 
-        <div style="padding-top: 6px;">
+        <div class="pt-2">
           <button
             type="submit"
-            class="btn-primary-pill"
-            style="font-size: 13px; padding: 9px 20px;"
+            class="btn btn-primary"
             disabled={savingProfile}
           >
             {savingProfile ? 'Saving Changes...' : 'Save Profile Changes'}
@@ -200,29 +195,28 @@
     </div>
 
     <!-- Password Card -->
-    <div class="shopify-card" style="padding: 20px;">
-      <div style="margin-bottom: 16px;">
-        <h2 style="font-size: 15px; font-weight: 600; margin: 0 0 2px 0;">Change Password</h2>
-        <p style="font-size: 12px; color: #71717a; margin: 0;">Update your edge-encrypted master password.</p>
+    <div class="shopify-card">
+      <div class="mb-4">
+        <h2 class="text-base font-semibold m-0 mb-1">Change Password</h2>
+        <p class="text-xs text-muted m-0">Update your edge-encrypted master password.</p>
       </div>
 
       {#if passwordSuccess}
-        <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <Icon name="check" size={16} />
+        <div class="info-callout mb-4 flex items-center gap-2 text-success">
+          <Icon name="check" size={14} />
           <span>{passwordSuccess}</span>
         </div>
       {/if}
 
       {#if passwordError}
-        <div style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <Icon name="warning" size={16} />
-          <span>{passwordError}</span>
+        <div class="error-banner mb-4">
+          {passwordError}
         </div>
       {/if}
 
-      <form onsubmit={handlePasswordSubmit} style="display: flex; flex-direction: column; gap: 18px;">
+      <form onsubmit={handlePasswordSubmit} class="flex flex-col gap-4">
         <div>
-          <label for="current-pw" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
+          <label for="current-pw" class="form-label">
             Current Password
           </label>
           <input
@@ -237,7 +231,7 @@
         </div>
 
         <div>
-          <label for="new-pw" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
+          <label for="new-pw" class="form-label">
             New Password (min 6 characters)
           </label>
           <input
@@ -253,7 +247,7 @@
         </div>
 
         <div>
-          <label for="confirm-pw" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">
+          <label for="confirm-pw" class="form-label">
             Confirm New Password
           </label>
           <input
@@ -267,11 +261,10 @@
           />
         </div>
 
-        <div style="padding-top: 6px;">
+        <div class="pt-2">
           <button
             type="submit"
-            class="btn-primary-pill"
-            style="font-size: 13px; padding: 9px 20px;"
+            class="btn btn-primary"
             disabled={savingPassword}
           >
             {savingPassword ? 'Updating Password...' : 'Update Password'}
@@ -282,4 +275,3 @@
 
   </div>
 {/if}
-

@@ -50,38 +50,38 @@
 </script>
 
 <svelte:head>
-  <title>Sign In - EdgeCMS</title>
+  <title>Sign In — EdgeCMS</title>
 </svelte:head>
 
-<div style="max-width: 420px; margin: 40px auto 80px auto;">
+<div class="auth-screen-container">
   {#if checkingSetup}
-    <div style="text-align: center; padding: 40px; color: var(--color-shade-50); font-size: 14px;">
+    <div class="text-center p-12 text-muted text-sm">
       Checking system status...
     </div>
   {:else}
-    <!-- Brand badge -->
-    <div style="text-align: center; margin-bottom: 28px;">
-      <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #000000; border-radius: 12px; margin-bottom: 16px;">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M14 6C12.3431 6 11 7.34315 11 9H9C8.44772 9 8 9.44772 8 10V20C8 20.5523 8.44772 21 9 21H19C19.5523 21 20 20.5523 20 20V10C20 9.44772 19.5523 9 19 9H17C17 7.34315 15.6569 6 14 6ZM14 7.5C14.8284 7.5 15.5 8.17157 15.5 9H12.5C12.5 8.17157 13.1716 7.5 14 7.5ZM9.5 10.5H18.5V19.5H9.5V10.5Z" fill="#C1FBD4" />
+    <!-- Brand lockup -->
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-10 h-10 bg-dark rounded-md mb-3">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="24" height="24" rx="5" fill="#171717" />
+          <path d="M7 12H17M7 7H17M7 17H13" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </div>
-      <h1 style="font-size: 26px; font-weight: 700; margin: 0 0 6px 0; letter-spacing: -0.02em;">Sign in to EdgeCMS</h1>
-      <p style="color: var(--color-shade-50); font-size: 14px; margin: 0;">Cloudflare Edge Headless Content Management</p>
+      <h1 class="text-xl font-semibold m-0 mb-1 tracking-tight">Sign in to EdgeCMS</h1>
+      <p class="text-muted text-xs m-0">Cloudflare Edge Headless Content Platform</p>
     </div>
 
     <!-- Login Card -->
-    <div class="shopify-card" style="padding: 28px;">
+    <div class="shopify-card">
       {#if error}
-        <div style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <Icon name="warning" size={16} />
-          <span>{error}</span>
+        <div class="error-banner mb-4">
+          {error}
         </div>
       {/if}
 
-      <form onsubmit={handleLogin} style="display: flex; flex-direction: column; gap: 18px;">
+      <form onsubmit={handleLogin} class="flex flex-col gap-4">
         <div>
-          <label for="email" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Email address</label>
+          <label for="email" class="form-label">Email Address</label>
           <input
             id="email"
             type="email"
@@ -94,9 +94,7 @@
         </div>
 
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <label for="password" style="font-size: 13px; font-weight: 600;">Password</label>
-          </div>
+          <label for="password" class="form-label">Password</label>
           <input
             id="password"
             type="password"
@@ -110,8 +108,7 @@
 
         <button
           type="submit"
-          class="btn-primary-pill"
-          style="width: 100%; justify-content: center; padding: 11px 20px; font-size: 14px; margin-top: 6px;"
+          class="btn btn-primary w-full mt-2"
           disabled={loading}
         >
           {loading ? 'Signing in...' : 'Sign In'}
@@ -120,10 +117,9 @@
     </div>
 
     <!-- Security notice -->
-    <div style="margin-top: 24px; text-align: center; font-size: 12px; color: var(--color-shade-50); display: flex; align-items: center; justify-content: center; gap: 6px;">
-      <Icon name="lock" size={14} />
-      <span>Protected by Cloudflare edge session tokens & Web Crypto PBKDF2</span>
+    <div class="mt-6 text-center text-xs text-muted flex items-center justify-center gap-1.5 font-mono">
+      <Icon name="lock" size={13} />
+      <span>Edge session tokens & Web Crypto PBKDF2</span>
     </div>
   {/if}
 </div>
-

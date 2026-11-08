@@ -94,45 +94,33 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
       Query and distribute dynamic schema records, media assets, and collections worldwide.
     </p>
   </div>
-
-  <div class="flex items-center gap-2">
-    <span class="pill-tag-mint">
-      Edge Global: Online
-    </span>
-    <span class="field-badge">
-      Hono v4
-    </span>
-  </div>
 </div>
 
 <!-- Public Edge Endpoints -->
 <div class="mb-6">
-  <div class="flex justify-between items-center mb-3">
-    <div>
-      <h2 class="text-base font-semibold text-dark m-0">Public Delivery Endpoints</h2>
-      <p class="text-xs text-muted m-0">No API key required. High-speed cache on Cloudflare edge.</p>
-    </div>
-    <span class="pill-tag-mint">Public / CDN Cached</span>
+  <div class="mb-3">
+    <h2 class="text-base font-semibold text-dark m-0">Public Delivery Endpoints</h2>
+    <p class="text-xs text-muted m-0">No API key required. High-speed cache on Cloudflare edge.</p>
   </div>
 
   <div class="shopify-table-container">
     <table class="shopify-table">
       <thead>
         <tr>
-          <th style="width: 80px;">Method</th>
-          <th>Endpoint</th>
+          <th class="col-method">Method</th>
+          <th class="col-endpoint">Endpoint</th>
           <th>Description</th>
-          <th class="text-right">Action</th>
+          <th class="col-actions">Action</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>
-            <span class="pill-tag-mint">GET</span>
+            <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/content/:collectionSlug</code>
-            <div style="font-size: 11px; color: #71717a; margin-top: 2px;">
+            <div class="text-xs text-muted mt-1 font-mono">
               Query params: <code>?page</code>, <code>?limit</code>, <code>?sort</code>, <code>?order</code>, <code>?search</code>
             </div>
           </td>
@@ -141,7 +129,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td class="text-right">
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/content/:collectionSlug`, 'content-list')}
             >
               {copied === 'content-list' ? 'Copied!' : 'Copy URL'}
@@ -151,7 +139,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
 
         <tr>
           <td>
-            <span class="pill-tag-mint">GET</span>
+            <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/content/:collectionSlug/:id</code>
@@ -161,7 +149,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td class="text-right">
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/content/:collectionSlug/:id`, 'content-single')}
             >
               {copied === 'content-single' ? 'Copied!' : 'Copy URL'}
@@ -171,7 +159,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
 
         <tr>
           <td>
-            <span class="pill-tag-mint">GET</span>
+            <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/media/*</code>
@@ -181,7 +169,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td class="text-right">
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/media/`, 'media')}
             >
               {copied === 'media' ? 'Copied!' : 'Copy URL'}
@@ -195,28 +183,25 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
 
 <!-- Authenticated Management Endpoints -->
 <div class="mb-6">
-  <div class="flex justify-between items-center mb-3">
-    <div>
-      <h2 class="text-base font-semibold text-dark m-0">Authenticated Admin Endpoints</h2>
-      <p class="text-xs text-muted m-0">Manage schemas, write drafts, and upload files.</p>
-    </div>
-    <span class="pill-tag-gray">Requires Bearer Token</span>
+  <div class="mb-3">
+    <h2 class="text-base font-semibold text-dark m-0">Authenticated Admin Endpoints</h2>
+    <p class="text-xs text-muted m-0">Bearer token required. Manage schemas, write drafts, and upload files.</p>
   </div>
 
   <div class="shopify-table-container">
     <table class="shopify-table">
       <thead>
         <tr>
-          <th style="width: 80px;">Method</th>
-          <th>Endpoint</th>
+          <th class="col-method">Method</th>
+          <th class="col-endpoint">Endpoint</th>
           <th>Description</th>
-          <th class="text-right">Action</th>
+          <th class="col-actions">Action</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>
-            <span class="pill-tag-gray">POST</span>
+            <span class="font-mono text-xs font-semibold text-dark">POST</span>
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/auth/login</code>
@@ -226,7 +211,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td class="text-right">
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/auth/login`, 'auth-login')}
             >
               {copied === 'auth-login' ? 'Copied!' : 'Copy URL'}
@@ -235,7 +220,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
         </tr>
         <tr>
           <td>
-            <span class="pill-tag-gray">GET</span>
+            <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/admin/collections</code>
@@ -245,7 +230,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td class="text-right">
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/admin/collections`, 'admin-collections')}
             >
               {copied === 'admin-collections' ? 'Copied!' : 'Copy URL'}
@@ -254,7 +239,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
         </tr>
         <tr>
           <td>
-            <span class="pill-tag-gray">POST</span>
+            <span class="font-mono text-xs font-semibold text-dark">POST</span>
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/admin/collections</code>
@@ -264,7 +249,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td class="text-right">
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/admin/collections`, 'admin-create-col')}
             >
               {copied === 'admin-create-col' ? 'Copied!' : 'Copy URL'}
@@ -273,7 +258,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
         </tr>
         <tr>
           <td>
-            <span class="pill-tag-gray">GET</span>
+            <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/admin/content/:collectionSlug</code>
@@ -283,7 +268,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td class="text-right">
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/admin/content/:collectionSlug`, 'admin-content-list')}
             >
               {copied === 'admin-content-list' ? 'Copied!' : 'Copy URL'}
@@ -292,7 +277,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
         </tr>
         <tr>
           <td>
-            <span class="pill-tag-gray">POST</span>
+            <span class="font-mono text-xs font-semibold text-dark">POST</span>
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/admin/content/:collectionSlug</code>
@@ -302,7 +287,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td class="text-right">
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/admin/content/:collectionSlug`, 'admin-create-item')}
             >
               {copied === 'admin-create-item' ? 'Copied!' : 'Copy URL'}
@@ -311,7 +296,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
         </tr>
         <tr>
           <td>
-            <span class="pill-tag-gray">POST</span>
+            <span class="font-mono text-xs font-semibold text-dark">POST</span>
           </td>
           <td>
             <code class="font-semibold text-dark text-sm">/api/admin/upload</code>
@@ -321,7 +306,7 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
           </td>
           <td class="text-right">
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               onclick={() => copyToClipboard(`${API_BASE}/api/admin/upload`, 'admin-upload')}
             >
               {copied === 'admin-upload' ? 'Copied!' : 'Copy URL'}

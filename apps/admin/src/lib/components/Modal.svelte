@@ -29,12 +29,6 @@
       onclose?.();
     }
   }
-
-  function onBackdropClick(e: MouseEvent) {
-    if (e.target === e.currentTarget) {
-      onclose?.();
-    }
-  }
 </script>
 
 <svelte:window onkeydown={onKeyDown} />
@@ -43,7 +37,6 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="modal-backdrop"
-    onclick={onBackdropClick}
     role="presentation"
   >
     <div

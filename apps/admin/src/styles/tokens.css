@@ -1,54 +1,138 @@
 /* ==========================================================================
-   Design Tokens & CSS Variables - Modern Minimal SaaS
+   Vercel Geist Design Tokens & CSS Variables
+   Strictly following DESIGN.md
    ========================================================================== */
 
 :root {
-  /* Brand & Theme Colors */
-  --color-primary: #09090b;
-  --color-ink: #09090b;
+  /* Typography */
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Vercel Colors: Ink & Surfaces */
+  --color-primary: #171717;
   --color-on-primary: #ffffff;
-  --color-canvas-light: #ffffff;
+  --color-ink: #171717;
+  --color-body: #4d4d4d;
+  --color-mute: #8f8f8f;
+  --color-faint: #a1a1a1;
+  --color-hairline: #ebebeb;
+  --color-hairline-soft: #f2f2f2;
+  --color-canvas: #fafafa;
   --color-canvas-cream: #fafafa;
-  /* Crisp modern neutral canvas */
-  --color-aloe: #10b981;
-  --color-aloe-hover: #059669;
-  --color-aloe-text: #ffffff;
-  --color-pistachio: #ecfdf5;
+  --color-canvas-light: #ffffff;
+  --color-canvas-elevated: #ffffff;
 
-  /* Neutral Shades */
-  --color-shade-10: #fafafa;
-  --color-shade-20: #f4f4f5;
-  --color-shade-30: #e4e4e7;
-  --color-shade-40: #a1a1aa;
-  --color-shade-50: #71717a;
-  --color-shade-60: #52525b;
-  --color-shade-70: #27272a;
-  --color-hairline: #eaeaea;
+  /* Accent & Link (Vercel Blue) */
+  --color-link: #0070f3;
+  --color-link-deep: #0761d1;
+  --color-link-soft: #d3e5ff;
 
-  /* Semantic Colors */
-  --color-danger-bg: #fef2f2;
-  --color-danger-border: #fee2e2;
-  --color-danger-text: #dc2626;
-  --color-danger-hover: #b91c1c;
+  /* Semantic State Colors */
+  --color-error: #ee0000;
+  --color-error-deep: #c50000;
+  --color-error-soft: #fff0f0;
+  --color-danger-bg: #fff0f0;
+  --color-danger-border: #ffd6d6;
+  --color-danger-text: #ee0000;
+  --color-danger-hover: #c50000;
 
+  --color-warning: #f5a623;
+  --color-warning-soft: #ffefcf;
+  --color-warning-deep: #ab570a;
   --color-warning-bg: #fffbeb;
   --color-warning-border: #fef3c7;
-  --color-warning-text: #d97706;
+  --color-warning-text: #ab570a;
 
+  --color-success: #171717;
   --color-success-bg: #f0fdf4;
   --color-success-border: #dcfce7;
   --color-success-text: #16a34a;
 
-  /* Radii */
+  /* Legacy Shade mappings pointing to crisp Vercel palette */
+  --color-shade-10: #fafafa;
+  --color-shade-20: #f5f5f5;
+  --color-shade-30: #ebebeb;
+  --color-shade-40: #a1a1a1;
+  --color-shade-50: #8f8f8f;
+  --color-shade-60: #4d4d4d;
+  --color-shade-70: #171717;
+
+  /* Vercel Radii: 6px for UI/app controls, 12px for cards/dialogs */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
-  --radius-pill: 9999px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 100px;
+  --radius-full: 9999px;
 
-  /* Elevation & Shadows - Subtle & Airy */
-  --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --shadow-dialog: 0 20px 32px -8px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
-  --shadow-popover: 0 8px 16px -4px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+  /* Vercel Whisper Elevation & Shadows */
+  --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-card-elevated: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-dialog: 0 4px 24px -2px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-popover: 0 4px 14px 0 rgba(0, 0, 0, 0.08);
+
+  /* Transitions */
+  --transition-fast: 0.12s ease;
+  --transition-normal: 0.15s ease;
+}
+
+/* ==========================================================================
+   Vercel Geist Dark Theme Tokens - True Solid Black (#000000) OLED Architecture
+   ========================================================================== */
+[data-theme="dark"] {
+  /* Solid Black Surfaces & Contrasting Ink */
+  --color-primary: #ffffff;
+  --color-on-primary: #000000;
+  --color-ink: #ffffff;
+  --color-body: #a1a1a1;
+  --color-mute: #666666;
+  --color-faint: #333333;
+  --color-hairline: #222222;
+  --color-hairline-soft: #111111;
+  --color-canvas: #000000;
+  --color-canvas-cream: #000000;
+  --color-canvas-light: #000000;
+  --color-canvas-elevated: #000000;
+
+  /* Accent & Link (Vercel Blue) */
+  --color-link: #0070f3;
+  --color-link-deep: #3291ff;
+  --color-link-soft: #081a2e;
+
+  /* Semantic State Colors - Pure neutral-dark backgrounds */
+  --color-error: #f87171;
+  --color-error-deep: #ef4444;
+  --color-error-soft: #140505;
+  --color-danger-bg: #140505;
+  --color-danger-border: #381212;
+  --color-danger-text: #f87171;
+  --color-danger-hover: #ef4444;
+
+  --color-warning: #f5a623;
+  --color-warning-soft: #140e00;
+  --color-warning-deep: #facc15;
+  --color-warning-bg: #140e00;
+  --color-warning-border: #382400;
+  --color-warning-text: #fbbf24;
+
+  --color-success: #ffffff;
+  --color-success-bg: #03140a;
+  --color-success-border: #093318;
+  --color-success-text: #4ade80;
+
+  /* Legacy Shade mappings */
+  --color-shade-10: #000000;
+  --color-shade-20: #0a0a0a;
+  --color-shade-30: #1a1a1a;
+  --color-shade-40: #333333;
+  --color-shade-50: #666666;
+  --color-shade-60: #a1a1a1;
+  --color-shade-70: #ffffff;
+
+  /* Crisp Hairline Definition for Solid Black Backdrop */
+  --shadow-card: 0 0 0 1px #222222;
+  --shadow-card-elevated: 0 0 0 1px #333333, 0 8px 24px rgba(0, 0, 0, 0.9);
+  --shadow-dialog: 0 0 0 1px #333333, 0 20px 50px rgba(0, 0, 0, 0.95);
+  --shadow-popover: 0 0 0 1px #2a2a2a, 0 8px 24px rgba(0, 0, 0, 0.9);
 }

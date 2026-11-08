@@ -62,32 +62,32 @@ const canonicalUrl = post?.canonical_url || undefined;
   publishedTime={post?.created_at}
 >
   <div style="margin-bottom: 24px;">
-    <a href="/" class="btn-outline-pill" style="font-size: 13px; padding: 6px 16px;">
+    <a href="/" class="btn-ghost">
       &larr; Back to articles
     </a>
   </div>
 
   {!post ? (
-    <div style="background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 12px; padding: 64px 24px; text-align: center;">
-      <h2 style="font-size: 22px; font-weight: 600; margin: 0 0 8px 0;">Article Not Found</h2>
-      <p style="color: #71717a; margin: 0;">The article "<code>{slug}</code>" could not be found or is not published yet.</p>
+    <div style="background-color: var(--color-canvas-elevated); border: 1px solid var(--color-hairline); border-radius: var(--radius-md); padding: 64px 24px; text-align: center;">
+      <h2 style="font-size: 20px; font-weight: 600; margin: 0 0 8px 0; color: var(--color-ink);">Article Not Found</h2>
+      <p style="color: var(--color-mute); margin: 0; font-size: 14px;">The article "<code>{slug}</code>" could not be found or is not published yet.</p>
     </div>
   ) : (
-    <article style="background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);">
+    <article style="background-color: var(--color-canvas-elevated); border: 1px solid var(--color-hairline); border-radius: var(--radius-md); padding: 40px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
       <header style="margin-bottom: 28px;">
         <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
-          <span class="pill-tag-mint">Published</span>
-          <span style="font-size: 13px; color: #71717a;">
+          <span class="badge-published">PUBLISHED</span>
+          <span style="font-size: 12px; color: var(--color-mute); font-family: var(--font-mono);">
             {new Date(post.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
           </span>
         </div>
-        <h1 style="font-size: 36px; font-weight: 500; color: #000000; margin: 0; line-height: 1.2; letter-spacing: -0.01em;">
+        <h1 style="font-size: 32px; font-weight: 600; color: var(--color-ink); margin: 0; line-height: 1.25; letter-spacing: -1.28px;">
           {post.title}
         </h1>
       </header>
 
       {post.cover_image && (
-        <div style="margin: 28px 0; border-radius: 12px; overflow: hidden; border: 1px solid #e4e4e7; background-color: #f4f4f5;">
+        <div style="margin: 28px 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--color-hairline); background-color: var(--color-hairline-soft);">
           <img
             src={post.cover_image}
             alt={post.title}
@@ -97,14 +97,14 @@ const canonicalUrl = post?.canonical_url || undefined;
       )}
 
       {post.excerpt && (
-        <div style="margin: 20px 0 28px 0; padding: 18px 24px; background-color: #fbfbf5; border: 1px solid #e4e4e7; border-radius: 12px; font-size: 16px; color: #3f3f46; line-height: 1.5;">
+        <div style="margin: 20px 0 28px 0; padding: 16px 20px; background-color: var(--color-canvas); border: 1px solid var(--color-hairline); border-radius: 6px; font-size: 15px; color: var(--color-body); line-height: 1.5;">
           {post.excerpt}
         </div>
       )}
 
       <div
         class="prose-content"
-        style="line-height: 1.7; font-size: 16px; color: #000000;"
+        style="line-height: 1.7; font-size: 15px; color: var(--color-body);"
         set:html={htmlContent}
       />
     </article>
@@ -116,8 +116,8 @@ const canonicalUrl = post?.canonical_url || undefined;
   .prose-content h2,
   .prose-content h3 {
     font-weight: 600;
-    color: #000000;
-    letter-spacing: -0.01em;
+    color: var(--color-ink);
+    letter-spacing: -0.4px;
     margin-top: 36px;
     margin-bottom: 14px;
   }
@@ -125,40 +125,43 @@ const canonicalUrl = post?.canonical_url || undefined;
     margin: 16px 0;
   }
   .prose-content code {
-    background-color: #f4f4f5;
-    padding: 3px 7px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background-color: var(--color-hairline-soft);
+    color: var(--color-ink);
+    border: 1px solid var(--color-hairline);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: var(--font-mono);
   }
   .prose-content pre {
-    background-color: #000000;
+    background-color: #171717;
     color: #f4f4f5;
-    padding: 20px;
-    border-radius: 12px;
+    padding: 16px 20px;
+    border-radius: 6px;
+    border: 1px solid #333333;
     overflow-x: auto;
   }
   .prose-content pre code {
     background-color: transparent;
+    border: none;
     padding: 0;
     color: inherit;
   }
   .prose-content img {
     max-width: 100%;
     height: auto;
-    border-radius: 12px;
+    border-radius: 6px;
     margin: 24px 0;
-    border: 1px solid #e4e4e7;
+    border: 1px solid var(--color-hairline);
     display: block;
   }
   .prose-content blockquote {
-    border-left: 4px solid #c1fbd4;
+    border-left: 2px solid var(--color-ink);
     padding: 8px 18px;
     margin: 24px 0;
-    font-style: italic;
-    color: #52525b;
-    background-color: #fbfbf5;
-    border-radius: 0 8px 8px 0;
+    color: var(--color-body);
+    background-color: var(--color-canvas);
+    border-radius: 0 4px 4px 0;
   }
   .prose-content ul,
   .prose-content ol {

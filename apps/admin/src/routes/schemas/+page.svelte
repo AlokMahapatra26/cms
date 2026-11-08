@@ -105,9 +105,8 @@
     newFieldKey = newFieldLabel
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '_')
-      .replace(/^_+|_+$/g, '');
+      .replace(/[^\w\s]/g, '')
+      .replace(/[\s_-]+/g, '_');
   }
 
   function openCreateModal() {
@@ -117,22 +116,10 @@
     modelDescription = '';
     modelIcon = 'schema';
     modelFields = [
-      {
-        id: `f_${Date.now()}_1`,
-        key: 'title',
-        label: 'Title',
-        type: 'text',
-        required: true,
-        placeholder: 'e.g. Item title'
-      }
+      { id: crypto.randomUUID(), key: 'title', label: 'Title', type: 'text', required: true }
     ];
-    newFieldLabel = '';
-    newFieldKey = '';
-    newFieldType = 'text';
-    newFieldRequired = false;
-    newFieldPlaceholder = '';
-    newFieldOptions = '';
     modalError = null;
+    resetFieldInputs();
     modalOpen = true;
   }
 
@@ -142,60 +129,63 @@
     modelSlug = col.slug;
     modelDescription = col.description || '';
     modelIcon = col.icon || 'schema';
-    modelFields = JSON.parse(JSON.stringify(col.fields || []));
-    newFieldLabel = '';
-    newFieldKey = '';
-    newFieldType = 'text';
-    newFieldRequired = false;
-    newFieldPlaceholder = '';
-    newFieldOptions = '';
+    modelFields = (col.fields || []).map((f) => ({
+      ...f,
+      id: f.id || crypto.randomUUID()
+    }));
     modalError = null;
+    resetFieldInputs();
     modalOpen = true;
   }
 
-  function addFieldToModel() {
-    if (!newFieldLabel.trim() || !newFieldKey.trim()) {
-      return;
-    }
-
-    if (modelFields.some((f) => f.key === newFieldKey.trim())) {
-      modalError = `Field key "${newFieldKey}" already exists in this schema`;
-      return;
-    }
-
-    const field: FieldDefinition = {
-      id: `f_${Date.now()}`,
-      key: newFieldKey.trim(),
-      label: newFieldLabel.trim(),
-      type: newFieldType,
-      required: newFieldRequired,
-      placeholder: newFieldPlaceholder.trim() || undefined,
-      options:
-        newFieldType === 'select'
-          ? newFieldOptions
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : undefined
-    };
-
-    modelFields = [...modelFields, field];
+  function resetFieldInputs() {
     newFieldLabel = '';
     newFieldKey = '';
     newFieldType = 'text';
     newFieldRequired = false;
     newFieldPlaceholder = '';
     newFieldOptions = '';
+  }
+
+  function addFieldToModel() {
+    if (!newFieldLabel.trim()) {
+      modalError = 'Field label is required';
+      return;
+    }
+    if (!newFieldKey.trim()) {
+      modalError = 'Field key (API property name) is required';
+      return;
+    }
+
+    const key = newFieldKey.trim().toLowerCase();
+    if (modelFields.some((f) => f.key === key)) {
+      modalError = `Field with key "${key}" already exists in this schema`;
+      return;
+    }
+
+    const newField: FieldDefinition = {
+      id: crypto.randomUUID(),
+      key,
+      label: newFieldLabel.trim(),
+      type: newFieldType,
+      required: newFieldRequired,
+      placeholder: newFieldPlaceholder.trim() || undefined
+    };
+
+    if (newFieldType === 'select' && newFieldOptions.trim()) {
+      newField.options = newFieldOptions
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean);
+    }
+
+    modelFields = [...modelFields, newField];
+    resetFieldInputs();
     modalError = null;
   }
 
-  function removeField(id: string) {
-    if (modelFields.length <= 1) {
-      modalError = 'A schema must have at least one field.';
-      return;
-    }
-    modelFields = modelFields.filter((f) => f.id !== id);
-    modalError = null;
+  function removeField(fieldId: string) {
+    modelFields = modelFields.filter((f) => f.id !== fieldId);
   }
 
   async function handleSaveModel(e: Event) {
@@ -308,25 +298,24 @@ ${fieldLines}
 </script>
 
 <svelte:head>
-  <title>Schema Builder - EdgeCMS</title>
+  <title>Schema Builder — EdgeCMS</title>
 </svelte:head>
 
 <!-- Header & Controls -->
-<div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+<div class="shopify-page-header">
   <div>
-    <h1 style="font-size: 18px; font-weight: 600; color: #09090b; margin: 0 0 3px 0; letter-spacing: -0.015em;">
+    <h1 class="shopify-page-title">
       Schemas
     </h1>
-    <p style="font-size: 13px; color: #71717a; margin: 0;">
-      Define and manage your content models and database schemas.
+    <p class="shopify-page-subtitle">
+      Define and manage content models and database schemas.
     </p>
   </div>
 
-  <div style="display: flex; align-items: center; gap: 8px;">
+  <div class="flex items-center gap-2">
     <button
       type="button"
-      class="btn-outline-pill"
-      style="font-size: 12px; padding: 5px 12px; color: #52525b;"
+      class="btn btn-secondary btn-sm"
       onclick={handleSync}
       disabled={syncing}
       title="Re-read cms.config.ts and sync collections to database"
@@ -337,8 +326,7 @@ ${fieldLines}
 
     <button
       type="button"
-      class="btn-primary-pill"
-      style="font-size: 12px; padding: 6px 14px;"
+      class="btn btn-primary btn-sm"
       onclick={openCreateModal}
     >
       <Icon name="plus" size={12} />
@@ -348,89 +336,87 @@ ${fieldLines}
 </div>
 
 {#if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 12px 16px; color: #b91c1c; margin-bottom: 20px; font-size: 13px;">
+  <div class="error-banner mb-4">
     {error}
   </div>
 {/if}
 
 <!-- Collection Cards Grid -->
 {#if loading}
-  <div class="shopify-card" style="padding: 48px; text-align: center; color: #71717a; font-size: 13.5px;">
+  <div class="shopify-card p-12 text-center text-muted text-sm">
     Loading schemas...
   </div>
 {:else if collections.length === 0}
-  <div class="shopify-card" style="padding: 56px 20px; text-align: center;">
-    <div style="width: 48px; height: 48px; border-radius: 12px; background: #f4f4f5; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #71717a;">
+  <div class="shopify-card p-12 text-center">
+    <div class="media-empty-icon">
       <Icon name="schema" size={24} />
     </div>
-    <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 6px 0;">No schemas created yet</h3>
-    <p style="color: #71717a; font-size: 13px; max-width: 420px; margin: 0 auto 18px auto;">
+    <h3 class="text-base font-semibold mb-2">No schemas created yet</h3>
+    <p class="text-muted text-sm max-w-md mx-auto mb-4">
       Create your first collection schema visually using the studio builder or sync from <code>cms.config.ts</code>.
     </p>
-    <div style="display: flex; justify-content: center; gap: 8px;">
-      <button type="button" class="btn-primary-pill" onclick={openCreateModal}>
+    <div class="flex justify-center gap-2">
+      <button type="button" class="btn btn-primary" onclick={openCreateModal}>
         Create New Schema
       </button>
-      <button type="button" class="btn-outline-pill" onclick={handleSync}>
+      <button type="button" class="btn btn-secondary" onclick={handleSync}>
         Sync cms.config.ts
       </button>
     </div>
   </div>
 {:else}
-  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px;">
+  <div class="schema-cards-grid">
     {#each collections as col (col.id)}
-      <div class="shopify-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <div class="schema-item-card">
         <div>
           <!-- Card Header -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div style="display: flex; align-items: center; gap: 9px;">
-              <div style="width: 30px; height: 30px; border-radius: 6px; background: #f4f4f5; color: #18181b; display: flex; align-items: center; justify-content: center;">
+          <div class="schema-card-header">
+            <div class="schema-card-identity">
+              <div class="schema-card-avatar">
                 <Icon name={col.icon || 'schema'} size={15} />
               </div>
-              <h3 style="font-size: 14.5px; font-weight: 600; color: #09090b; margin: 0;">
+              <h3 class="schema-card-title">
                 {col.name}
               </h3>
             </div>
 
-            <span style="font-size: 12px; color: #71717a;">
+            <span class="schema-card-badge">
               {col.fields?.length || 0} fields
             </span>
           </div>
 
           <!-- Description -->
           {#if col.description}
-            <p style="font-size: 12.5px; color: #52525b; margin: 0 0 12px 0; line-height: 1.4;">
+            <p class="schema-card-desc">
               {col.description}
             </p>
           {/if}
 
           <!-- Fields Badges -->
-          <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 16px;">
+          <div class="schema-fields-list">
             {#each (col.fields || []) as field}
-              <span class="field-badge" title="{field.label} ({field.type})">
-                <strong style="color: #18181b;">{field.key}</strong>
-                <span style="opacity: 0.6; font-size: 10.5px;">({field.type})</span>
+              <span class="schema-field-chip" title="{field.label} ({field.type})">
+                <span class="schema-field-chip-key">{field.key}</span>
+                <span class="schema-field-chip-type">({field.type})</span>
               </span>
             {/each}
           </div>
         </div>
 
-        <!-- Card Footer Actions: 32px pill buttons -->
-        <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--color-hairline); gap: 6px;">
+        <!-- Card Footer Actions -->
+        <div class="schema-card-footer">
           <a
             href="/content/{col.slug}"
-            class="btn-primary-pill"
-            style="font-size: 12px; padding: 5px 12px;"
+            class="btn btn-primary btn-sm"
           >
             <span>Manage Content</span>
-            <span style="font-size: 10px;">→</span>
+            <span>&rarr;</span>
           </a>
 
-          <div style="display: flex; align-items: center; gap: 6px;">
+          <div class="schema-card-actions-group">
             <button
               type="button"
-              class="btn-outline-pill"
-              style="font-size: 11.5px; padding: 4px 10px;"
+              class="btn btn-secondary btn-sm"
               onclick={() => openEditModal(col)}
               title="Edit schema visually"
             >
@@ -440,8 +426,7 @@ ${fieldLines}
 
             <button
               type="button"
-              class="btn-outline-pill"
-              style="font-size: 11.5px; padding: 4px 8px;"
+              class="btn btn-secondary btn-sm"
               onclick={() => openCodeModal(col)}
               title="View TypeScript definition"
             >
@@ -451,12 +436,11 @@ ${fieldLines}
 
             <button
               type="button"
-              class="btn-danger-outline-pill"
-              style="font-size: 11.5px; padding: 4px 8px;"
+              class="btn btn-danger btn-sm"
               onclick={() => handleDelete(col)}
               title="Delete collection"
             >
-              <Icon name="trash" size={11} />
+              <Icon name="trash" size={12} />
             </button>
           </div>
         </div>
@@ -465,32 +449,33 @@ ${fieldLines}
   </div>
 {/if}
 
-<!-- VISUAL SCHEMA BUILDER STUDIO MODAL (Scalable 980px 2-Column Popup) -->
+<!-- VISUAL SCHEMA BUILDER STUDIO MODAL -->
 {#if modalOpen}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="modal-backdrop"
-    onclick={(e) => {
-      if (e.target === e.currentTarget) modalOpen = false;
-    }}
     role="presentation"
   >
     <div
-      class="modal-dialog schema-modal-dialog"
+      class="schema-modal-dialog"
       role="dialog"
       aria-modal="true"
       tabindex="-1"
-      onclick={(e) => e.stopPropagation()}
     >
-      <!-- Sticky Modal Header -->
+      <!-- Modal Header -->
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 9px;">
-          <div style="width: 28px; height: 28px; border-radius: 6px; background: #f4f4f5; color: #18181b; display: flex; align-items: center; justify-content: center;">
+        <div class="flex items-center gap-2">
+          <div class="modal-icon-badge info">
             <Icon name="schema" size={14} />
           </div>
-          <h3 class="modal-title" style="font-size: 14.5px;">
-            {editingSlug ? `Edit Schema — ${modelName}` : 'New Schema'}
-          </h3>
+          <div>
+            <h3 class="modal-title">
+              {editingSlug ? `Edit Schema: ${modelName}` : 'New Schema'}
+            </h3>
+            <p class="modal-subtitle">
+              Configure collection schema and field definitions
+            </p>
+          </div>
         </div>
 
         <button
@@ -504,10 +489,10 @@ ${fieldLines}
       </div>
 
       <!-- Studio Form -->
-      <form onsubmit={handleSaveModel} style="display: flex; flex-direction: column; flex: 1; overflow: hidden; margin: 0;">
-        <div class="modal-body" style="overflow-y: auto; max-height: calc(85vh - 130px); padding: 18px 22px;">
+      <form onsubmit={handleSaveModel} class="schema-studio-form">
+        <div class="schema-studio-scrollable">
           {#if modalError}
-            <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 10px 14px; color: #b91c1c; margin-bottom: 16px; font-size: 12.5px;">
+            <div class="error-banner mb-4">
               {modalError}
             </div>
           {/if}
@@ -518,7 +503,7 @@ ${fieldLines}
             <div class="schema-panel-card">
               <h4 class="schema-panel-heading">Collection Details</h4>
 
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div class="form-row-2col">
                 <div>
                   <label for="sm-name" class="form-label">Collection Name *</label>
                   <input
@@ -545,7 +530,7 @@ ${fieldLines}
                 </div>
               </div>
 
-              <div style="margin-bottom: 16px;">
+              <div class="mb-4">
                 <label for="sm-desc" class="form-label">Description (Optional)</label>
                 <input
                   id="sm-desc"
@@ -556,17 +541,17 @@ ${fieldLines}
                 />
               </div>
 
-              <div style="border-top: 1px solid #e4e4e7; padding-top: 14px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <h4 class="schema-panel-heading" style="margin: 0;">
+              <div class="form-sub-header">
+                <div class="form-sub-header-row">
+                  <h4 class="schema-panel-heading m-0">
                     Defined Fields ({modelFields.length})
                   </h4>
-                  <span style="font-size: 11px; color: #71717a;">Minimum 1 field required</span>
+                  <span class="text-xs text-muted">Minimum 1 field required</span>
                 </div>
 
                 {#if modelFields.length === 0}
                   <div class="empty-fields-state">
-                    <p style="font-size: 12px; color: #71717a; margin: 0;">
+                    <p class="text-xs text-muted m-0">
                       No fields added yet. Configure a field on the right and click "Add Field".
                     </p>
                   </div>
@@ -587,7 +572,7 @@ ${fieldLines}
                             </div>
                             <div class="field-item-meta">
                               <span class="field-item-key">{f.key}</span>
-                              <span class="meta-dot">•</span>
+                              <span class="meta-dot">&bull;</span>
                               <span class="field-item-type">{f.type}</span>
                             </div>
                           </div>
@@ -599,7 +584,7 @@ ${fieldLines}
                           onclick={() => removeField(f.id)}
                           title="Remove field"
                         >
-                          <Icon name="trash" size={13} />
+                          <Icon name="close" size={12} />
                         </button>
                       </div>
                     {/each}
@@ -610,10 +595,13 @@ ${fieldLines}
 
             <!-- Right Column: Field Configurator / Builder -->
             <div class="schema-panel-card builder-card">
-              <h4 class="schema-panel-heading" style="margin-bottom: 8px;">Field Type</h4>
+              <h4 class="schema-panel-heading">Add New Field</h4>
+              <p class="text-xs text-muted mb-3">
+                Pick a data type and configure its API property settings
+              </p>
 
-              <!-- Field Types Grid (8 types, clean cards) -->
-              <div style="margin-bottom: 12px;">
+              <!-- Field Types Grid (8 types, clean Vercel cards) -->
+              <div class="mb-3">
                 <div class="field-types-catalog">
                   {#each FIELD_TYPES as ft}
                     <button
@@ -622,7 +610,7 @@ ${fieldLines}
                       onclick={() => (newFieldType = ft.type)}
                     >
                       <div class="field-catalog-icon">
-                        <Icon name={ft.icon} size={14} />
+                        <Icon name={ft.icon} size={13} />
                       </div>
                       <div class="field-catalog-info">
                         <span class="field-catalog-name">{ft.label}</span>
@@ -634,7 +622,7 @@ ${fieldLines}
               </div>
 
               <!-- Field Inputs -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+              <div class="form-row-2col">
                 <div>
                   <label for="nf-label" class="form-label">Field Label *</label>
                   <input
@@ -659,7 +647,7 @@ ${fieldLines}
               </div>
 
               {#if newFieldType === 'select'}
-                <div style="margin-bottom: 10px;">
+                <div class="mb-3">
                   <label for="nf-options" class="form-label">Dropdown Options (Comma separated)</label>
                   <input
                     id="nf-options"
@@ -672,16 +660,15 @@ ${fieldLines}
               {/if}
 
               <!-- Options & Add Action -->
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid #e4e4e7;">
-                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; cursor: pointer; color: #18181b;">
+              <div class="form-add-footer-row">
+                <label class="form-checkbox-label">
                   <input type="checkbox" bind:checked={newFieldRequired} />
                   <span>Mark as required field</span>
                 </label>
 
                 <button
                   type="button"
-                  class="btn-primary-pill"
-                  style="font-size: 12px; padding: 6px 15px;"
+                  class="btn btn-secondary btn-sm"
                   disabled={!newFieldLabel.trim() || !newFieldKey.trim()}
                   onclick={addFieldToModel}
                 >
@@ -697,8 +684,7 @@ ${fieldLines}
         <div class="modal-footer">
           <button
             type="button"
-            class="btn-outline-pill"
-            style="font-size: 12px; padding: 6px 14px;"
+            class="btn btn-secondary"
             disabled={saving}
             onclick={() => (modalOpen = false)}
           >
@@ -706,8 +692,7 @@ ${fieldLines}
           </button>
           <button
             type="submit"
-            class="btn-primary-pill"
-            style="font-size: 12px; padding: 6px 20px;"
+            class="btn btn-primary"
             disabled={saving || !modelName.trim() || !modelSlug.trim()}
           >
             {saving ? 'Saving...' : editingSlug ? 'Update Schema' : 'Create Content Model'}
@@ -723,23 +708,18 @@ ${fieldLines}
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     class="modal-backdrop"
-    onclick={(e) => {
-      if (e.target === e.currentTarget) codeModalOpen = false;
-    }}
     role="presentation"
   >
     <div
       class="modal-dialog"
-      style="max-width: 620px;"
       role="dialog"
       aria-modal="true"
       tabindex="-1"
-      onclick={(e) => e.stopPropagation()}
     >
       <div class="modal-header">
         <div>
           <h3 class="modal-title">TypeScript Definition</h3>
-          <p class="modal-subtitle">Code for {codeModalTitle}</p>
+          <p class="modal-subtitle">Generated schema for {codeModalTitle}</p>
         </div>
         <button
           type="button"
@@ -751,24 +731,24 @@ ${fieldLines}
         </button>
       </div>
 
-      <div class="modal-body" style="padding: 16px 20px;">
-        <pre style="background: #18181b; color: #f4f4f5; padding: 14px 16px; border-radius: 8px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; margin: 0 0 12px 0;"><code>{codeModalSnippet}</code></pre>
-        <p style="font-size: 12px; color: #71717a; margin: 0;">
-          Place this in <code>cms.config.ts</code> to version control this schema in Git.
+      <div class="modal-body">
+        <pre class="bg-shade p-3 rounded text-xs overflow-x-auto mb-3"><code>{codeModalSnippet}</code></pre>
+        <p class="text-xs text-muted m-0">
+          Place this inside <code>cms.config.ts</code> to version control your schema in Git.
         </p>
       </div>
 
       <div class="modal-footer">
         <button
           type="button"
-          class="btn-outline-pill"
+          class="btn btn-secondary"
           onclick={() => (codeModalOpen = false)}
         >
           Close
         </button>
         <button
           type="button"
-          class="btn-primary-pill"
+          class="btn btn-primary"
           onclick={copyCode}
         >
           <Icon name="check" size={12} />

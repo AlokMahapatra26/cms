@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte';
 
   interface Props {
-    variant?: 'primary' | 'aloe' | 'outline' | 'danger' | 'gray';
+    variant?: 'primary' | 'aloe' | 'outline' | 'danger' | 'gray' | 'secondary' | 'ghost';
     size?: 'md' | 'sm';
     type?: 'button' | 'submit' | 'reset';
     disabled?: boolean;
@@ -28,21 +28,22 @@
   }: Props = $props();
 
   let buttonClass = $derived.by(() => {
-    let base = '';
+    let classes: string[] = [];
+
     if (size === 'sm') {
-      if (variant === 'aloe') base = 'btn-sm-pill btn-aloe-sm';
-      else if (variant === 'danger') base = 'btn-sm-pill btn-danger-sm';
-      else if (variant === 'gray') base = 'btn-sm-pill btn-gray-sm';
-      else if (variant === 'outline') base = 'btn-outline-pill';
-      else base = 'btn-sm-pill btn-gray-sm';
+      classes.push('btn-sm');
+      if (variant === 'danger') classes.push('btn-danger');
+      else if (variant === 'outline' || variant === 'gray' || variant === 'secondary' || variant === 'ghost') classes.push('btn-secondary');
+      else classes.push('btn-primary');
     } else {
-      if (variant === 'aloe') base = 'btn-aloe-pill';
-      else if (variant === 'danger') base = 'btn-danger-pill';
-      else if (variant === 'outline') base = 'btn-outline-pill';
-      else if (variant === 'gray') base = 'btn-outline-pill';
-      else base = 'btn-primary-pill';
+      classes.push('btn');
+      if (variant === 'danger') classes.push('btn-danger');
+      else if (variant === 'outline' || variant === 'gray' || variant === 'secondary' || variant === 'ghost') classes.push('btn-secondary');
+      else classes.push('btn-primary');
     }
-    return [base, customClass].filter(Boolean).join(' ');
+
+    if (customClass) classes.push(customClass);
+    return classes.join(' ');
   });
 </script>
 
@@ -71,4 +72,3 @@
     {/if}
   </button>
 {/if}
-

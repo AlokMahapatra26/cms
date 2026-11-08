@@ -64,41 +64,38 @@
 </script>
 
 <svelte:head>
-  <title>Setup Super Admin - EdgeCMS</title>
+  <title>Setup Administrator — EdgeCMS</title>
 </svelte:head>
 
-<div style="max-width: 480px; margin: 40px auto 80px auto;">
+<div class="auth-screen-container">
   {#if checking}
-    <div style="text-align: center; padding: 40px; color: var(--color-shade-50); font-size: 14px;">
+    <div class="text-center p-12 text-muted text-sm">
       Checking configuration status...
     </div>
   {:else}
-    <!-- Brand badge -->
-    <div style="text-align: center; margin-bottom: 28px;">
-      <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: #000000; border-radius: 12px; margin-bottom: 16px;">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M14 6C12.3431 6 11 7.34315 11 9H9C8.44772 9 8 9.44772 8 10V20C8 20.5523 8.44772 21 9 21H19C19.5523 21 20 20.5523 20 20V10C20 9.44772 19.5523 9 19 9H17C17 7.34315 15.6569 6 14 6ZM14 7.5C14.8284 7.5 15.5 8.17157 15.5 9H12.5C12.5 8.17157 13.1716 7.5 14 7.5ZM9.5 10.5H18.5V19.5H9.5V10.5Z" fill="#C1FBD4" />
+    <!-- Brand lockup -->
+    <div class="text-center mb-6">
+      <div class="inline-flex items-center justify-center w-10 h-10 bg-dark rounded-md mb-3">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="24" height="24" rx="5" fill="#171717" />
+          <path d="M7 12H17M7 7H17M7 17H13" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </div>
-      <div style="display: inline-block; background-color: var(--color-aloe); color: #043e1d; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 10px; border-radius: 9999px; margin-bottom: 12px;">
-        First Time Setup
-      </div>
-      <h1 style="font-size: 26px; font-weight: 700; margin: 0 0 6px 0; letter-spacing: -0.02em;">Create Super Admin</h1>
-      <p style="color: var(--color-shade-50); font-size: 14px; margin: 0;">Configure your primary administrator account for EdgeCMS</p>
+      <h1 class="text-xl font-semibold m-0 mb-1 tracking-tight">Create Super Admin</h1>
+      <p class="text-muted text-xs m-0">Configure your primary administrator account for EdgeCMS</p>
     </div>
 
     <!-- Setup Card -->
-    <div class="shopify-card" style="padding: 28px;">
+    <div class="shopify-card">
       {#if error}
-        <div style="background-color: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
-          <Icon name="warning" size={16} />
-          <span>{error}</span>
+        <div class="error-banner mb-4">
+          {error}
         </div>
       {/if}
 
-      <form onsubmit={handleSetup} style="display: flex; flex-direction: column; gap: 18px;">
+      <form onsubmit={handleSetup} class="flex flex-col gap-4">
         <div>
-          <label for="name" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Your Name</label>
+          <label for="name" class="form-label">Full Name</label>
           <input
             id="name"
             type="text"
@@ -111,7 +108,7 @@
         </div>
 
         <div>
-          <label for="email" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Admin Email Address</label>
+          <label for="email" class="form-label">Email Address</label>
           <input
             id="email"
             type="email"
@@ -124,12 +121,12 @@
         </div>
 
         <div>
-          <label for="password" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Password</label>
+          <label for="password" class="form-label">Password (min 6 characters)</label>
           <input
             id="password"
             type="password"
             bind:value={password}
-            placeholder="Minimum 6 characters"
+            placeholder="••••••••••••"
             class="shopify-input"
             required
             minlength="6"
@@ -138,12 +135,12 @@
         </div>
 
         <div>
-          <label for="confirmPassword" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px;">Confirm Password</label>
+          <label for="confirm" class="form-label">Confirm Password</label>
           <input
-            id="confirmPassword"
+            id="confirm"
             type="password"
             bind:value={confirmPassword}
-            placeholder="Re-type password"
+            placeholder="••••••••••••"
             class="shopify-input"
             required
             autocomplete="new-password"
@@ -152,25 +149,18 @@
 
         <button
           type="submit"
-          class="btn-primary-pill"
-          style="width: 100%; justify-content: center; padding: 11px 20px; font-size: 14px; margin-top: 6px;"
+          class="btn btn-primary w-full mt-2"
           disabled={loading}
         >
-          {loading ? 'Creating Administrator...' : 'Complete Setup & Launch CMS'}
+          {loading ? 'Creating Administrator...' : 'Create Admin Account'}
         </button>
       </form>
     </div>
 
-    <!-- Onboarding note -->
-    <div style="margin-top: 24px; padding: 16px; background-color: #ffffff; border: 1px solid var(--color-hairline); border-radius: 12px; font-size: 12px; color: var(--color-shade-60); line-height: 1.5;">
-      <div style="display: flex; align-items: center; gap: 6px; font-weight: 600; color: #000000; margin-bottom: 4px;">
-        <Icon name="lock" size={14} />
-        <span>Secure by Design</span>
-      </div>
-      <p style="margin: 4px 0 0 0;">
-        This account will have full administrator permissions over schemas, content collections, media, and settings. Credentials are encrypted via PBKDF2 with unique salts directly within Cloudflare D1 SQLite.
-      </p>
+    <!-- Security notice -->
+    <div class="mt-6 text-center text-xs text-muted flex items-center justify-center gap-1.5 font-mono">
+      <Icon name="lock" size={13} />
+      <span>Encrypted with Web Crypto PBKDF2 & SHA-256</span>
     </div>
   {/if}
 </div>
-

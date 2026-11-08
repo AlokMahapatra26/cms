@@ -1,29 +1,37 @@
 /* ==========================================================================
-   Collections & Schema Builder Components (Scalable Studio)
+   Collections & Schema Builder Components - Vercel Geist Style
+   Strictly following DESIGN.md
    ========================================================================== */
 
-/* Schema Card Layout */
+/* Schema Card Grid (Main View) */
+.schema-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
 .schema-item-card {
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-lg);
-  background-color: #ffffff;
+  border-radius: var(--radius-md); /* 12px */
+  background-color: var(--color-canvas-elevated);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 18px 20px;
+  padding: 20px 22px;
   box-shadow: var(--shadow-card);
-  transition: all 0.15s ease;
-  min-height: 180px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  min-height: 200px;
+  overflow: hidden;
 }
 
 .schema-item-card:hover {
-  border-color: var(--color-shade-30);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  border-color: var(--color-mute);
+  box-shadow: var(--shadow-card-elevated);
 }
 
 .schema-card-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
@@ -34,38 +42,41 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
+  flex: 1;
 }
 
 .schema-card-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  background-color: #000000;
-  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm); /* 6px */
+  background-color: var(--color-ink);
+  color: var(--color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
   flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 .schema-card-title {
   font-size: 15px;
   font-weight: 600;
   margin: 0;
-  color: #000000;
+  color: var(--color-ink);
   line-height: 1.25;
+  letter-spacing: -0.28px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
 }
 
 .schema-card-slug {
   font-size: 11px;
-  color: var(--color-shade-50);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--color-mute);
+  font-family: var(--font-mono);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -73,22 +84,20 @@
 }
 
 .schema-card-badge {
-  background-color: var(--color-shade-20);
-  border: 1px solid var(--color-hairline);
-  color: var(--color-shade-60);
-  font-size: 11px;
+  color: var(--color-mute);
+  font-size: 12px;
   font-weight: 500;
-  padding: 3px 9px;
-  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .schema-card-desc {
-  font-size: 12px;
-  color: var(--color-shade-50);
-  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--color-body);
+  margin: 0 0 14px 0;
   line-height: 1.45;
+  min-height: 36px;
 }
 
 /* Fields Chips List */
@@ -97,13 +106,14 @@
   flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 16px;
+  align-content: flex-start;
 }
 
 .schema-field-chip {
-  background-color: #fafafa;
+  background-color: var(--color-canvas);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
-  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  padding: 2px 7px;
   font-size: 11.5px;
   display: inline-flex;
   align-items: center;
@@ -112,13 +122,15 @@
 }
 
 .schema-field-chip-key {
-  font-weight: 600;
-  color: #18181b;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--color-ink);
 }
 
 .schema-field-chip-type {
-  color: var(--color-shade-40);
+  color: var(--color-mute);
   font-size: 10.5px;
+  font-family: var(--font-mono);
 }
 
 /* Card Actions Footer */
@@ -129,29 +141,37 @@
   gap: 8px;
   padding-top: 14px;
   border-top: 1px solid var(--color-hairline);
+  flex-wrap: wrap;
 }
 
 .schema-card-actions-group {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 /* ==========================================================================
    Scalable Schema Studio Modal
    ========================================================================== */
 .schema-modal-dialog {
-  max-width: 980px;
+  max-width: 960px;
   width: 95vw;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--color-canvas-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-dialog);
+  overflow: hidden;
 }
 
 .modal-subtitle {
   font-size: 12px;
-  color: var(--color-shade-50);
+  color: var(--color-mute);
   margin: 2px 0 0 0;
+  font-weight: 400;
 }
 
 .schema-studio-form {
@@ -160,17 +180,19 @@
   overflow: hidden;
   flex: 1;
   min-height: 0;
+  margin: 0;
 }
 
 .schema-studio-scrollable {
-  padding: 18px 22px;
+  padding: 20px 24px;
   overflow-y: auto;
+  max-height: calc(85vh - 120px);
   flex: 1;
 }
 
 .schema-studio-grid {
   display: grid;
-  grid-template-columns: 1fr 1.15fr;
+  grid-template-columns: 1fr 1fr;
   gap: 18px;
   align-items: start;
 }
@@ -182,25 +204,25 @@
 }
 
 .schema-panel-card {
-  background-color: #ffffff;
+  background-color: var(--color-canvas-elevated);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm); /* 6px */
   padding: 16px;
   display: flex;
   flex-direction: column;
 }
 
 .schema-panel-card.builder-card {
-  background-color: #fafafa;
-  border-color: #e4e4e7;
+  background-color: var(--color-canvas);
+  border-color: var(--color-hairline);
 }
 
 .schema-panel-heading {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
-  color: #000000;
+  color: var(--color-ink);
   margin: 0 0 10px 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.2px;
 }
 
 .input-slug-prefix {
@@ -212,15 +234,15 @@
 .slug-prefix {
   position: absolute;
   left: 10px;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
-  color: var(--color-shade-40);
+  color: var(--color-faint);
   pointer-events: none;
 }
 
 .input-with-prefix {
   padding-left: 22px !important;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 
@@ -228,59 +250,54 @@
 .schema-fields-scroll-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 260px;
+  gap: 6px;
+  max-height: 250px;
   overflow-y: auto;
   padding-right: 4px;
 }
 
 .schema-fields-scroll-list::-webkit-scrollbar {
-  width: 5px;
-}
-
-.schema-fields-scroll-list::-webkit-scrollbar-track {
-  background: transparent;
+  width: 4px;
 }
 
 .schema-fields-scroll-list::-webkit-scrollbar-thumb {
-  background: var(--color-shade-30);
-  border-radius: var(--radius-pill);
+  background: var(--color-hairline);
+  border-radius: 4px;
 }
 
 .field-item-row {
-  background-color: #ffffff;
+  background-color: var(--color-canvas-elevated);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
-  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--transition-fast);
 }
 
 .field-item-row:hover {
-  border-color: var(--color-shade-30);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border-color: var(--color-mute);
 }
 
 .field-item-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   min-width: 0;
 }
 
 .field-type-icon-box {
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-shade-20);
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-hairline-soft);
   border: 1px solid var(--color-hairline);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #27272a;
+  color: var(--color-ink);
   flex-shrink: 0;
 }
 
@@ -297,24 +314,25 @@
 
 .field-item-label {
   font-size: 13px;
-  font-weight: 600;
-  color: #000000;
+  font-weight: 500;
+  color: var(--color-ink);
 }
 
 .badge-required {
   font-size: 10px;
-  font-weight: 600;
-  color: #dc2626;
-  background-color: #fef2f2;
-  border: 1px solid #fee2e2;
-  padding: 1px 5px;
-  border-radius: 4px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  color: var(--color-error);
+  background-color: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  padding: 1px 4px;
+  border-radius: 3px;
   line-height: 1;
 }
 
 .field-item-meta {
   font-size: 11px;
-  color: var(--color-shade-50);
+  color: var(--color-mute);
   margin-top: 2px;
   display: flex;
   align-items: center;
@@ -322,46 +340,45 @@
 }
 
 .field-item-key {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: #52525b;
+  color: var(--color-body);
 }
 
 .meta-dot {
-  color: var(--color-shade-30);
+  color: var(--color-hairline);
 }
 
 .field-item-type {
-  text-transform: capitalize;
-  color: var(--color-shade-50);
+  font-family: var(--font-mono);
+  text-transform: lowercase;
+  color: var(--color-mute);
 }
 
 .field-delete-btn {
   background: transparent;
-  border: 1px solid transparent;
-  color: var(--color-shade-40);
-  padding: 6px;
-  border-radius: var(--radius-sm);
+  border: none;
+  color: var(--color-mute);
+  padding: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
-  outline: none;
+  transition: all var(--transition-fast);
 }
 
 .field-delete-btn:hover {
-  background-color: #fee2e2;
-  border-color: #fca5a5;
-  color: #dc2626;
+  background-color: var(--color-danger-bg);
+  color: var(--color-error);
 }
 
 .empty-fields-state {
   padding: 24px 16px;
   text-align: center;
   border: 1px dashed var(--color-hairline);
-  border-radius: var(--radius-md);
-  background-color: #fafafa;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-canvas);
 }
 
 /* Field Types Catalog Grid */
@@ -372,47 +389,46 @@
 }
 
 .field-catalog-card {
-  background-color: #ffffff;
+  background-color: var(--color-canvas-elevated);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm); /* 6px */
   padding: 8px 10px;
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.12s ease;
+  transition: all var(--transition-fast);
   width: 100%;
 }
 
 .field-catalog-card:hover {
-  border-color: #000000;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border-color: var(--color-mute);
+  background-color: var(--color-hairline-soft);
 }
 
 .field-catalog-card.active {
-  background-color: #000000;
-  color: #ffffff;
-  border-color: #000000;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background-color: var(--color-ink);
+  color: var(--color-on-primary);
+  border-color: var(--color-ink);
 }
 
 .field-catalog-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-shade-20);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-hairline-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #27272a;
+  color: var(--color-ink);
   flex-shrink: 0;
-  transition: all 0.12s ease;
+  transition: all var(--transition-fast);
 }
 
 .field-catalog-card.active .field-catalog-icon {
-  background-color: #27272a;
-  color: #ffffff;
+  background-color: var(--color-ink);
+  color: var(--color-on-primary);
 }
 
 .field-catalog-info {
@@ -423,14 +439,14 @@
 
 .field-catalog-name {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
 }
 
 .field-catalog-desc {
   font-size: 10.5px;
-  color: var(--color-shade-50);
+  color: var(--color-mute);
   line-height: 1.2;
   margin-top: 1px;
   white-space: nowrap;
@@ -439,5 +455,44 @@
 }
 
 .field-catalog-card.active .field-catalog-desc {
-  color: #a1a1aa;
+  color: var(--color-body);
+}
+
+/* Modal Form Row Helpers (to eliminate inline styles) */
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-sub-header {
+  border-top: 1px solid var(--color-hairline);
+  padding-top: 14px;
+}
+
+.form-sub-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.form-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--color-ink);
+}
+
+.form-add-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline);
 }

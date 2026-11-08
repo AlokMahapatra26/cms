@@ -901,28 +901,9 @@ app.post('/api/admin/collections/sync', async (c) => {
   }
 });
 
-// List all collections (Auto-syncs from cms.config.ts)
+// List all collections from D1
 app.get('/api/admin/collections', async (c) => {
   try {
-    // 1. Auto-sync any code-first collection from cms.config.ts into D1
-    if (cmsConfig.collections && cmsConfig.collections.length > 0) {
-      for (const col of cmsConfig.collections) {
-        const fieldsJson = JSON.stringify(col.fields || []);
-        const now = new Date().toISOString();
-        await c.env.DB.prepare(
-          `INSERT INTO collections (id, slug, name, description, icon, fields, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-           ON CONFLICT(slug) DO UPDATE SET
-             name = excluded.name,
-             description = excluded.description,
-             icon = excluded.icon,
-             fields = excluded.fields,
-             updated_at = excluded.updated_at`
-        ).bind(col.id || `col_${col.slug}`, col.slug, col.name, col.description || null, col.icon || 'schema', fieldsJson, now, now).run();
-      }
-    }
-
-    // 2. Fetch all active collections from D1
     const rows = await c.env.DB.prepare(
       `SELECT * FROM collections ORDER BY name ASC`
     ).all();

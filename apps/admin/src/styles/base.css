@@ -1,20 +1,45 @@
 /* ==========================================================================
-   Base & Reset Styles
+   Base & Reset Styles - Vercel Geist Aesthetic
+   Strictly following DESIGN.md
    ========================================================================== */
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
+/* Custom sleek scrollbars across all scrollable elements */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-hairline) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-hairline);
+  border-radius: var(--radius-xs);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-mute);
+}
+
 html, body {
   margin: 0;
   padding: 0;
-  background-color: var(--color-canvas-cream);
+  background-color: var(--color-canvas);
   color: var(--color-ink);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-feature-settings: "ss03";
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
 a {
@@ -22,30 +47,32 @@ a {
   text-decoration: none;
 }
 
-button {
+button, input, textarea, select {
   font-family: inherit;
 }
 
-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
 }
 
 /* ==========================================================================
-   App Shell & Navigation
+   App Shell & Navigation (Vercel Style)
    ========================================================================== */
 
 .shopify-header {
-  background-color: #ffffff;
+  background-color: var(--color-canvas-elevated);
   border-bottom: 1px solid var(--color-hairline);
-  padding: 10px 24px;
+  padding: 0 24px;
+  height: 52px;
   position: sticky;
   top: 0;
   z-index: 50;
+  display: flex;
+  align-items: center;
 }
 
 .shopify-nav-inner {
-  max-width: 100%;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -56,8 +83,8 @@ code {
   align-items: center;
   gap: 10px;
   font-weight: 600;
-  font-size: 14.5px;
-  color: #09090b;
+  font-size: 14px;
+  color: var(--color-ink);
   text-decoration: none;
   letter-spacing: -0.02em;
 }
@@ -69,47 +96,50 @@ code {
   background-color: transparent;
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  font-size: 12.5px;
+  font-size: 13px;
+  font-weight: 500;
   text-decoration: none;
-  color: inherit;
-  transition: all 0.15s ease;
+  color: var(--color-ink);
+  transition: background-color var(--transition-fast);
 }
 
 .shopify-user-pill:hover {
-  background-color: var(--color-shade-20);
+  background-color: var(--color-hairline-soft);
 }
 
 .shopify-app-body {
   display: flex;
-  min-height: calc(100vh - 49px);
+  min-height: calc(100vh - 52px);
   width: 100%;
 }
 
 .shopify-sidebar {
   width: 220px;
   min-width: 220px;
-  background-color: #ffffff;
+  background-color: var(--color-canvas-elevated);
   border-right: 1px solid var(--color-hairline);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 18px 12px;
+  padding: 16px 12px;
   position: sticky;
-  top: 49px;
-  height: calc(100vh - 49px);
+  top: 52px;
+  height: calc(100vh - 52px);
   overflow-y: auto;
   box-sizing: border-box;
 }
 
 .shopify-sidebar-section {
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .shopify-sidebar-heading {
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
-  color: var(--color-shade-40);
-  letter-spacing: 0.04em;
+  color: var(--color-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   padding: 0 10px 8px 10px;
   margin: 0;
 }
@@ -118,50 +148,50 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 10px;
+  padding: 6px 10px;
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 400;
-  color: var(--color-shade-60);
+  color: var(--color-body);
   text-decoration: none;
-  transition: all 0.12s ease;
+  transition: all var(--transition-fast);
   margin-bottom: 2px;
 }
 
 .shopify-sidebar-link:hover {
-  background-color: #f9f9fb;
-  color: #09090b;
+  background-color: var(--color-hairline-soft);
+  color: var(--color-ink);
 }
 
 .shopify-sidebar-link.active {
-  background-color: var(--color-shade-20);
-  color: #09090b;
+  background-color: var(--color-hairline-soft);
+  color: var(--color-ink);
   font-weight: 500;
 }
 
 .shopify-sidebar-link-content {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
 }
 
 .shopify-content-area {
   flex: 1;
   min-width: 0;
-  background-color: var(--color-canvas-cream);
-  padding: 28px 36px 64px 36px;
+  background-color: var(--color-canvas);
+  padding: 32px 40px 64px 40px;
   box-sizing: border-box;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .shopify-content-inner {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1120px;
   margin: 0 auto;
 }
 
 .shopify-page-header {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -170,19 +200,20 @@ code {
 }
 
 .shopify-page-title {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 600;
-  color: #09090b;
-  margin: 0 0 2px 0;
-  letter-spacing: -0.015em;
+  color: var(--color-ink);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
 }
 
 .shopify-page-subtitle {
-  font-size: 12.5px;
-  color: var(--color-shade-50);
+  font-size: 13px;
+  color: var(--color-mute);
   margin: 0;
+  font-weight: 400;
 }
-
 
 /* App Layout Helpers */
 .min-h-screen {
@@ -190,52 +221,102 @@ code {
 }
 
 .user-avatar-badge {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #000000;
-  color: #ffffff;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-ink);
+  color: var(--color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-mono);
 }
 
 .collection-avatar-badge {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
   border-radius: var(--radius-xs);
-  background: #000000;
-  color: #ffffff;
+  background: var(--color-ink);
+  color: var(--color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 8.5px;
-  font-weight: 700;
+  font-size: 9px;
+  font-weight: 600;
+  font-family: var(--font-mono);
 }
 
-.sidebar-status-box {
-  padding: 8px 10px;
+/* Sidebar Theme Toggle (Vercel Geist Style) */
+.sidebar-footer-theme {
+  border-top: 1px solid var(--color-hairline);
+  padding-top: 8px;
+  margin-top: 12px;
+}
+
+.sidebar-theme-toggle {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 11.5px;
-  color: var(--color-shade-50);
+  justify-content: space-between;
+  padding: 6px 10px;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-body);
+  font-size: 12.5px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
-.status-dot-active {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #10b981;
+.sidebar-theme-toggle:hover {
+  background-color: var(--color-hairline-soft);
+  color: var(--color-ink);
+}
+
+.sidebar-theme-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-switch-track {
+  width: 28px;
+  height: 16px;
+  background-color: var(--color-hairline);
+  border-radius: var(--radius-pill);
+  position: relative;
+  transition: background-color var(--transition-fast);
+}
+
+.theme-switch-track.active {
+  background-color: var(--color-ink);
+}
+
+.theme-switch-thumb {
+  width: 12px;
+  height: 12px;
+  background-color: var(--color-canvas-elevated);
+  border-radius: var(--radius-full);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.theme-switch-track.active .theme-switch-thumb {
+  transform: translateX(12px);
+  background-color: var(--color-canvas);
 }
 
 .auth-screen-container {
-  max-width: 520px;
+  max-width: 440px;
   width: 100%;
-  margin: 48px auto 80px auto;
+  margin: 64px auto 80px auto;
   padding: 0 20px;
   flex: 1;
 }

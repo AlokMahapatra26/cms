@@ -92,7 +92,7 @@
 </script>
 
 <svelte:head>
-  <title>Media Library - EdgeCMS</title>
+  <title>Media Library — EdgeCMS</title>
 </svelte:head>
 
 <!-- Header -->
@@ -102,14 +102,14 @@
       Media
     </h1>
     <p class="shopify-page-subtitle">
-      Upload and manage images and assets.
+      Upload and manage images and assets on Cloudflare R2.
     </p>
   </div>
 
   <div>
-    <label class="btn-primary-pill cursor-pointer text-xs py-2 px-3 inline-flex items-center gap-1.5">
-      <Icon name="upload" size={14} />
-      <span>{uploading ? 'Uploading to R2...' : 'Upload Media'}</span>
+    <label class="btn btn-primary btn-sm cursor-pointer">
+      <Icon name="upload" size={13} />
+      <span>{uploading ? 'Uploading...' : 'Upload File'}</span>
       <input
         type="file"
         accept="image/*"
@@ -122,25 +122,25 @@
 </div>
 
 {#if error}
-  <div class="error-banner mb-6">
+  <div class="error-banner mb-4">
     {error}
   </div>
 {/if}
 
 {#if loading}
-  <div class="shopify-card p-12 text-center text-muted">
-    <p class="m-0 text-base">Fetching R2 bucket storage...</p>
+  <div class="shopify-card p-12 text-center text-muted text-sm">
+    Fetching R2 bucket storage...
   </div>
 {:else if items.length === 0}
   <div class="shopify-card p-12 text-center">
-    <div class="media-empty-icon" style="color: #71717a; display: inline-flex; align-items: center; justify-content: center;">
+    <div class="media-empty-icon mx-auto">
       <Icon name="media" size={24} />
     </div>
-    <h3 class="text-lg font-semibold m-0 mb-1">No media files yet</h3>
-    <p class="text-muted text-base m-0 mb-4">
+    <h3 class="text-base font-semibold mb-2">No media files yet</h3>
+    <p class="text-muted text-sm max-w-md mx-auto mb-4">
       Upload images, graphics, and assets to attach them to your dynamic content records.
     </p>
-    <label class="btn-primary-pill cursor-pointer text-sm inline-flex items-center gap-1.5">
+    <label class="btn btn-primary cursor-pointer inline-flex">
       <Icon name="upload" size={14} />
       <span>Upload First File</span>
       <input type="file" accept="image/*" onchange={handleUpload} class="hidden" />
@@ -152,7 +152,7 @@
       <div class="shopify-card media-card">
         <!-- Thumbnail with fallback for non-images -->
         <div class="media-thumb-container">
-          <span class="absolute">FILE</span>
+          <span class="text-xs text-muted font-mono">FILE</span>
           <img
             src={item.url}
             alt={item.key}
@@ -164,25 +164,25 @@
         </div>
 
         <!-- Details -->
-        <div class="p-2 flex-1 flex flex-col justify-between">
+        <div class="p-3 flex-1 flex flex-col justify-between">
           <div>
-            <div class="text-sm font-semibold text-dark truncate mb-1" title={item.key}>
+            <div class="text-sm font-medium text-dark truncate mb-1" title={item.key}>
               {item.key.replace('uploads/', '')}
             </div>
-            <div class="text-xs text-muted mb-2">
+            <div class="text-xs text-muted mb-3 font-mono">
               {formatBytes(item.size)}
             </div>
           </div>
 
           <div class="flex gap-1 items-center">
             <button
-              class="btn-sm-pill btn-gray-sm flex-1 justify-center whitespace-nowrap"
+              class="btn btn-secondary btn-sm flex-1"
               onclick={() => copyUrl(item.url, item.key)}
             >
               {copiedKey === item.key ? 'Copied!' : 'Copy URL'}
             </button>
             <button
-              class="btn-sm-pill btn-gray-sm"
+              class="btn btn-secondary btn-sm"
               title="Rename asset"
               onclick={() => {
                 renameTargetItem = item;
@@ -195,13 +195,13 @@
               href={item.url}
               target="_blank"
               rel="noopener"
-              class="btn-sm-pill btn-gray-sm inline-flex items-center justify-center"
+              class="btn btn-secondary btn-sm"
               title="Open full image in new tab"
             >
               <Icon name="external" size={11} />
             </a>
             <button
-              class="btn-sm-pill btn-danger-sm"
+              class="btn btn-danger btn-sm"
               title="Delete asset from Cloudflare R2"
               disabled={deletingKey === item.key}
               onclick={() => handleDeleteMedia(item.key, item.key.replace('uploads/', ''))}

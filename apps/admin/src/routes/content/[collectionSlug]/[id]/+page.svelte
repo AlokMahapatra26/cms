@@ -31,22 +31,14 @@
       item = itemData;
       status = itemData.status;
 
-      // Populate form data with existing item values and fallback defaults
-      const populated: Record<string, any> = {};
+      // Populate form data
+      const data: Record<string, any> = {};
       for (const field of colData.fields || []) {
-        if (itemData.data?.[field.key] !== undefined) {
-          populated[field.key] = itemData.data[field.key];
-        } else if (field.type === 'boolean') {
-          populated[field.key] = false;
-        } else if (field.type === 'number') {
-          populated[field.key] = null;
-        } else {
-          populated[field.key] = '';
-        }
+        data[field.key] = itemData.data?.[field.key] ?? (field.type === 'boolean' ? false : field.type === 'number' ? null : '');
       }
-      formData = populated;
+      formData = data;
     } catch (err: any) {
-      error = err.message || 'Failed to load record';
+      error = err.message || 'Failed to load content item';
     } finally {
       loading = false;
     }
@@ -72,8 +64,8 @@
 
   async function handleDelete() {
     const confirmed = await modal.confirm({
-      title: `Delete ${collection?.name || 'Item'}?`,
-      message: `Are you sure you want to permanently delete this record? This action cannot be undone.`,
+      title: `Delete record?`,
+      message: `Are you sure you want to delete this record? This action cannot be undone.`,
       confirmText: 'Delete Record',
       variant: 'danger'
     });
@@ -97,26 +89,29 @@
 </script>
 
 <svelte:head>
-  <title>Edit {collection?.name ? collection.name.replace(/s$/, '') : 'Item'} - EdgeCMS</title>
+  <title>Edit {collection?.name ? collection.name.replace(/s$/, '') : 'Item'} — EdgeCMS</title>
 </svelte:head>
 
-<div style="margin-bottom: 20px;">
-  <div style="margin-bottom: 6px;">
-    <a href="/content/{collectionSlug}" style="font-size: 12.5px; color: #71717a; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-      <Icon name="arrow-left" size={13} />
-      <span>{collection?.name || 'Back'}</span>
-    </a>
-  </div>
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-    <h1 style="font-size: 18px; font-weight: 600; color: #09090b; margin: 0; letter-spacing: -0.015em;">
+<!-- Header & Controls -->
+<div class="shopify-page-header">
+  <div>
+    <div class="mb-1">
+      <a href="/content/{collectionSlug}" class="text-xs text-muted inline-flex items-center gap-1">
+        <Icon name="arrow-left" size={12} />
+        <span>{collection?.name || 'Back'}</span>
+      </a>
+    </div>
+    <h1 class="shopify-page-title">
       Edit {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}
     </h1>
+  </div>
 
+  <div class="flex items-center gap-2">
     <button
       type="button"
-      class="btn-danger-outline-pill"
-      style="font-size: 12px; padding: 4px 10px;"
+      class="btn btn-danger btn-sm"
       onclick={handleDelete}
+      title="Delete record"
     >
       <Icon name="trash" size={12} />
       <span>Delete</span>
@@ -125,21 +120,21 @@
 </div>
 
 {#if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 12px 16px; color: #b91c1c; margin-bottom: 16px; font-size: 13px;">
+  <div class="error-banner mb-4">
     <strong>Error:</strong> {error}
   </div>
 {/if}
 
 {#if loading}
-  <div class="shopify-card" style="padding: 48px; text-align: center; color: #71717a; font-size: 13.5px;">
+  <div class="shopify-card p-12 text-center text-muted text-sm">
     Loading dynamic record...
   </div>
 {:else if collection && item}
-  <div class="shopify-card" style="padding: 20px;">
-    <form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 16px;">
+  <div class="shopify-card">
+    <form onsubmit={handleSubmit} class="flex flex-col gap-4">
       <!-- Visibility / Status Toggle -->
       <div>
-        <div style="font-size: 12.5px; font-weight: 600; color: #27272a; margin-bottom: 6px;">
+        <div class="form-label">
           Visibility Status
         </div>
         <div class="shopify-segmented">
@@ -166,20 +161,19 @@
       {/each}
 
       <!-- Actions Bar -->
-      <div style="display: flex; gap: 12px; align-items: center; padding-top: 14px; border-top: 1px solid #e4e4e7; flex-wrap: wrap;">
+      <div class="shopify-actions-bar">
         <button
           type="submit"
           disabled={submitting}
-          class="btn-primary-pill"
+          class="btn btn-primary"
         >
           {submitting ? 'Saving...' : 'Save Changes'}
         </button>
 
-        <a href="/content/{collectionSlug}" class="btn-sm-pill btn-gray-sm" style="padding: 8px 16px; margin-left: auto;">
+        <a href="/content/{collectionSlug}" class="btn btn-secondary ml-auto">
           Cancel
         </a>
       </div>
     </form>
   </div>
 {/if}
-

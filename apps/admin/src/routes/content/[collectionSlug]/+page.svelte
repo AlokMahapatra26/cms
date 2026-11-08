@@ -39,15 +39,12 @@
   }
 
   $effect(() => {
-    // reload when route param changes
     if (collectionSlug) {
       loadData();
     }
   });
 
-  // Reset pagination when search query or filter changes
   $effect(() => {
-    // track reactive dependencies
     const _q = searchQuery;
     const _f = filter;
     currentPage = 1;
@@ -99,111 +96,92 @@
     return item.id.substring(0, 8);
   }
 
-  function handleSort(columnKey: string) {
-    if (sortColumn === columnKey) {
+  function handleSort(column: string) {
+    if (sortColumn === column) {
       sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
-      sortColumn = columnKey;
-      sortDirection = columnKey === 'created_at' ? 'desc' : 'asc';
+      sortColumn = column;
+      sortDirection = 'asc';
     }
   }
 
   function clearAllFilters() {
-    searchQuery = '';
     filter = 'all';
+    searchQuery = '';
     currentPage = 1;
   }
 
-  // Pick up to 4 fields to show as columns in the table
-  const tableColumns = $derived(
-    (collection?.fields || []).slice(0, 4)
-  );
+  const filteredByStatus = $derived.by(() => {
+    if (filter === 'all') return items;
+    return items.filter((i) => i.status === filter);
+  });
 
-  // Status Filter Counts
-  const publishedCount = $derived(items.filter((i) => i.status === 'published').length);
-  const draftCount = $derived(items.filter((i) => i.status === 'draft').length);
-
-  // Filtered Items (by status & search query)
-  const filteredItems = $derived(
-    items.filter((item) => {
-      // 1. Status filter
-      if (filter !== 'all' && item.status !== filter) {
-        return false;
-      }
-
-      // 2. Search query filter
-      const q = searchQuery.trim().toLowerCase();
-      if (!q) return true;
-
-      // Match item ID
-      if (item.id.toLowerCase().includes(q)) return true;
-
-      // Match status
-      if (item.status.toLowerCase().includes(q)) return true;
-
-      // Match any field inside item.data
+  const searchedItems = $derived.by(() => {
+    if (!searchQuery.trim()) return filteredByStatus;
+    const q = searchQuery.toLowerCase().trim();
+    return filteredByStatus.filter((item) => {
+      if (item.status?.toLowerCase().includes(q)) return true;
+      if (item.id?.toLowerCase().includes(q)) return true;
       if (item.data) {
         for (const val of Object.values(item.data)) {
-          if (val !== undefined && val !== null) {
-            const strVal = String(val).toLowerCase();
-            if (strVal.includes(q)) return true;
+          if (val !== undefined && val !== null && String(val).toLowerCase().includes(q)) {
+            return true;
           }
         }
       }
-
       return false;
-    })
-  );
+    });
+  });
 
-  // Sorted Items
-  const sortedItems = $derived(
-    [...filteredItems].sort((a, b) => {
-      let valA: any;
-      let valB: any;
+  const sortedItems = $derived.by(() => {
+    return [...searchedItems].sort((a, b) => {
+      let aVal: any;
+      let bVal: any;
 
       if (sortColumn === 'status') {
-        valA = a.status;
-        valB = b.status;
+        aVal = a.status || '';
+        bVal = b.status || '';
       } else if (sortColumn === 'created_at') {
-        valA = new Date(a.created_at).getTime();
-        valB = new Date(b.created_at).getTime();
+        aVal = new Date(a.created_at).getTime();
+        bVal = new Date(b.created_at).getTime();
+      } else if (sortColumn === 'updated_at') {
+        aVal = new Date(a.updated_at).getTime();
+        bVal = new Date(b.updated_at).getTime();
       } else {
-        valA = a.data?.[sortColumn];
-        valB = b.data?.[sortColumn];
+        aVal = a.data?.[sortColumn] ?? '';
+        bVal = b.data?.[sortColumn] ?? '';
       }
 
-      // Handle nulls / undefined - push to end
-      if (valA === undefined || valA === null || valA === '') return 1;
-      if (valB === undefined || valB === null || valB === '') return -1;
-
-      let comparison = 0;
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        comparison = valA - valB;
-      } else if (typeof valA === 'boolean' && typeof valB === 'boolean') {
-        comparison = valA === valB ? 0 : valA ? -1 : 1;
-      } else if (
-        sortColumn === 'created_at' ||
-        (typeof valA === 'string' && /^\d{4}-\d{2}-\d{2}/.test(valA) && /^\d{4}-\d{2}-\d{2}/.test(valB))
-      ) {
-        const timeA = new Date(valA).getTime();
-        const timeB = new Date(valB).getTime();
-        comparison = isNaN(timeA) || isNaN(timeB) ? String(valA).localeCompare(String(valB)) : timeA - timeB;
-      } else {
-        comparison = String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' });
+      if (typeof aVal === 'string') {
+        const cmp = aVal.localeCompare(String(bVal));
+        return sortDirection === 'asc' ? cmp : -cmp;
       }
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  });
 
-      return sortDirection === 'asc' ? comparison : -comparison;
-    })
-  );
+  const publishedCount = $derived(items.filter((i) => i.status === 'published').length);
+  const draftCount = $derived(items.filter((i) => i.status === 'draft').length);
 
-  // Pagination calculations
+  const tableColumns = $derived.by(() => {
+    if (!collection?.fields || collection.fields.length === 0) {
+      return [{ key: 'id', label: 'ID', type: 'text' }];
+    }
+    return collection.fields.slice(0, 4).map((f) => ({
+      key: f.key,
+      label: f.label || f.key,
+      type: f.type
+    }));
+  });
+
   const totalItems = $derived(sortedItems.length);
   const totalPages = $derived(Math.max(1, Math.ceil(totalItems / pageSize)));
   const startIndex = $derived((currentPage - 1) * pageSize);
   const endIndex = $derived(Math.min(startIndex + pageSize, totalItems));
   const paginatedItems = $derived(sortedItems.slice(startIndex, endIndex));
 
-  // Generate page numbers for pagination
   const visiblePages = $derived.by(() => {
     const pages: (number | string)[] = [];
     if (totalPages <= 5) {
@@ -224,37 +202,35 @@
 </script>
 
 <svelte:head>
-  <title>{collection?.name || 'Content Collection'} - EdgeCMS</title>
+  <title>{collection?.name || 'Content Collection'} — EdgeCMS</title>
 </svelte:head>
 
 <!-- Header & Controls -->
-<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+<div class="shopify-page-header">
   <div>
-    <h1 style="font-size: 18px; font-weight: 600; color: #09090b; margin: 0 0 3px 0; letter-spacing: -0.015em;">
+    <h1 class="shopify-page-title">
       {collection?.name || 'Collection'}
     </h1>
     {#if collection?.description}
-      <p style="font-size: 13px; color: #71717a; margin: 0;">
+      <p class="shopify-page-subtitle">
         {collection.description}
       </p>
     {/if}
   </div>
 
-  <div style="display: flex; align-items: center; gap: 8px;">
+  <div class="flex items-center gap-2">
     <a
       href="/schemas"
-      class="btn-outline-pill"
-      style="font-size: 12px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px; color: #52525b;"
+      class="btn btn-secondary btn-sm"
       title="Edit schema fields"
     >
-      <Icon name="settings" size={13} />
+      <Icon name="settings" size={12} />
       <span>Schema</span>
     </a>
 
     <a
       href="/content/{collectionSlug}/new"
-      class="btn-primary-pill"
-      style="font-size: 12px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;"
+      class="btn btn-primary btn-sm"
     >
       <Icon name="plus" size={12} />
       <span>New {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}</span>
@@ -264,272 +240,247 @@
 
 <!-- Toolbar: Filter Tabs + Search Box -->
 {#if items.length > 0}
-  <div class="table-toolbar" style="margin-bottom: 14px;">
-    <div class="table-toolbar-left" style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
-      <!-- Status Tabs -->
-      <div class="shopify-segmented">
-        <button
-          class="shopify-segment-btn {filter === 'all' ? 'active' : ''}"
-          onclick={() => (filter = 'all')}
-        >
-          All ({items.length})
-        </button>
-        <button
-          class="shopify-segment-btn {filter === 'published' ? 'active' : ''}"
-          onclick={() => (filter = 'published')}
-        >
-          Published ({publishedCount})
-        </button>
-        <button
-          class="shopify-segment-btn {filter === 'draft' ? 'active' : ''}"
-          onclick={() => (filter = 'draft')}
-        >
-          Drafts ({draftCount})
-        </button>
-      </div>
+  <div class="table-toolbar mb-3">
+    <!-- Status Tabs -->
+    <div class="shopify-segmented">
+      <button
+        class="shopify-segment-btn {filter === 'all' ? 'active' : ''}"
+        onclick={() => (filter = 'all')}
+      >
+        All ({items.length})
+      </button>
+      <button
+        class="shopify-segment-btn {filter === 'published' ? 'active' : ''}"
+        onclick={() => (filter = 'published')}
+      >
+        Published ({publishedCount})
+      </button>
+      <button
+        class="shopify-segment-btn {filter === 'draft' ? 'active' : ''}"
+        onclick={() => (filter = 'draft')}
+      >
+        Drafts ({draftCount})
+      </button>
+    </div>
 
-      <!-- Instant Search Input -->
-      <div class="table-search-box" style="max-width: 260px;">
-        <span class="table-search-icon">
-          <Icon name="search" size={13} />
-        </span>
-        <input
-          type="text"
-          class="table-search-input"
-          placeholder="Search..."
-          bind:value={searchQuery}
-        />
-        {#if searchQuery}
-          <button
-            type="button"
-            class="table-search-clear"
-            onclick={() => (searchQuery = '')}
-            title="Clear search"
-            aria-label="Clear search"
-          >
-            <Icon name="close" size={11} />
-          </button>
-        {/if}
-      </div>
+    <!-- Search Input -->
+    <div class="search-input-wrapper">
+      <span class="search-input-icon">
+        <Icon name="search" size={13} />
+      </span>
+      <input
+        type="text"
+        class="search-input-field"
+        placeholder="Search..."
+        bind:value={searchQuery}
+      />
     </div>
   </div>
 {/if}
 
 {#if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 12px 16px; color: #b91c1c; margin-bottom: 20px; font-size: 13px;">
+  <div class="error-banner mb-4">
     {error}
   </div>
 {/if}
 
 {#if loading}
-  <div class="shopify-card" style="padding: 48px; text-align: center; color: #71717a; font-size: 13.5px;">
+  <div class="shopify-card p-12 text-center text-muted text-sm">
     Loading dynamic records...
   </div>
 {:else if items.length === 0}
-  <div class="shopify-card" style="padding: 56px 20px; text-align: center;">
-    <div style="width: 48px; height: 48px; border-radius: 12px; background: #f4f4f5; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #71717a;">
+  <div class="shopify-card p-12 text-center">
+    <div class="media-empty-icon">
       <Icon name="collection" size={24} />
     </div>
-    <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 6px 0;">No records in this collection yet</h3>
-    <p style="color: #71717a; font-size: 13px; max-width: 420px; margin: 0 auto 18px auto;">
+    <h3 class="text-base font-semibold mb-2">No records in this collection yet</h3>
+    <p class="text-muted text-sm max-w-md mx-auto mb-4">
       Add your first record using the auto-generated dynamic form based on the schema fields.
     </p>
-    <a href="/content/{collectionSlug}/new" class="btn-primary-pill" style="display: inline-flex;">
+    <a href="/content/{collectionSlug}/new" class="btn btn-primary">
       Create First {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}
     </a>
   </div>
 {:else}
   <!-- Dynamic Table with Sorting and Pagination -->
-  <div class="shopify-card" style="overflow: hidden; padding: 0;">
-    <div style="overflow-x: auto;">
-      <table class="shopify-table">
-        <thead>
+  <div class="shopify-table-container">
+    <table class="shopify-table">
+      <thead>
+        <tr>
+          {#each tableColumns as col}
+            <th
+              class="sortable"
+              onclick={() => handleSort(col.key)}
+              title="Sort by {col.label}"
+            >
+              <span class="table-header-content">
+                <span>{col.label}</span>
+                <span class="sort-indicator {sortColumn === col.key ? '' : 'inactive'}">
+                  {#if sortColumn === col.key}
+                    <Icon name={sortDirection === 'asc' ? 'chevron-up' : 'chevron-down'} size={12} />
+                  {/if}
+                </span>
+              </span>
+            </th>
+          {/each}
+
+          <!-- Status Column Header -->
+          <th
+            class="sortable col-status"
+            onclick={() => handleSort('status')}
+            title="Sort by status"
+          >
+            <span class="table-header-content">
+              <span>STATUS</span>
+              <span class="sort-indicator {sortColumn === 'status' ? '' : 'inactive'}">
+                {#if sortColumn === 'status'}
+                  <Icon name={sortDirection === 'asc' ? 'chevron-up' : 'chevron-down'} size={12} />
+                {/if}
+              </span>
+            </span>
+          </th>
+
+          <!-- Created Date Column Header -->
+          <th
+            class="sortable col-created"
+            onclick={() => handleSort('created_at')}
+            title="Sort by creation date"
+          >
+            <span class="table-header-content">
+              <span>CREATED</span>
+              <span class="sort-indicator {sortColumn === 'created_at' ? '' : 'inactive'}">
+                {#if sortColumn === 'created_at'}
+                  <Icon name={sortDirection === 'asc' ? 'chevron-up' : 'chevron-down'} size={12} />
+                {/if}
+              </span>
+            </span>
+          </th>
+
+          <!-- Actions Header -->
+          <th class="col-actions">ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#if sortedItems.length === 0}
           <tr>
-            {#each tableColumns as col}
-              <th
-                class="sortable {sortColumn === col.key ? 'active-sort' : ''}"
-                onclick={() => handleSort(col.key)}
-                title="Sort by {col.label}"
-              >
-                <span class="th-sort-wrapper">
-                  <span>{col.label}</span>
-                  <span class="sort-indicator">
-                    {#if sortColumn === col.key}
-                      <Icon name={sortDirection === 'asc' ? 'chevron-up' : 'chevron-down'} size={12} />
-                    {:else}
-                      <Icon name="sort" size={11} />
-                    {/if}
-                  </span>
-                </span>
-              </th>
-            {/each}
-
-            <!-- Status Column Header -->
-            <th
-              class="sortable {sortColumn === 'status' ? 'active-sort' : ''}"
-              style="width: 110px;"
-              onclick={() => handleSort('status')}
-              title="Sort by status"
-            >
-              <span class="th-sort-wrapper">
-                <span>STATUS</span>
-                <span class="sort-indicator">
-                  {#if sortColumn === 'status'}
-                    <Icon name={sortDirection === 'asc' ? 'chevron-up' : 'chevron-down'} size={12} />
-                  {:else}
-                    <Icon name="sort" size={11} />
-                  {/if}
-                </span>
-              </span>
-            </th>
-
-            <!-- Created Date Column Header -->
-            <th
-              class="sortable {sortColumn === 'created_at' ? 'active-sort' : ''}"
-              style="width: 120px;"
-              onclick={() => handleSort('created_at')}
-              title="Sort by creation date"
-            >
-              <span class="th-sort-wrapper">
-                <span>CREATED</span>
-                <span class="sort-indicator">
-                  {#if sortColumn === 'created_at'}
-                    <Icon name={sortDirection === 'asc' ? 'chevron-up' : 'chevron-down'} size={12} />
-                  {:else}
-                    <Icon name="sort" size={11} />
-                  {/if}
-                </span>
-              </span>
-            </th>
-
-            <!-- Actions Header -->
-            <th style="text-align: right; width: 140px;">ACTIONS</th>
+            <td colspan={tableColumns.length + 3} class="p-12 text-center">
+              <div class="media-empty-icon mx-auto mb-2">
+                <Icon name="search" size={18} />
+              </div>
+              <div class="font-semibold text-sm mb-1">
+                No records match your filters
+              </div>
+              <p class="text-xs text-muted mb-3">
+                {searchQuery ? `No results found for "${searchQuery}".` : 'Try selecting a different status filter.'}
+              </p>
+              <button type="button" class="btn btn-secondary btn-sm" onclick={clearAllFilters}>
+                Clear Filters
+              </button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {#if sortedItems.length === 0}
+        {:else}
+          {#each paginatedItems as item (item.id)}
             <tr>
-              <td colspan={tableColumns.length + 3} style="padding: 48px 20px; text-align: center;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: #f4f4f5; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; color: #71717a;">
-                  <Icon name="search" size={18} />
-                </div>
-                <div style="font-size: 14px; font-weight: 600; color: #000000; margin-bottom: 4px;">
-                  No records match your filters
-                </div>
-                <p style="font-size: 12px; color: #71717a; margin: 0 0 12px 0;">
-                  {searchQuery ? `No results found for "${searchQuery}".` : 'Try selecting a different status filter.'}
-                </p>
-                <button type="button" class="btn-outline-pill" onclick={clearAllFilters}>
-                  Clear Filters
+              {#each tableColumns as col, idx}
+                <td>
+                  {#if idx === 0}
+                    <!-- Primary Title Column -->
+                    <div class="flex items-center gap-2 min-w-0">
+                      {#if item.data?.[col.key] && col.type === 'media'}
+                        <img src={item.data[col.key]} alt="Thumb" class="table-thumb" />
+                      {/if}
+                      <span class="font-medium text-sm text-dark shopify-table-cell-truncate">
+                        {item.data?.[col.key] !== undefined && item.data?.[col.key] !== null ? item.data[col.key] : '—'}
+                      </span>
+                    </div>
+                  {:else if col.type === 'boolean'}
+                    <span class="text-xs font-medium inline-flex items-center gap-1 {item.data?.[col.key] ? 'text-success' : 'text-muted'}">
+                      {#if item.data?.[col.key]}
+                        <Icon name="check" size={12} />
+                        <span>Yes</span>
+                      {:else}
+                        <Icon name="close" size={12} />
+                        <span>No</span>
+                      {/if}
+                    </span>
+                  {:else if col.type === 'media'}
+                    {#if item.data?.[col.key]}
+                      <img src={item.data[col.key]} alt="Thumb" class="table-thumb" />
+                    {:else}
+                      <span class="text-faint text-xs">None</span>
+                    {/if}
+                  {:else if col.type === 'number'}
+                    <span class="font-mono text-xs font-medium shopify-table-cell-truncate">
+                      {item.data?.[col.key] !== undefined ? item.data[col.key] : '—'}
+                    </span>
+                  {:else}
+                    <span class="text-xs text-muted shopify-table-cell-truncate">
+                      {item.data?.[col.key] !== undefined ? String(item.data[col.key]).replace(/<[^>]*>?/gm, '') : '—'}
+                    </span>
+                  {/if}
+                </td>
+              {/each}
+
+              <!-- Status Column -->
+              <td class="col-status">
+                <button
+                  type="button"
+                  class="cursor-pointer bg-transparent border-none p-0 inline-flex"
+                  onclick={() => handleToggleStatus(item)}
+                  title="Click to toggle status"
+                >
+                  {#if item.status === 'published'}
+                    <span class="badge-published">PUBLISHED</span>
+                  {:else}
+                    <span class="badge-draft">DRAFT</span>
+                  {/if}
+                </button>
+              </td>
+
+              <!-- Created Date -->
+              <td class="col-created text-xs text-muted whitespace-nowrap font-mono">
+                {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+              </td>
+
+              <!-- Actions -->
+              <td class="col-actions whitespace-nowrap">
+                <a
+                  href="/content/{collectionSlug}/{item.id}"
+                  class="btn btn-secondary btn-sm"
+                >
+                  Edit
+                </a>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm ml-1"
+                  title="Delete item"
+                  onclick={() => handleDelete(item)}
+                >
+                  Delete
                 </button>
               </td>
             </tr>
-          {:else}
-            {#each paginatedItems as item (item.id)}
-              <tr>
-                {#each tableColumns as col, idx}
-                  <td>
-                    {#if idx === 0}
-                      <!-- Primary Title Column -->
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        {#if item.data?.[col.key] && col.type === 'media'}
-                          <img src={item.data[col.key]} alt="Thumb" style="width: 28px; height: 28px; border-radius: 4px; object-fit: cover;" />
-                        {/if}
-                        <span style="font-weight: 600; color: #000000; font-size: 13px;">
-                          {item.data?.[col.key] !== undefined && item.data?.[col.key] !== null ? item.data[col.key] : '—'}
-                        </span>
-                      </div>
-                    {:else if col.type === 'boolean'}
-                      <span style="font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; color: {item.data?.[col.key] ? '#15803d' : '#71717a'};">
-                        {#if item.data?.[col.key]}
-                          <Icon name="check" size={12} />
-                          <span>Yes</span>
-                        {:else}
-                          <Icon name="close" size={12} />
-                          <span>No</span>
-                        {/if}
-                      </span>
-                    {:else if col.type === 'media'}
-                      {#if item.data?.[col.key]}
-                        <img src={item.data[col.key]} alt="Thumb" style="width: 26px; height: 26px; border-radius: 4px; object-fit: cover; border: 1px solid #e4e4e7;" />
-                      {:else}
-                        <span style="color: #a1a1aa; font-size: 11px;">None</span>
-                      {/if}
-                    {:else if col.type === 'number'}
-                      <span style="font-family: monospace; font-size: 12.5px; font-weight: 600;">
-                        {item.data?.[col.key] !== undefined ? item.data[col.key] : '—'}
-                      </span>
-                    {:else}
-                      <span style="font-size: 12.5px; color: #3f3f46; max-width: 200px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        {item.data?.[col.key] !== undefined ? String(item.data[col.key]).replace(/<[^>]*>?/gm, '') : '—'}
-                      </span>
-                    {/if}
-                  </td>
-                {/each}
-
-                <!-- Status Column -->
-                <td>
-                  <button
-                    type="button"
-                    class="status-toggle-btn"
-                    onclick={() => handleToggleStatus(item)}
-                    title="Click to toggle status"
-                  >
-                    {#if item.status === 'published'}
-                      <span class="pill-tag-mint">PUBLISHED</span>
-                    {:else}
-                      <span class="pill-tag-gray">DRAFT</span>
-                    {/if}
-                  </button>
-                </td>
-
-                <!-- Created Date -->
-                <td style="font-size: 11.5px; color: #71717a; white-space: nowrap;">
-                  {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                </td>
-
-                <!-- Actions -->
-                <td style="text-align: right; white-space: nowrap;">
-                  <a
-                    href="/content/{collectionSlug}/{item.id}"
-                    class="btn-sm-pill btn-gray-sm"
-                    style="font-size: 11px; padding: 2.5px 8px;"
-                  >
-                    Edit
-                  </a>
-                  <button
-                    type="button"
-                    class="btn-sm-pill btn-danger-sm"
-                    style="font-size: 11px; padding: 2.5px 7px; margin-left: 4px;"
-                    title="Delete item"
-                    onclick={() => handleDelete(item)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            {/each}
-          {/if}
-        </tbody>
-      </table>
-    </div>
+          {/each}
+        {/if}
+      </tbody>
+    </table>
 
     <!-- Pagination & Item Count Footer -->
     {#if sortedItems.length > 0}
-      <div class="table-pagination">
-        <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="table-pagination-bar">
+        <div class="flex items-center gap-3">
           <span>
             Showing <strong>{startIndex + 1}–{endIndex}</strong> of <strong>{totalItems}</strong> records
             {#if searchQuery || filter !== 'all'}
-              <span style="color: #71717a;">(from {items.length} total)</span>
+              <span class="text-muted">(from {items.length} total)</span>
             {/if}
           </span>
 
-          <div class="page-size-selector">
-            <label for="page-size" style="color: #71717a;">Rows:</label>
+          <div class="flex items-center gap-1">
+            <label for="page-size" class="text-muted text-xs">Rows:</label>
             <select
               id="page-size"
-              class="page-size-select"
+              class="shopify-input py-1 px-2 text-xs w-auto"
               bind:value={pageSize}
               onchange={() => (currentPage = 1)}
             >
@@ -555,7 +506,7 @@
 
             {#each visiblePages as p}
               {#if p === '...'}
-                <span style="padding: 0 4px; color: #a1a1aa; font-size: 11px;">...</span>
+                <span class="px-1 text-faint text-xs">...</span>
               {:else}
                 <button
                   type="button"

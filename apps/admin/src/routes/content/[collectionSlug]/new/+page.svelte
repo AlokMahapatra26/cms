@@ -76,37 +76,39 @@
 </script>
 
 <svelte:head>
-  <title>New {collection?.name || 'Item'} - EdgeCMS</title>
+  <title>New {collection?.name || 'Item'} — EdgeCMS</title>
 </svelte:head>
 
-<div style="margin-bottom: 20px;">
-  <div style="margin-bottom: 6px;">
-    <a href="/content/{collectionSlug}" style="font-size: 12.5px; color: #71717a; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-      <Icon name="arrow-left" size={13} />
-      <span>{collection?.name || 'Back'}</span>
-    </a>
+<div class="shopify-page-header">
+  <div>
+    <div class="mb-1">
+      <a href="/content/{collectionSlug}" class="text-xs text-muted inline-flex items-center gap-1">
+        <Icon name="arrow-left" size={12} />
+        <span>{collection?.name || 'Back'}</span>
+      </a>
+    </div>
+    <h1 class="shopify-page-title">
+      New {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}
+    </h1>
   </div>
-  <h1 style="font-size: 18px; font-weight: 600; color: #09090b; margin: 0; letter-spacing: -0.015em;">
-    New {collection?.name ? collection.name.replace(/s$/, '') : 'Item'}
-  </h1>
 </div>
 
 {#if error}
-  <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 10px 14px; color: #b91c1c; margin-bottom: 16px; font-size: 12.5px;">
+  <div class="error-banner mb-4">
     {error}
   </div>
 {/if}
 
 {#if loading}
-  <div class="shopify-card" style="padding: 40px; text-align: center; color: #71717a; font-size: 13px;">
+  <div class="shopify-card p-12 text-center text-muted text-sm">
     Loading...
   </div>
 {:else if collection}
-  <div class="shopify-card" style="padding: 24px;">
-    <form onsubmit={handleSubmit} style="display: flex; flex-direction: column; gap: 18px;">
+  <div class="shopify-card">
+    <form onsubmit={handleSubmit} class="flex flex-col gap-4">
       <!-- Visibility / Status Toggle -->
       <div>
-        <div class="form-label" style="margin-bottom: 6px;">Status</div>
+        <div class="form-label">Status</div>
         <div class="shopify-segmented">
           <button
             type="button"
@@ -131,7 +133,7 @@
       {/each}
 
       <!-- Actions Bar -->
-      <div style="display: flex; gap: 12px; align-items: center; padding-top: 14px; border-top: 1px solid #e4e4e7; flex-wrap: wrap;">
+      <div class="shopify-actions-bar">
         <button
           type="button"
           disabled={submitting}
@@ -140,7 +142,7 @@
             const form = document.querySelector('form');
             if (form) form.requestSubmit();
           }}
-          class="btn-aloe-pill"
+          class="btn btn-primary"
         >
           {submitting && status === 'published' ? 'Publishing...' : 'Publish Item'}
         </button>
@@ -153,16 +155,15 @@
             const form = document.querySelector('form');
             if (form) form.requestSubmit();
           }}
-          class="btn-outline-pill"
+          class="btn btn-secondary"
         >
           {submitting && status === 'draft' ? 'Saving...' : 'Save as Draft'}
         </button>
 
-        <a href="/content/{collectionSlug}" class="btn-sm-pill btn-gray-sm" style="padding: 8px 16px; margin-left: auto;">
+        <a href="/content/{collectionSlug}" class="btn btn-secondary ml-auto">
           Cancel
         </a>
       </div>
     </form>
   </div>
 {/if}
-

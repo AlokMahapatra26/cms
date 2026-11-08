@@ -151,7 +151,7 @@
 
         <button
           type="button"
-          class="btn-sm-pill btn-danger-sm"
+          class="btn btn-danger btn-sm"
           onclick={() => (value = null)}
         >
           Remove
@@ -159,7 +159,7 @@
       </div>
     {:else}
       <div class="media-upload-box">
-        <label class="btn-outline-pill cursor-pointer text-sm inline-flex items-center gap-1.5">
+        <label class="btn btn-secondary btn-sm cursor-pointer inline-flex items-center gap-1.5">
           <Icon name="upload" size={13} />
           <span>{uploadingMedia ? 'Uploading to R2...' : 'Select or Upload Media'}</span>
           <input
