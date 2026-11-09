@@ -12,6 +12,7 @@
   } from '$lib/api';
   import { Icon } from '$lib/components';
   import { workspacesStore } from '$lib/workspaces.svelte';
+  import { frontendStore } from '$lib/frontendStore.svelte';
   import { modal } from '$lib/modal.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import type { User, Workspace } from '@cms/shared';
@@ -915,28 +916,51 @@
         {/if}
       </div>
 
-      <!-- Astro Frontend Starter Card -->
+      <!-- Astro Frontend Opt-In Feature Card -->
       <div class="shopify-card col-span-2">
-        <div class="workspace-settings-header">
-          <div>
-            <div class="flex items-center gap-2 mb-1">
-              <h2 class="text-base font-semibold m-0">Astro Frontend Starter</h2>
-              <span class="pill-tag-mint">Live at :4321</span>
+        <div class="workspace-mode-banner">
+          <div class="workspace-mode-info">
+            <div class="flex items-center gap-2">
+              <span class="workspace-mode-title">Astro Frontend Website (:4321)</span>
+              {#if frontendStore.enabled}
+                <span class="pill-tag-mint">Enabled</span>
+              {:else}
+                <span class="pill-tag-gray">Disabled</span>
+              {/if}
             </div>
-            <p class="text-xs text-muted m-0">
-              A clean blank canvas powered by Astro 5.0 and connected to your EdgeCMS Cloudflare database. Edit <code>apps/web/src/pages/index.astro</code> to build your custom client website.
+            <p class="workspace-mode-desc">
+              {frontendStore.enabled 
+                ? 'Embedded Astro 5.0 blank canvas active at localhost:4321 with quick navigation link in your top header.' 
+                : 'Pure Headless CMS mode. The embedded public frontend and its navigation shortcuts are disabled.'}
             </p>
           </div>
 
-          <a
-            href="http://localhost:4321"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="btn btn-secondary btn-sm"
-          >
-            <span>Open Website</span>
-            <Icon name="external" size={11} />
-          </a>
+          <div class="flex items-center gap-3">
+            {#if frontendStore.enabled}
+              <a
+                href="http://localhost:4321"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-secondary btn-sm"
+              >
+                <span>Open Website</span>
+                <Icon name="external" size={11} />
+              </a>
+            {/if}
+
+            <div class="workspace-toggle-wrapper">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={frontendStore.enabled}
+                class="workspace-toggle-track {frontendStore.enabled ? 'active' : ''}"
+                onclick={() => frontendStore.toggle()}
+                title={frontendStore.enabled ? 'Disable Astro Frontend' : 'Enable Astro Frontend'}
+              >
+                <span class="workspace-toggle-thumb"></span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     {/if}
