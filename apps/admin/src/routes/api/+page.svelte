@@ -35,6 +35,7 @@
   }
 
   const collections = $derived(collectionsStore.list);
+  const isMultiTenant = $derived(workspacesStore.enabled && workspacesStore.list.length > 1);
 
   function copyToClipboard(text: string, id: string) {
     navigator.clipboard.writeText(text);
@@ -113,7 +114,6 @@ export type ${recordName} = CmsRecord<${typeName}>;`;
   const agentPrompt = $derived.by(() => {
     const cols = collections;
     const base = cleanApiBase;
-    const isMultiTenant = workspacesStore.enabled && workspacesStore.list.length > 1;
     const wsSlug = workspacesStore.active.slug;
     const wsName = workspacesStore.active.name;
 
