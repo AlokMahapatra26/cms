@@ -377,7 +377,7 @@
 
     <!-- Workspaces & Client Management Card -->
     <div class="shopify-card">
-      <div class="flex items-center justify-between mb-4">
+      <div class="workspace-settings-header mb-4">
         <div>
           <h2 class="text-base font-semibold m-0 mb-1">Workspaces & Client Projects</h2>
           <p class="text-xs text-muted m-0">
@@ -385,33 +385,47 @@
           </p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <div class="workspace-toggle-wrapper">
-            <span class="text-xs text-muted font-medium">
-              {workspacesStore.enabled ? 'Multi-Client Mode: ON' : 'Multi-Client Mode: OFF'}
-            </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={workspacesStore.enabled}
-              class="workspace-toggle-track {workspacesStore.enabled ? 'active' : ''}"
-              onclick={() => workspacesStore.toggleMultiTenant()}
-              title={workspacesStore.enabled ? 'Disable Multi-Client Mode' : 'Enable Multi-Client Mode'}
-            >
-              <span class="workspace-toggle-thumb"></span>
-            </button>
-          </div>
+        {#if workspacesStore.enabled}
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            onclick={() => (showCreateWsModal = true)}
+          >
+            <Icon name="plus" size={12} />
+            <span>New Client Workspace</span>
+          </button>
+        {/if}
+      </div>
 
-          {#if workspacesStore.enabled}
-            <button
-              type="button"
-              class="btn btn-secondary btn-sm"
-              onclick={() => (showCreateWsModal = true)}
-            >
-              <Icon name="plus" size={12} />
-              <span>New Client Workspace</span>
-            </button>
-          {/if}
+      <!-- Feature Toggle Banner -->
+      <div class="workspace-mode-banner mb-4">
+        <div class="workspace-mode-info">
+          <div class="flex items-center gap-2">
+            <span class="workspace-mode-title">Multi-Client Agency Mode</span>
+            {#if workspacesStore.enabled}
+              <span class="pill-tag-mint">Enabled</span>
+            {:else}
+              <span class="pill-tag-gray">Disabled</span>
+            {/if}
+          </div>
+          <p class="workspace-mode-desc">
+            {workspacesStore.enabled 
+              ? 'Multi-tenant isolation active. Client workspace quick-switcher is active in your top navigation.' 
+              : 'Single personal project mode. All collections and content are managed under your primary workspace with zero overhead.'}
+          </p>
+        </div>
+
+        <div class="workspace-toggle-wrapper">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={workspacesStore.enabled}
+            class="workspace-toggle-track {workspacesStore.enabled ? 'active' : ''}"
+            onclick={() => workspacesStore.toggleMultiTenant()}
+            title={workspacesStore.enabled ? 'Disable Multi-Client Mode' : 'Enable Multi-Client Mode'}
+          >
+            <span class="workspace-toggle-thumb"></span>
+          </button>
         </div>
       </div>
 
