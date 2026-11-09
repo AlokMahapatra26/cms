@@ -15,3 +15,4 @@
 ## Creating Schemas
 Always edit `cms.config.ts` using the builder helpers: `text`, `longtext`, `richtext`, `number`, `boolean`, `date`, `media`, `select`, `relation`.
 Saving `cms.config.ts` automatically updates Cloudflare D1.
+

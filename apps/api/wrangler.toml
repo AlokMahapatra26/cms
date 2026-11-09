@@ -9,7 +9,7 @@ port = 8787
 [[d1_databases]]
 binding = "DB"
 database_name = "cms-d1"
-database_id = "local-cms-d1"
+database_id = "a32128b9-5c9b-49ff-886e-e49c682ca84a"
 migrations_dir = "migrations"
 
 [[r2_buckets]]

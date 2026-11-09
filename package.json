@@ -12,6 +12,9 @@
     "build:admin": "pnpm --filter @cms/admin build",
     "build:web": "pnpm --filter @cms/web build",
     "migrate:local": "pnpm --filter @cms/api migrate:local",
-    "cms:sync": "node scripts/sync-cms.mjs"
+    "cms:sync": "node scripts/sync-cms.mjs",
+    "deploy:api": "pnpm --filter @cms/api wrangler deploy",
+    "deploy:admin": "VITE_API_BASE_URL=\"https://cms-api.alokmahapatra2604.workers.dev\" pnpm --filter @cms/admin build && pnpm --filter @cms/api wrangler pages deploy ../admin/build --project-name=edgecms-admin",
+    "deploy": "pnpm deploy:api && pnpm deploy:admin"
   }
 }

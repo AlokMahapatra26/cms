@@ -71,3 +71,4 @@ import { getCMSContent } from '../lib/cms';
 // Fetches all published items with relational fields populated:
 const products = await getCMSContent('products');
 ```
+

@@ -49,3 +49,4 @@ export default cmsConfig;
   - `GET /api/v1/:workspaceSlug/content/:collectionSlug?status=published&populate=true`
   - Or simply `GET /api/content/:collectionSlug`
 - Client helper: `apps/web/src/lib/cms.ts` provides `getCMSContent(slug)`.
+

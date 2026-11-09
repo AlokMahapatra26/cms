@@ -32,6 +32,9 @@ importers:
       '@sveltejs/adapter-auto':
         specifier: ^4.0.0
         version: 4.0.0(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@5.1.1(supports-color@10.2.2)(svelte@5.57.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))(svelte@5.57.3)(typescript@5.9.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))
+      '@sveltejs/adapter-static':
+        specifier: ^4.0.1
+        version: 4.0.1(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@5.1.1(supports-color@10.2.2)(svelte@5.57.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))(svelte@5.57.3)(typescript@5.9.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))
       '@sveltejs/kit':
         specifier: ^2.16.0
         version: 2.70.3(@sveltejs/vite-plugin-svelte@5.1.1(supports-color@10.2.2)(svelte@5.57.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))(svelte@5.57.3)(typescript@5.9.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1))
@@ -1180,6 +1183,11 @@ packages:
     resolution: {integrity: sha512-kmuYSQdD2AwThymQF0haQhM8rE5rhutQXG4LNbnbShwhMO4qQGnKaaTy+88DuNSuoQDi58+thpq8XpHc1+oEKQ==}
     peerDependencies:
       '@sveltejs/kit': ^2.0.0
+
+  '@sveltejs/adapter-static@4.0.1':
+    resolution: {integrity: sha512-svOU1OcBiJ9Kn1cdxHDmJIsBy1/iQe9STPvUFkO2/iinxPFS7r8fc9TiCaWWUgbrE+7ox6Bt4MURv3RPi7sunQ==}
+    peerDependencies:
+      '@sveltejs/kit': ^3.0.0-next.0
 
   '@sveltejs/kit@2.70.3':
     resolution: {integrity: sha512-UDvEYuZqAMbfB/oXIoqKvbKcb7YczK5zYrzmsGV1zRJk03jntwp8dXiYoIJotxAndsKvcPFtx9H1GRSKFdSHgg==}
@@ -3300,6 +3308,10 @@ snapshots:
     dependencies:
       '@sveltejs/kit': 2.70.3(@sveltejs/vite-plugin-svelte@5.1.1(supports-color@10.2.2)(svelte@5.57.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))(svelte@5.57.3)(typescript@5.9.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1))
       import-meta-resolve: 4.2.0
+
+  '@sveltejs/adapter-static@4.0.1(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@5.1.1(supports-color@10.2.2)(svelte@5.57.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))(svelte@5.57.3)(typescript@5.9.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))':
+    dependencies:
+      '@sveltejs/kit': 2.70.3(@sveltejs/vite-plugin-svelte@5.1.1(supports-color@10.2.2)(svelte@5.57.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))(svelte@5.57.3)(typescript@5.9.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1))
 
   '@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@5.1.1(supports-color@10.2.2)(svelte@5.57.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1)))(svelte@5.57.3)(typescript@5.9.3)(vite@6.4.5(lightningcss@1.33.0)(yaml@2.9.1))':
     dependencies:
