@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { getMe } from '$lib/api';
   import { collectionsStore } from '$lib/collections.svelte';
   import { workspacesStore } from '$lib/workspaces.svelte';
   import { Icon } from '$lib/components';
@@ -10,7 +12,18 @@
 
   const cleanApiBase = $derived(apiBase.trim().replace(/\/+$/, '') || 'http://localhost:8787');
 
-  onMount(() => {
+  onMount(async () => {
+    try {
+      const user = await getMe();
+      if (user.role !== 'admin') {
+        const firstCol = collectionsStore.list[0]?.slug;
+        goto(firstCol ? `/content/${firstCol}` : '/settings');
+        return;
+      }
+    } catch {
+      goto('/login');
+      return;
+    }
     workspacesStore.load();
     collectionsStore.load();
     const saved = localStorage.getItem('cms_api_base');

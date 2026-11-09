@@ -138,14 +138,16 @@
             <span class="font-medium text-xs">{currentUser.name}</span>
           </a>
 
-          <a
-            href="/api"
-            class="btn btn-secondary btn-sm"
-            title="Headless API"
-          >
-            <span>API</span>
-            <Icon name="external" size={11} />
-          </a>
+          {#if currentUser.role === 'admin'}
+            <a
+              href="/api"
+              class="btn btn-secondary btn-sm"
+              title="Headless API"
+            >
+              <span>API</span>
+              <Icon name="external" size={11} />
+            </a>
+          {/if}
 
           <button
             onclick={handleLogout}
@@ -215,12 +217,14 @@
           <!-- Section 3: Distribution & Settings -->
           <div class="shopify-sidebar-section">
             <h3 class="shopify-sidebar-heading">Settings</h3>
-            <a href="/api" class="shopify-sidebar-link {page.url.pathname === '/api' ? 'active' : ''}">
-              <div class="shopify-sidebar-link-content">
-                <Icon name="api" size={14} />
-                <span>REST API</span>
-              </div>
-            </a>
+            {#if currentUser.role === 'admin'}
+              <a href="/api" class="shopify-sidebar-link {page.url.pathname === '/api' ? 'active' : ''}">
+                <div class="shopify-sidebar-link-content">
+                  <Icon name="api" size={14} />
+                  <span>REST API</span>
+                </div>
+              </a>
+            {/if}
 
             <a href="/settings" class="shopify-sidebar-link {page.url.pathname === '/settings' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
