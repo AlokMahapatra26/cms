@@ -16,7 +16,7 @@ const yellow = '\x1b[33m';
 const red = '\x1b[31m';
 
 const BANNER = `
-${bold}${cyan}▲ EdgeCMS${reset} ${dim}- Cloudflare Workers + D1 + R2 Native Headless CMS${reset}
+${bold}${cyan}▲ CFEdge-CMS${reset} ${dim}- Cloudflare Workers + D1 + R2 Native Headless CMS${reset}
 `;
 
 function hasGlobalPnpm() {
@@ -31,7 +31,7 @@ function hasGlobalPnpm() {
 function printHelp() {
   console.log(BANNER);
   console.log(`${bold}Usage:${reset}
-  npx create-edge-cms [project-name] [options]
+  npx create-cfedge-cms [project-name] [options]
 
 ${bold}Options:${reset}
   -y, --yes          Skip prompts and accept defaults
@@ -39,9 +39,10 @@ ${bold}Options:${reset}
   -h, --help         Show this help message
 
 ${bold}Examples:${reset}
-  npx create-edge-cms my-cms
-  npx create-edge-cms my-cms --yes
-  pnpm create edge-cms my-cms
+  npx create-cfedge-cms my-cms
+  npx create-cfedge-cms my-cms --yes
+  pnpm create cfedge-cms my-cms
+  npm create cfedge-cms my-cms
 `);
 }
 
@@ -66,10 +67,10 @@ async function main() {
 
   if (!targetDir) {
     if (isYes) {
-      targetDir = 'my-edge-cms';
+      targetDir = 'my-cfedge-cms';
     } else {
-      const answer = await rl.question(`${bold}Project name:${reset} ${dim}(default: my-edge-cms)${reset} `);
-      targetDir = answer.trim() || 'my-edge-cms';
+      const answer = await rl.question(`${bold}Project name:${reset} ${dim}(default: my-cfedge-cms)${reset} `);
+      targetDir = answer.trim() || 'my-cfedge-cms';
     }
   }
 
@@ -85,7 +86,7 @@ async function main() {
     }
   }
 
-  console.log(`\n${cyan}Scaffolding EdgeCMS in:${reset} ${bold}${projectPath}${reset}\n`);
+  console.log(`\n${cyan}Scaffolding CFEdge-CMS in:${reset} ${bold}${projectPath}${reset}\n`);
 
   // Clone from GitHub
   const repoUrl = 'https://github.com/AlokMahapatra26/cms.git';
@@ -101,8 +102,8 @@ async function main() {
       fs.rmSync(gitDir, { recursive: true, force: true });
     }
 
-    // Clean up create-edge-cms package from the cloned workspace
-    const internalPkgDir = path.join(projectPath, 'packages', 'create-edge-cms');
+    // Clean up create-cfedge-cms package from the cloned workspace
+    const internalPkgDir = path.join(projectPath, 'packages', 'create-cfedge-cms');
     if (fs.existsSync(internalPkgDir)) {
       fs.rmSync(internalPkgDir, { recursive: true, force: true });
     }

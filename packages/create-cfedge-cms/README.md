@@ -1,23 +1,23 @@
-# create-edge-cms
+# create-cfedge-cms
 
-Interactive CLI to scaffold a modern, high-speed **EdgeCMS** project powered by **Cloudflare Workers, Cloudflare D1 (SQL), and Cloudflare R2**.
+Interactive CLI to scaffold a modern, high-speed **CFEdge-CMS** project powered by **Cloudflare Workers, Cloudflare D1 (SQL), and Cloudflare R2**.
 
 ## Quick Start
 
-You can create an EdgeCMS project with a single command using your favorite package manager:
+You can create a CFEdge-CMS project with a single command using your favorite package manager:
 
 ```bash
 # npm
-npm create edge-cms my-cms
+npm create cfedge-cms my-cms
 
 # npx
-npx create-edge-cms my-cms
+npx create-cfedge-cms my-cms
 
 # pnpm
-pnpm create edge-cms my-cms
+pnpm create cfedge-cms my-cms
 
 # bun
-bun create edge-cms my-cms
+bun create cfedge-cms my-cms
 ```
 
 ## What's Included
@@ -42,4 +42,3 @@ pnpm dev
 ## License
 
 MIT © [Alok Mahapatra](https://github.com/AlokMahapatra26)
-

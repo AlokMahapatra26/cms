@@ -128,10 +128,10 @@ export type ${recordName} = CmsRecord<${typeName}>;`;
       ? `   - Create catalog listing pages and detail pages for your CMS collections.`
       : cols.map((c) => `   - **${c.name}**: Create listing page (\`/${c.slug}\`) and detail page (\`/${c.slug}/[id]\`). Render title, thumbnail, and defined fields.`).join('\n');
 
-    return `# EdgeCMS Headless API Integration Spec for AI Agent
+    return `# CFEdge-CMS Headless API Integration Spec for AI Agent
 
 ## 1. System Overview
-You are tasked with connecting our frontend application (Next.js / Astro / React / SvelteKit / Nuxt) to our EdgeCMS Headless API.
+You are tasked with connecting our frontend application (Next.js / Astro / React / SvelteKit / Nuxt) to our CFEdge-CMS Headless API.
 - **Base API URL**: \`${base}\` (configured via environment variable \`PUBLIC_API_URL\` or \`NEXT_PUBLIC_API_URL\`)
 - **Backend Architecture**: Cloudflare Workers + Cloudflare D1 (SQL) + Cloudflare R2 (Media Storage)
 - **Delivery**: All public content endpoints are edge-cached globally and return standard JSON.
@@ -172,7 +172,7 @@ ${collectionInstructions}
 </script>
 
 <svelte:head>
-  <title>Agent Prompt Studio - EdgeCMS</title>
+  <title>Agent Prompt Studio - CFEdge-CMS</title>
 </svelte:head>
 
 <!-- Header -->

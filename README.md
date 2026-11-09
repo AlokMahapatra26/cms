@@ -1,4 +1,4 @@
-# EdgeCMS
+# CFEdge-CMS
 
 A high-performance, edge-native headless CMS built on **Cloudflare Workers**, **Cloudflare D1 (SQL)**, and **Cloudflare R2 (Object Storage)** with a **Vercel Geist OLED dark-mode** admin panel and an **AI Agent Prompt Studio**.
 
@@ -6,20 +6,20 @@ A high-performance, edge-native headless CMS built on **Cloudflare Workers**, **
 
 ## Quickstart via CLI
 
-Create a new EdgeCMS project in seconds with zero configuration:
+Create a new CFEdge-CMS project in seconds with zero configuration:
 
 ```bash
 # npm
-npm create edge-cms my-cms
+npm create cfedge-cms my-cms
 
 # npx
-npx create-edge-cms my-cms
+npx create-cfedge-cms my-cms
 
 # pnpm
-pnpm create edge-cms my-cms
+pnpm create cfedge-cms my-cms
 
 # bun
-bun create edge-cms my-cms
+bun create cfedge-cms my-cms
 ```
 
 ---
@@ -32,7 +32,7 @@ apps/
 └── admin/     # SvelteKit Admin Dashboard (Vercel Geist design, OLED pitch black)
 packages/
 ├── shared/    # Shared TypeScript types & dynamic collection schemas
-└── create-edge-cms/ # CLI scaffolder for npm
+└── create-cfedge-cms/ # CLI scaffolder for npm
 ```
 
 ---
@@ -42,7 +42,7 @@ packages/
 - **Global Edge Performance**: Sub-50ms latency worldwide running directly on Cloudflare's network.
 - **Dynamic Content Models**: Create custom collections (Blogs, Products, Authors, etc.) with custom fields (text, rich text, images, dates, select dropdowns) stored in SQLite on Cloudflare D1.
 - **Agent Prompt Studio**: Generates 1-click prompt specifications containing TypeScript types, edge endpoints, and design specs to hand off directly to AI coding agents (Cursor, Claude Code, Windsurf).
-- **Zero-Dependency CLI**: `create-edge-cms` scaffolds fresh projects in seconds using native Node 18+ capabilities.
+- **Zero-Dependency CLI**: `create-cfedge-cms` scaffolds fresh projects in seconds using native Node 18+ capabilities with automatic pnpm fallback.
 - **Edge Storage (R2)**: Direct image and file upload with global CDN delivery.
 
 ---

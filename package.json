@@ -1,5 +1,5 @@
 {
-  "name": "edge-cms-monorepo",
+  "name": "cfedge-cms-monorepo",
   "version": "0.1.0",
   "private": true,
   "scripts": {

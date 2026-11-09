@@ -1,17 +1,17 @@
 {
-  "name": "create-edge-cms",
+  "name": "create-cfedge-cms",
   "version": "0.1.0",
-  "description": "Scaffold a high-speed EdgeCMS project powered by Cloudflare Workers, D1 & R2",
+  "description": "Scaffold a high-speed CFEdge-CMS project powered by Cloudflare Workers, D1 & R2",
   "type": "module",
   "bin": {
-    "create-edge-cms": "./bin/index.js"
+    "create-cfedge-cms": "./bin/index.js"
   },
   "files": [
     "bin",
     "README.md"
   ],
   "keywords": [
-    "edge-cms",
+    "cfedge-cms",
     "cms",
     "headless-cms",
     "cloudflare-workers",
@@ -31,4 +31,3 @@
   },
   "homepage": "https://github.com/AlokMahapatra26/cms#readme"
 }
-
