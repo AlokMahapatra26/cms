@@ -218,3 +218,10 @@
   font-family: var(--font-mono);
   font-size: 11px;
 }
+
+.workspace-solo-callout {
+  padding: 12px 14px;
+  background-color: var(--color-hairline-soft);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+}

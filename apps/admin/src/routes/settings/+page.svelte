@@ -3,7 +3,10 @@
   import { goto } from '$app/navigation';
   import { getMe, updateProfile, changePassword } from '$lib/api';
   import { Icon } from '$lib/components';
-  import type { User } from '@cms/shared';
+  import { workspacesStore } from '$lib/workspaces.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import ConfirmModal from '$lib/ConfirmModal.svelte';
+  import type { User, Workspace } from '@cms/shared';
 
   let user = $state<User | null>(null);
   let loadingUser = $state(true);
@@ -23,6 +26,105 @@
   let passwordSuccess = $state<string | null>(null);
   let passwordError = $state<string | null>(null);
 
+  // Workspaces state
+  let showCreateWsModal = $state(false);
+  let newWsName = $state('');
+  let newWsSlug = $state('');
+  let isCreatingWs = $state(false);
+  let createWsError = $state('');
+
+  let showEditWsModal = $state(false);
+  let editingWs = $state<Workspace | null>(null);
+  let editWsName = $state('');
+  let editWsSlug = $state('');
+  let isUpdatingWs = $state(false);
+  let editWsError = $state('');
+
+  let showDeleteConfirm = $state(false);
+  let deleteTargetWs = $state<Workspace | null>(null);
+  let isDeletingWs = $state(false);
+
+  function handleWsNameInput(e: Event) {
+    const val = (e.target as HTMLInputElement).value;
+    newWsName = val;
+    newWsSlug = val.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
+  }
+
+  async function handleCreateWs(e: Event) {
+    e.preventDefault();
+    if (!newWsName.trim() || !newWsSlug.trim()) {
+      createWsError = 'Please provide both workspace name and slug.';
+      return;
+    }
+
+    isCreatingWs = true;
+    createWsError = '';
+    try {
+      await workspacesStore.create({
+        name: newWsName.trim(),
+        slug: newWsSlug.trim()
+      });
+      newWsName = '';
+      newWsSlug = '';
+      showCreateWsModal = false;
+    } catch (err: any) {
+      createWsError = err.message || 'Failed to create workspace';
+    } finally {
+      isCreatingWs = false;
+    }
+  }
+
+  function openEditWsModal(ws: Workspace) {
+    editingWs = ws;
+    editWsName = ws.name;
+    editWsSlug = ws.slug;
+    editWsError = '';
+    showEditWsModal = true;
+  }
+
+  async function handleSaveWs(e: Event) {
+    e.preventDefault();
+    if (!editingWs) return;
+    if (!editWsName.trim()) {
+      editWsError = 'Please provide a workspace name.';
+      return;
+    }
+
+    isUpdatingWs = true;
+    editWsError = '';
+    try {
+      await workspacesStore.update(editingWs.id, {
+        name: editWsName.trim(),
+        slug: editingWs.id === 'ws_default' ? 'default' : editWsSlug.trim()
+      });
+      showEditWsModal = false;
+      editingWs = null;
+    } catch (err: any) {
+      editWsError = err.message || 'Failed to update workspace';
+    } finally {
+      isUpdatingWs = false;
+    }
+  }
+
+  function openDeleteWsConfirm(ws: Workspace) {
+    deleteTargetWs = ws;
+    showDeleteConfirm = true;
+  }
+
+  async function handleConfirmDeleteWs() {
+    if (!deleteTargetWs) return;
+    isDeletingWs = true;
+    try {
+      await workspacesStore.remove(deleteTargetWs.id);
+      showDeleteConfirm = false;
+      deleteTargetWs = null;
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete workspace');
+    } finally {
+      isDeletingWs = false;
+    }
+  }
+
   async function loadUser() {
     loadingUser = true;
     try {
@@ -41,6 +143,7 @@
 
   onMount(() => {
     loadUser();
+    workspacesStore.load();
   });
 
   async function handleProfileSubmit(e: SubmitEvent) {
@@ -273,5 +376,240 @@
       </form>
     </div>
 
+    <!-- Workspaces & Client Management Card -->
+    <div class="shopify-card">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-base font-semibold m-0 mb-1">Workspaces & Client Projects</h2>
+          <p class="text-xs text-muted m-0">
+            Manage isolated client websites or project environments on your single Cloudflare deployment.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          onclick={() => (showCreateWsModal = true)}
+        >
+          <Icon name="plus" size={12} />
+          <span>New Client Workspace</span>
+        </button>
+      </div>
+
+      {#if workspacesStore.list.length <= 1}
+        <div class="workspace-solo-callout mb-4">
+          <div class="flex items-center gap-2 text-sm font-medium text-dark mb-1">
+            <Icon name="workspace" size={14} />
+            <span>Single Project Mode (Default)</span>
+          </div>
+          <p class="text-xs text-muted m-0">
+            You are currently running in single-project mode. Your top navigation is streamlined and clean. When you add a client workspace, a quick-switcher will automatically appear in your header.
+          </p>
+        </div>
+      {/if}
+
+      <div class="shopify-table-container">
+        <table class="shopify-table">
+          <thead>
+            <tr>
+              <th>Workspace</th>
+              <th>Slug / API Path</th>
+              <th>Status</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each workspacesStore.list as ws (ws.id)}
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="workspace-trigger-icon">
+                      <Icon name="workspace" size={12} />
+                    </div>
+                    <div>
+                      <div class="font-medium text-sm text-dark">{ws.name}</div>
+                      {#if ws.id === 'ws_default'}
+                        <div class="text-xs text-muted">Primary Root Workspace</div>
+                      {/if}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <code class="font-mono text-xs">/{ws.slug}</code>
+                </td>
+                <td>
+                  {#if workspacesStore.activeSlug === ws.slug}
+                    <span class="pill-tag-mint">Active</span>
+                  {:else}
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      onclick={() => workspacesStore.switchWorkspace(ws.slug)}
+                    >
+                      Switch
+                    </button>
+                  {/if}
+                </td>
+                <td class="text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      title="Rename Workspace"
+                      onclick={() => openEditWsModal(ws)}
+                    >
+                      <Icon name="edit" size={12} />
+                      <span>Rename</span>
+                    </button>
+
+                    {#if ws.id !== 'ws_default' && ws.slug !== 'default'}
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm text-danger"
+                        title="Delete Workspace"
+                        onclick={() => openDeleteWsConfirm(ws)}
+                      >
+                        <Icon name="trash" size={12} />
+                      </button>
+                    {/if}
+                  </div>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
+{/if}
+
+<!-- Modal: Create Workspace -->
+{#if showCreateWsModal}
+  <Modal open={showCreateWsModal} title="Create Client Workspace" onclose={() => (showCreateWsModal = false)}>
+    <form onsubmit={handleCreateWs}>
+      {#if createWsError}
+        <div class="error-banner mb-3">{createWsError}</div>
+      {/if}
+
+      <div class="form-group">
+        <label for="settings-ws-name" class="form-label">Client / Workspace Name *</label>
+        <input
+          id="settings-ws-name"
+          type="text"
+          class="shopify-input"
+          placeholder="e.g. Nike India, Dental Clinic, Tech Startup"
+          value={newWsName}
+          oninput={handleWsNameInput}
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="settings-ws-slug" class="form-label">Workspace Slug (API Identifier) *</label>
+        <input
+          id="settings-ws-slug"
+          type="text"
+          class="shopify-input font-mono"
+          placeholder="e.g. nike, dental-clinic"
+          bind:value={newWsSlug}
+          required
+        />
+        <div class="field-hint">
+          Used in frontend delivery URLs: <code>/api/v1/:slug/content/...</code>
+        </div>
+      </div>
+
+      <div class="shopify-actions-bar">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={() => (showCreateWsModal = false)}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          disabled={isCreatingWs}
+        >
+          {isCreatingWs ? 'Creating...' : 'Create Workspace'}
+        </button>
+      </div>
+    </form>
+  </Modal>
+{/if}
+
+<!-- Modal: Edit / Rename Workspace -->
+{#if showEditWsModal && editingWs}
+  <Modal open={showEditWsModal} title="Rename Workspace" onclose={() => { showEditWsModal = false; editingWs = null; }}>
+    <form onsubmit={handleSaveWs}>
+      {#if editWsError}
+        <div class="error-banner mb-3">{editWsError}</div>
+      {/if}
+
+      <div class="form-group">
+        <label for="settings-edit-name" class="form-label">Workspace / Brand Name *</label>
+        <input
+          id="settings-edit-name"
+          type="text"
+          class="shopify-input"
+          placeholder="e.g. My Main Agency, Personal Brand"
+          bind:value={editWsName}
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="settings-edit-slug" class="form-label">Workspace Slug</label>
+        <input
+          id="settings-edit-slug"
+          type="text"
+          class="shopify-input font-mono"
+          bind:value={editWsSlug}
+          disabled={editingWs.id === 'ws_default'}
+          required
+        />
+        {#if editingWs.id === 'ws_default'}
+          <div class="field-hint">
+            The default workspace uses <code>default</code> (and root <code>/api/content/*</code>) for backward compatibility.
+          </div>
+        {:else}
+          <div class="field-hint">
+            Used in frontend delivery URLs: <code>/api/v1/:slug/content/...</code>
+          </div>
+        {/if}
+      </div>
+
+      <div class="shopify-actions-bar">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={() => { showEditWsModal = false; editingWs = null; }}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          disabled={isUpdatingWs}
+        >
+          {isUpdatingWs ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+    </form>
+  </Modal>
+{/if}
+
+<!-- Modal: Confirm Delete Workspace -->
+{#if showDeleteConfirm && deleteTargetWs}
+  <ConfirmModal
+    open={showDeleteConfirm}
+    title="Delete Workspace '{deleteTargetWs.name}'?"
+    message="This will permanently delete this client workspace along with all its collections and content items. This action cannot be undone."
+    confirmText={isDeletingWs ? 'Deleting...' : 'Delete Workspace'}
+    cancelText="Cancel"
+    danger={true}
+    onconfirm={handleConfirmDeleteWs}
+    oncancel={() => { showDeleteConfirm = false; deleteTargetWs = null; }}
+  />
 {/if}

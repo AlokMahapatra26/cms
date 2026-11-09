@@ -109,84 +109,86 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<div class="workspace-switcher-container">
-  <span class="workspace-divider">/</span>
+{#if workspacesStore.list.length > 1}
+  <div class="workspace-switcher-container">
+    <span class="workspace-divider">/</span>
 
-  <button
-    type="button"
-    class="workspace-trigger {open ? 'active' : ''}"
-    onclick={toggleDropdown}
-    title="Switch Client Workspace"
-  >
-    <span class="workspace-trigger-icon">
-      <Icon name="workspace" size={12} />
-    </span>
-    <span>{workspacesStore.active.name}</span>
-    <Icon name="chevron-down" size={10} class="workspace-chevron" />
-  </button>
+    <button
+      type="button"
+      class="workspace-trigger {open ? 'active' : ''}"
+      onclick={toggleDropdown}
+      title="Switch Client Workspace"
+    >
+      <span class="workspace-trigger-icon">
+        <Icon name="workspace" size={12} />
+      </span>
+      <span>{workspacesStore.active.name}</span>
+      <Icon name="chevron-down" size={10} class="workspace-chevron" />
+    </button>
 
-  {#if open}
-    <div class="workspace-dropdown">
-      <div class="workspace-dropdown-header">Client Workspaces</div>
+    {#if open}
+      <div class="workspace-dropdown">
+        <div class="workspace-dropdown-header">Client Workspaces</div>
 
-      {#each workspacesStore.list as ws (ws.id)}
-        <div class="workspace-item-row {workspacesStore.activeSlug === ws.slug ? 'selected' : ''}">
-          <button
-            type="button"
-            class="workspace-item"
-            onclick={() => handleSelect(ws.slug)}
-          >
-            <div class="workspace-item-info">
-              <span class="workspace-item-name">{ws.name}</span>
-              <span class="workspace-item-slug">/{ws.slug}</span>
-            </div>
-            {#if workspacesStore.activeSlug === ws.slug}
-              <Icon name="check" size={13} />
-            {/if}
-          </button>
+        {#each workspacesStore.list as ws (ws.id)}
+          <div class="workspace-item-row {workspacesStore.activeSlug === ws.slug ? 'selected' : ''}">
+            <button
+              type="button"
+              class="workspace-item"
+              onclick={() => handleSelect(ws.slug)}
+            >
+              <div class="workspace-item-info">
+                <span class="workspace-item-name">{ws.name}</span>
+                <span class="workspace-item-slug">/{ws.slug}</span>
+              </div>
+              {#if workspacesStore.activeSlug === ws.slug}
+                <Icon name="check" size={13} />
+              {/if}
+            </button>
 
-          <button
-            type="button"
-            class="workspace-item-edit-btn"
-            title="Rename '{ws.name}'"
-            onclick={(e) => {
-              e.stopPropagation();
-              openEditModal(ws);
-            }}
-          >
-            <Icon name="edit" size={12} />
-          </button>
-        </div>
-      {/each}
+            <button
+              type="button"
+              class="workspace-item-edit-btn"
+              title="Rename '{ws.name}'"
+              onclick={(e) => {
+                e.stopPropagation();
+                openEditModal(ws);
+              }}
+            >
+              <Icon name="edit" size={12} />
+            </button>
+          </div>
+        {/each}
 
-      <div class="workspace-dropdown-divider"></div>
+        <div class="workspace-dropdown-divider"></div>
 
-      <button
-        type="button"
-        class="workspace-add-btn"
-        onclick={() => {
-          open = false;
-          openEditModal(workspacesStore.active);
-        }}
-      >
-        <Icon name="edit" size={13} />
-        <span>Rename Active Workspace</span>
-      </button>
+        <button
+          type="button"
+          class="workspace-add-btn"
+          onclick={() => {
+            open = false;
+            openEditModal(workspacesStore.active);
+          }}
+        >
+          <Icon name="edit" size={13} />
+          <span>Rename Active Workspace</span>
+        </button>
 
-      <button
-        type="button"
-        class="workspace-add-btn"
-        onclick={() => {
-          open = false;
-          showCreateModal = true;
-        }}
-      >
-        <Icon name="plus" size={13} />
-        <span>New Client Workspace</span>
-      </button>
-    </div>
-  {/if}
-</div>
+        <button
+          type="button"
+          class="workspace-add-btn"
+          onclick={() => {
+            open = false;
+            showCreateModal = true;
+          }}
+        >
+          <Icon name="plus" size={13} />
+          <span>New Client Workspace</span>
+        </button>
+      </div>
+    {/if}
+  </div>
+{/if}
 
 <!-- Modal: Create Workspace -->
 {#if showCreateModal}
