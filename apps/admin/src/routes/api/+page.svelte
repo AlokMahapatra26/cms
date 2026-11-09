@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { collectionsStore } from '$lib/collections.svelte';
+  import { workspacesStore } from '$lib/workspaces.svelte';
   import { Icon } from '$lib/components';
   import type { Collection, FieldDefinition } from '@cms/shared';
 
@@ -10,6 +11,7 @@
   const cleanApiBase = $derived(apiBase.trim().replace(/\/+$/, '') || 'http://localhost:8787');
 
   onMount(() => {
+    workspacesStore.load();
     collectionsStore.load();
     const saved = localStorage.getItem('cms_api_base');
     if (saved) {
@@ -111,16 +113,18 @@ export type ${recordName} = CmsRecord<${typeName}>;`;
   const agentPrompt = $derived.by(() => {
     const cols = collections;
     const base = cleanApiBase;
+    const wsSlug = workspacesStore.active.slug;
+    const wsName = workspacesStore.active.name;
 
     const endpointsList = cols.length === 0
-      ? `- \`GET ${base}/api/content/:slug\` (List published records)\n- \`GET ${base}/api/content/:slug/:id\` (Get single record by ID or slug)`
+      ? `- \`GET ${base}/api/v1/${wsSlug}/content/:slug\` (List published records)\n- \`GET ${base}/api/v1/${wsSlug}/content/:slug/:id\` (Get single record by ID or slug)`
       : cols.map((col) => {
           const pascal = toPascalCase(col.slug);
           return `### ${col.name} (\`${col.slug}\`)
-- **List All**: \`GET ${base}/api/content/${col.slug}?page=1&limit=12&sort=created_at&order=desc\`
+- **List All**: \`GET ${base}/api/v1/${wsSlug}/content/${col.slug}?page=1&limit=12&sort=created_at&order=desc\`
   - Query parameters: \`?page\`, \`?limit\`, \`?sort\`, \`?order\`, \`?search\`
   - Returns: \`${pascal}Record[]\`
-- **Single Record**: \`GET ${base}/api/content/${col.slug}/:id\`
+- **Single Record**: \`GET ${base}/api/v1/${wsSlug}/content/${col.slug}/:id\`
   - Returns: \`${pascal}Record\``;
         }).join('\n\n');
 
@@ -133,7 +137,8 @@ export type ${recordName} = CmsRecord<${typeName}>;`;
 ## 1. System Overview
 You are tasked with connecting our frontend application (Next.js / Astro / React / SvelteKit / Nuxt) to our CFEdge-CMS Headless API.
 - **Base API URL**: \`${base}\` (configured via environment variable \`PUBLIC_API_URL\` or \`NEXT_PUBLIC_API_URL\`)
-- **Backend Architecture**: Cloudflare Workers + Cloudflare D1 (SQL) + Cloudflare R2 (Media Storage)
+- **Active Workspace**: \`${wsName}\` (Slug: \`${wsSlug}\`)
+- **Backend Architecture**: Cloudflare Workers + Cloudflare D1 (Multi-Tenant SQL) + Cloudflare R2 (Media Storage)
 - **Delivery**: All public content endpoints are edge-cached globally and return standard JSON.
 
 ---
@@ -161,9 +166,10 @@ ${endpointsList}
 1. **Environment Setup**: In your frontend project root, configure \`.env.local\` (or \`.env\`):
    \`\`\`env
    PUBLIC_API_URL=${base}
+   WORKSPACE_SLUG=${wsSlug}
    \`\`\`
    (Use \`NEXT_PUBLIC_API_URL=${base}\` if using Next.js).
-2. **CMS Client**: Create a data fetching helper using \`PUBLIC_API_URL\` with typed returns.
+2. **CMS Client**: Create a data fetching helper using \`PUBLIC_API_URL\` targeting \`/api/v1/${wsSlug}/content/:slug\` with typed returns.
 3. **Collection Pages**:
 ${collectionInstructions}
 4. **Rich Text / HTML**: If a collection has rich text HTML, render it safely with semantic prose styles.
@@ -230,9 +236,15 @@ ${collectionInstructions}
 
 <!-- Essential Public Delivery Endpoints -->
 <div class="mb-6">
-  <div class="mb-3">
-    <h2 class="text-base font-semibold text-dark m-0">Public Delivery Endpoints</h2>
-    <p class="text-xs text-muted m-0">Zero-authentication endpoints for high-speed edge delivery from Cloudflare D1 & R2.</p>
+  <div class="flex items-center justify-between mb-3">
+    <div>
+      <h2 class="text-base font-semibold text-dark m-0">Public Delivery Endpoints</h2>
+      <p class="text-xs text-muted m-0">Zero-authentication endpoints for high-speed edge delivery from Cloudflare D1 & R2.</p>
+    </div>
+    <div class="workspace-badge-pill">
+      <Icon name="workspace" size={12} />
+      <span>Active: <strong>{workspacesStore.active.name}</strong> (<code>{workspacesStore.active.slug}</code>)</span>
+    </div>
   </div>
 
   <div class="shopify-table-container">
@@ -251,19 +263,19 @@ ${collectionInstructions}
             <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
-            <code class="font-semibold text-dark text-sm">/api/content/:slug</code>
+            <code class="font-semibold text-dark text-sm">/api/v1/{workspacesStore.active.slug}/content/:slug</code>
             <div class="text-xs text-muted mt-1 font-mono">
               Params: <code>?page</code>, <code>?limit</code>, <code>?sort</code>, <code>?order</code>, <code>?search</code>
             </div>
           </td>
           <td class="text-muted text-sm">
-            Fetch published collection items with pagination and keyword filtering.
+            Fetch published collection items for workspace <strong>{workspacesStore.active.name}</strong>.
           </td>
           <td class="text-right">
             <button
               type="button"
               class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${cleanApiBase}/api/content/${collections[0]?.slug || 'blogs'}`, 'ep-list')}
+              onclick={() => copyToClipboard(`${cleanApiBase}/api/v1/${workspacesStore.active.slug}/content/${collections[0]?.slug || 'blogs'}`, 'ep-list')}
             >
               <Icon name={copied === 'ep-list' ? 'check' : 'copy'} size={12} />
               <span>{copied === 'ep-list' ? 'Copied' : 'Copy URL'}</span>
@@ -276,7 +288,7 @@ ${collectionInstructions}
             <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
-            <code class="font-semibold text-dark text-sm">/api/content/:slug/:id</code>
+            <code class="font-semibold text-dark text-sm">/api/v1/{workspacesStore.active.slug}/content/:slug/:id</code>
           </td>
           <td class="text-muted text-sm">
             Retrieve a single published record by unique record ID or slug.
@@ -285,7 +297,7 @@ ${collectionInstructions}
             <button
               type="button"
               class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${cleanApiBase}/api/content/${collections[0]?.slug || 'blogs'}/:id`, 'ep-single')}
+              onclick={() => copyToClipboard(`${cleanApiBase}/api/v1/${workspacesStore.active.slug}/content/${collections[0]?.slug || 'blogs'}/:id`, 'ep-single')}
             >
               <Icon name={copied === 'ep-single' ? 'check' : 'copy'} size={12} />
               <span>{copied === 'ep-single' ? 'Copied' : 'Copy URL'}</span>

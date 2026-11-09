@@ -15,14 +15,18 @@ import type {
   UpdateCollectionInput,
   ContentItem,
   CreateContentItemInput,
-  UpdateContentItemInput
+  UpdateContentItemInput,
+  Workspace,
+  CreateWorkspaceInput,
+  UpdateWorkspaceInput
 } from '@cms/shared';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8787';
 const TOKEN_KEY = 'edgecms_auth_token';
+const WORKSPACE_KEY = 'cfedge_active_workspace';
 
 // -------------------------------------------------------------
-// TOKEN MANAGEMENT
+// TOKEN & WORKSPACE MANAGEMENT
 // -------------------------------------------------------------
 
 export function getToken(): string | null {
@@ -42,11 +46,26 @@ export function clearToken(): void {
   }
 }
 
+export function getActiveWorkspaceSlug(): string {
+  if (typeof window === 'undefined') return 'default';
+  return localStorage.getItem(WORKSPACE_KEY) || 'default';
+}
+
+export function setActiveWorkspaceSlug(slug: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(WORKSPACE_KEY, slug);
+  }
+}
+
 function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = { ...extraHeaders };
   const token = getToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+  const wsSlug = getActiveWorkspaceSlug();
+  if (wsSlug) {
+    headers['x-workspace'] = wsSlug;
   }
   return headers;
 }
@@ -533,5 +552,83 @@ export async function deleteContentItem(collectionSlug: string, id: string): Pro
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.error || 'Failed to delete content item');
+  }
+}
+
+// -------------------------------------------------------------
+// WORKSPACES & MULTI-TENANCY API
+// -------------------------------------------------------------
+
+export async function fetchWorkspaces(): Promise<Workspace[]> {
+  const res = await fetch(`${API_BASE}/api/admin/workspaces`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch workspaces');
+  }
+
+  return res.json();
+}
+
+export async function createWorkspace(input: CreateWorkspaceInput): Promise<Workspace> {
+  const res = await fetch(`${API_BASE}/api/admin/workspaces`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to create workspace');
+  }
+
+  return data;
+}
+
+export async function updateWorkspace(id: string, input: UpdateWorkspaceInput): Promise<Workspace> {
+  const res = await fetch(`${API_BASE}/api/admin/workspaces/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update workspace');
+  }
+
+  return data;
+}
+
+export async function deleteWorkspace(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/admin/workspaces/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to delete workspace');
   }
 }

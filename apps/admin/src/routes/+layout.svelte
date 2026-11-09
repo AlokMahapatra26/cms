@@ -8,6 +8,8 @@
   import type { User } from '@cms/shared';
   import ConfirmModal from '$lib/ConfirmModal.svelte';
   import { Icon } from '$lib/components';
+  import WorkspaceSwitcher from '$lib/components/WorkspaceSwitcher.svelte';
+  import { workspacesStore } from '$lib/workspaces.svelte';
   import { handleEnterNavigation } from '$lib/form-utils';
 
   let { children } = $props();
@@ -47,6 +49,7 @@
       // Validate session with backend
       const user = await getMe();
       currentUser = user;
+      await workspacesStore.load();
       collectionsStore.load();
 
       // If authenticated and visiting /login or /setup, redirect to schemas
@@ -93,14 +96,20 @@
   <!-- Vercel Platform Header -->
   <header class="shopify-header">
     <div class="shopify-nav-inner">
-      <!-- Brand Lockup -->
-      <a href="/schemas" class="shopify-brand">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="24" height="24" rx="5" fill="var(--color-ink)" />
-          <path d="M7 12H17M7 7H17M7 17H13" stroke="var(--color-canvas)" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-        <span>EdgeCMS</span>
-      </a>
+      <!-- Brand Lockup & Workspace Switcher -->
+      <div class="flex items-center gap-1">
+        <a href="/schemas" class="shopify-brand">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="5" fill="var(--color-ink)" />
+            <path d="M7 12H17M7 7H17M7 17H13" stroke="var(--color-canvas)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>EdgeCMS</span>
+        </a>
+
+        {#if currentUser}
+          <WorkspaceSwitcher />
+        {/if}
+      </div>
 
       <!-- Right Action Controls -->
       <div class="flex items-center gap-2">

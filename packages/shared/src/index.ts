@@ -97,6 +97,29 @@ export interface ChangePasswordInput {
 
 
 // -------------------------------------------------------------
+// WORKSPACES & MULTI-TENANCY
+// -------------------------------------------------------------
+
+export interface Workspace {
+  id: string;
+  name: string;
+  slug: string;
+  api_key: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateWorkspaceInput {
+  name: string;
+  slug: string;
+}
+
+export interface UpdateWorkspaceInput {
+  name?: string;
+  slug?: string;
+}
+
+// -------------------------------------------------------------
 // DYNAMIC SCHEMA & CONTENT TYPES (Headless CMS Engine)
 // -------------------------------------------------------------
 
@@ -123,6 +146,7 @@ export interface FieldDefinition {
 
 export interface Collection {
   id: string;
+  workspace_id?: string;
   slug: string;
   name: string;
   description?: string | null;
@@ -133,6 +157,7 @@ export interface Collection {
 }
 
 export interface CreateCollectionInput {
+  workspace_id?: string;
   name: string;
   slug: string;
   description?: string;
@@ -150,6 +175,7 @@ export interface UpdateCollectionInput {
 
 export interface ContentItem {
   id: string;
+  workspace_id?: string;
   collection_slug: string;
   status: 'draft' | 'published';
   data: Record<string, any>;
@@ -158,6 +184,7 @@ export interface ContentItem {
 }
 
 export interface CreateContentItemInput {
+  workspace_id?: string;
   status?: 'draft' | 'published';
   data: Record<string, any>;
 }

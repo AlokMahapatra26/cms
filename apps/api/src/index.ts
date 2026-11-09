@@ -18,7 +18,10 @@ import type {
   CreateContentItemInput,
   UpdateContentItemInput,
   PaginationInfo,
-  PaginatedResponse
+  PaginatedResponse,
+  Workspace,
+  CreateWorkspaceInput,
+  UpdateWorkspaceInput
 } from '@cms/shared';
 import { cmsConfig } from '@cms/shared';
 import {
@@ -872,6 +875,147 @@ app.get('/api/media/*', async (c) => {
 });
 
 // -------------------------------------------------------------
+// WORKSPACES & MULTI-TENANCY API
+// -------------------------------------------------------------
+
+// Helper to resolve workspace from query, header, or route
+async function resolveWorkspace(c: any): Promise<{ id: string; name: string; slug: string } | null> {
+  const paramSlug = c.req.param('workspaceSlug') || c.req.param('workspace');
+  const headerVal = c.req.header('x-workspace') || c.req.header('x-workspace-id');
+  const queryVal = c.req.query('workspace');
+
+  const slugOrId = paramSlug || headerVal || queryVal;
+
+  if (slugOrId && slugOrId !== 'all') {
+    const ws = await c.env.DB.prepare(
+      `SELECT id, name, slug FROM workspaces WHERE slug = ? OR id = ? LIMIT 1`
+    ).bind(slugOrId, slugOrId).first<{ id: string; name: string; slug: string }>();
+
+    if (ws) return ws;
+  }
+
+  // Fallback to default workspace
+  const defaultWs = await c.env.DB.prepare(
+    `SELECT id, name, slug FROM workspaces WHERE slug = 'default' OR id = 'ws_default' LIMIT 1`
+  ).first<{ id: string; name: string; slug: string }>();
+
+  return defaultWs || { id: 'ws_default', name: 'Default Workspace', slug: 'default' };
+}
+
+// List all workspaces
+app.get('/api/admin/workspaces', async (c) => {
+  try {
+    const rows = await c.env.DB.prepare(
+      `SELECT * FROM workspaces ORDER BY created_at ASC`
+    ).all<Workspace>();
+
+    return c.json(rows.results);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to list workspaces' }, 500);
+  }
+});
+
+// Create workspace (e.g. for a new client)
+app.post('/api/admin/workspaces', async (c) => {
+  try {
+    const body = await c.req.json<CreateWorkspaceInput>();
+    const name = body.name?.trim();
+    let slug = body.slug?.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
+
+    if (!name || !slug) {
+      return c.json({ error: 'Workspace name and slug are required' }, 400);
+    }
+
+    const existing = await c.env.DB.prepare(
+      `SELECT id FROM workspaces WHERE slug = ?`
+    ).bind(slug).first();
+
+    if (existing) {
+      return c.json({ error: `Workspace slug '${slug}' is already taken` }, 409);
+    }
+
+    const id = `ws_${crypto.randomUUID()}`;
+    const apiKey = `cf_live_${crypto.randomUUID().replace(/-/g, '')}`;
+    const now = new Date().toISOString();
+
+    await c.env.DB.prepare(
+      `INSERT INTO workspaces (id, name, slug, api_key, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(id, name, slug, apiKey, now, now).run();
+
+    const created: Workspace = { id, name, slug, api_key: apiKey, created_at: now, updated_at: now };
+    return c.json(created, 201);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to create workspace' }, 500);
+  }
+});
+
+// Update workspace
+app.put('/api/admin/workspaces/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+    const body = await c.req.json<UpdateWorkspaceInput>();
+
+    const existing = await c.env.DB.prepare(
+      `SELECT * FROM workspaces WHERE id = ?`
+    ).bind(id).first<Workspace>();
+
+    if (!existing) {
+      return c.json({ error: 'Workspace not found' }, 404);
+    }
+
+    const name = body.name?.trim() || existing.name;
+    let slug = existing.slug;
+    if (body.slug) {
+      slug = body.slug.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
+      const conflict = await c.env.DB.prepare(
+        `SELECT id FROM workspaces WHERE slug = ? AND id != ?`
+      ).bind(slug, id).first();
+      if (conflict) {
+        return c.json({ error: `Workspace slug '${slug}' is already in use` }, 409);
+      }
+    }
+
+    const now = new Date().toISOString();
+    await c.env.DB.prepare(
+      `UPDATE workspaces SET name = ?, slug = ?, updated_at = ? WHERE id = ?`
+    ).bind(name, slug, now, id).run();
+
+    return c.json({ ...existing, name, slug, updated_at: now });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to update workspace' }, 500);
+  }
+});
+
+// Delete workspace
+app.delete('/api/admin/workspaces/:id', async (c) => {
+  try {
+    const id = c.req.param('id');
+
+    const ws = await c.env.DB.prepare(
+      `SELECT slug FROM workspaces WHERE id = ?`
+    ).bind(id).first<{ slug: string }>();
+
+    if (!ws) {
+      return c.json({ error: 'Workspace not found' }, 404);
+    }
+
+    if (ws.slug === 'default' || id === 'ws_default') {
+      return c.json({ error: 'The default primary workspace cannot be deleted' }, 400);
+    }
+
+    // Cascade delete content and collections for this workspace
+    await c.env.DB.prepare(`DELETE FROM content_items WHERE workspace_id = ?`).bind(id).run();
+    await c.env.DB.prepare(`DELETE FROM collections WHERE workspace_id = ?`).bind(id).run();
+    await c.env.DB.prepare(`DELETE FROM workspaces WHERE id = ?`).bind(id).run();
+
+    return c.json({ success: true, deletedId: id });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to delete workspace' }, 500);
+  }
+});
+
+// -------------------------------------------------------------
 // CODE-FIRST SCHEMA ENGINE & COLLECTIONS API
 // Schemas are defined in cms.config.ts by developers & AI agents.
 // -------------------------------------------------------------
@@ -879,20 +1023,22 @@ app.get('/api/media/*', async (c) => {
 // Sync collections defined in cms.config.ts into Cloudflare D1
 app.post('/api/admin/collections/sync', async (c) => {
   try {
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
     const synced: any[] = [];
     for (const col of cmsConfig.collections || []) {
       const fieldsJson = JSON.stringify(col.fields || []);
       const now = new Date().toISOString();
       await c.env.DB.prepare(
-        `INSERT INTO collections (id, slug, name, description, icon, fields, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT(slug) DO UPDATE SET
+        `INSERT INTO collections (id, workspace_id, slug, name, description, icon, fields, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(workspace_id, slug) DO UPDATE SET
            name = excluded.name,
            description = excluded.description,
            icon = excluded.icon,
            fields = excluded.fields,
            updated_at = excluded.updated_at`
-      ).bind(col.id || `col_${col.slug}`, col.slug, col.name, col.description || null, col.icon || 'schema', fieldsJson, now, now).run();
+      ).bind(col.id || `col_${col.slug}`, wsId, col.slug, col.name, col.description || null, col.icon || 'schema', fieldsJson, now, now).run();
       synced.push({ slug: col.slug, name: col.name, fieldsCount: col.fields.length });
     }
     return c.json({ success: true, count: synced.length, collections: synced });
@@ -901,12 +1047,21 @@ app.post('/api/admin/collections/sync', async (c) => {
   }
 });
 
-// List all collections from D1
+// List all collections from D1 (scoped to workspace)
 app.get('/api/admin/collections', async (c) => {
   try {
-    const rows = await c.env.DB.prepare(
-      `SELECT * FROM collections ORDER BY name ASC`
-    ).all();
+    const ws = await resolveWorkspace(c);
+    const queryWs = c.req.query('workspace');
+
+    let rows;
+    if (queryWs === 'all') {
+      rows = await c.env.DB.prepare(`SELECT * FROM collections ORDER BY name ASC`).all();
+    } else {
+      const wsId = ws?.id || 'ws_default';
+      rows = await c.env.DB.prepare(
+        `SELECT * FROM collections WHERE workspace_id = ? OR (workspace_id = 'ws_default' AND ? = 'ws_default') ORDER BY name ASC`
+      ).bind(wsId, wsId).all();
+    }
 
     const collections = rows.results.map((r: any) => ({
       ...r,
@@ -924,9 +1079,12 @@ app.get('/api/admin/collections', async (c) => {
 app.get('/api/admin/collections/:slug', async (c) => {
   try {
     const slug = c.req.param('slug');
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
+
     const row = await c.env.DB.prepare(
-      `SELECT * FROM collections WHERE slug = ?`
-    ).bind(slug).first<any>();
+      `SELECT * FROM collections WHERE (workspace_id = ? OR workspace_id = 'ws_default') AND slug = ?`
+    ).bind(wsId, slug).first<any>();
 
     if (!row) {
       return c.json({ error: 'Collection not found' }, 404);
@@ -945,6 +1103,9 @@ app.get('/api/admin/collections/:slug', async (c) => {
 app.post('/api/admin/collections', async (c) => {
   try {
     const body = await c.req.json<CreateCollectionInput>();
+    const ws = await resolveWorkspace(c);
+    const wsId = body.workspace_id || ws?.id || 'ws_default';
+
     const name = body.name?.trim();
     let slug = body.slug?.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
 
@@ -952,13 +1113,13 @@ app.post('/api/admin/collections', async (c) => {
       return c.json({ error: 'Collection name and slug are required' }, 400);
     }
 
-    // Check slug uniqueness
+    // Check slug uniqueness within this workspace
     const existing = await c.env.DB.prepare(
-      `SELECT id FROM collections WHERE slug = ?`
-    ).bind(slug).first();
+      `SELECT id FROM collections WHERE workspace_id = ? AND slug = ?`
+    ).bind(wsId, slug).first();
 
     if (existing) {
-      return c.json({ error: `A collection with slug "${slug}" already exists` }, 409);
+      return c.json({ error: `A collection with slug "${slug}" already exists in this workspace` }, 409);
     }
 
     const id = `col_${Date.now()}`;
@@ -968,12 +1129,13 @@ app.post('/api/admin/collections', async (c) => {
     const fields = JSON.stringify(body.fields || []);
 
     await c.env.DB.prepare(
-      `INSERT INTO collections (id, slug, name, description, icon, fields, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(id, slug, name, description, icon, fields, now, now).run();
+      `INSERT INTO collections (id, workspace_id, slug, name, description, icon, fields, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, wsId, slug, name, description, icon, fields, now, now).run();
 
     return c.json({
       id,
+      workspace_id: wsId,
       slug,
       name,
       description,
@@ -991,9 +1153,12 @@ app.post('/api/admin/collections', async (c) => {
 app.put('/api/admin/collections/:slug', async (c) => {
   try {
     const currentSlug = c.req.param('slug');
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
+
     const existing = await c.env.DB.prepare(
-      `SELECT * FROM collections WHERE slug = ?`
-    ).bind(currentSlug).first<any>();
+      `SELECT * FROM collections WHERE (workspace_id = ? OR workspace_id = 'ws_default') AND slug = ?`
+    ).bind(wsId, currentSlug).first<any>();
 
     if (!existing) {
       return c.json({ error: 'Collection not found' }, 404);
@@ -1009,13 +1174,13 @@ app.put('/api/admin/collections/:slug', async (c) => {
     let newSlug = existing.slug;
     if (body.slug && body.slug.trim() !== existing.slug) {
       newSlug = body.slug.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
-      // check collision
+      // check collision within same workspace
       const collision = await c.env.DB.prepare(
-        `SELECT id FROM collections WHERE slug = ? AND id != ?`
-      ).bind(newSlug, existing.id).first();
+        `SELECT id FROM collections WHERE workspace_id = ? AND slug = ? AND id != ?`
+      ).bind(existing.workspace_id || wsId, newSlug, existing.id).first();
 
       if (collision) {
-        return c.json({ error: `A collection with slug "${newSlug}" already exists` }, 409);
+        return c.json({ error: `A collection with slug "${newSlug}" already exists in this workspace` }, 409);
       }
 
       // cascade update content items collection_slug
@@ -1063,6 +1228,9 @@ app.delete('/api/admin/collections/:slug', async (c) => {
 app.get('/api/admin/content/:collectionSlug', async (c) => {
   try {
     const slug = c.req.param('collectionSlug');
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
+
     const pageQuery = c.req.query('page');
     const limitQuery = c.req.query('limit');
     const paginateQuery = c.req.query('paginate');
@@ -1077,8 +1245,11 @@ app.get('/api/admin/content/:collectionSlug', async (c) => {
     const sort = c.req.query('sort')?.trim() || 'created_at';
     const order = c.req.query('order')?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-    const conditions: string[] = ['collection_slug = ?'];
-    const params: any[] = [slug];
+    const conditions: string[] = [
+      'collection_slug = ?',
+      '(workspace_id = ? OR (workspace_id = "ws_default" AND ? = "ws_default") OR workspace_id IS NULL)'
+    ];
+    const params: any[] = [slug, wsId, wsId];
 
     if (status && status !== 'all') {
       conditions.push('status = ?');
@@ -1150,9 +1321,12 @@ app.get('/api/admin/content/:collectionSlug', async (c) => {
 app.get('/api/admin/content/:collectionSlug/:id', async (c) => {
   try {
     const { collectionSlug, id } = c.req.param();
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
+
     const row = await c.env.DB.prepare(
-      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ?`
-    ).bind(collectionSlug, id).first<any>();
+      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ? AND (workspace_id = ? OR (workspace_id = "ws_default" AND ? = "ws_default") OR workspace_id IS NULL)`
+    ).bind(collectionSlug, id, wsId, wsId).first<any>();
 
     if (!row) {
       return c.json({ error: 'Content item not found' }, 404);
@@ -1171,12 +1345,14 @@ app.get('/api/admin/content/:collectionSlug/:id', async (c) => {
 app.post('/api/admin/content/:collectionSlug', async (c) => {
   try {
     const slug = c.req.param('collectionSlug');
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
     const body = await c.req.json<CreateContentItemInput>();
 
-    // Check collection exists
+    // Check collection exists in workspace
     const collection = await c.env.DB.prepare(
-      `SELECT id FROM collections WHERE slug = ?`
-    ).bind(slug).first();
+      `SELECT id FROM collections WHERE slug = ? AND (workspace_id = ? OR workspace_id = 'ws_default' OR workspace_id IS NULL)`
+    ).bind(slug, wsId).first();
 
     if (!collection) {
       return c.json({ error: `Collection "${slug}" not found` }, 404);
@@ -1188,12 +1364,13 @@ app.post('/api/admin/content/:collectionSlug', async (c) => {
     const data = JSON.stringify(body.data || {});
 
     await c.env.DB.prepare(
-      `INSERT INTO content_items (id, collection_slug, status, data, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(id, slug, status, data, now, now).run();
+      `INSERT INTO content_items (id, workspace_id, collection_slug, status, data, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, wsId, slug, status, data, now, now).run();
 
     return c.json({
       id,
+      workspace_id: wsId,
       collection_slug: slug,
       status,
       data: body.data || {},
@@ -1209,9 +1386,12 @@ app.post('/api/admin/content/:collectionSlug', async (c) => {
 app.put('/api/admin/content/:collectionSlug/:id', async (c) => {
   try {
     const { collectionSlug, id } = c.req.param();
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
+
     const existing = await c.env.DB.prepare(
-      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ?`
-    ).bind(collectionSlug, id).first<any>();
+      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ? AND (workspace_id = ? OR workspace_id = 'ws_default' OR workspace_id IS NULL)`
+    ).bind(collectionSlug, id, wsId).first<any>();
 
     if (!existing) {
       return c.json({ error: 'Content item not found' }, 404);
@@ -1229,6 +1409,7 @@ app.put('/api/admin/content/:collectionSlug/:id', async (c) => {
 
     return c.json({
       id,
+      workspace_id: existing.workspace_id,
       collection_slug: collectionSlug,
       status,
       data: updatedData,
@@ -1244,9 +1425,12 @@ app.put('/api/admin/content/:collectionSlug/:id', async (c) => {
 app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
   try {
     const { collectionSlug, id } = c.req.param();
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
+
     await c.env.DB.prepare(
-      `DELETE FROM content_items WHERE collection_slug = ? AND id = ?`
-    ).bind(collectionSlug, id).run();
+      `DELETE FROM content_items WHERE collection_slug = ? AND id = ? AND (workspace_id = ? OR workspace_id = 'ws_default' OR workspace_id IS NULL)`
+    ).bind(collectionSlug, id, wsId).run();
 
     if (collectionSlug === 'articles') {
       await c.env.DB.prepare(`DELETE FROM posts WHERE id = ?`).bind(id).run();
@@ -1259,13 +1443,18 @@ app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
 });
 
 // -------------------------------------------------------------
-// PUBLIC DYNAMIC CONTENT API (For Frontends / Astro / Static Site Gen)
+// PUBLIC DYNAMIC CONTENT API (Multi-Tenant & Backward Compatible)
 // -------------------------------------------------------------
 
-// Public: Get published items of a collection (supports ?page, ?limit, ?paginate, ?search, ?sort, ?order)
-app.get('/api/content/:collectionSlug', async (c) => {
+async function handleGetContentItems(c: any, explicitWsSlug?: string) {
   try {
     const slug = c.req.param('collectionSlug');
+    const ws = explicitWsSlug
+      ? await c.env.DB.prepare(`SELECT id, slug FROM workspaces WHERE slug = ? OR id = ? LIMIT 1`).bind(explicitWsSlug, explicitWsSlug).first<{ id: string; slug: string }>()
+      : await resolveWorkspace(c);
+
+    const wsId = ws?.id || 'ws_default';
+
     const pageQuery = c.req.query('page');
     const limitQuery = c.req.query('limit');
     const paginateQuery = c.req.query('paginate');
@@ -1279,8 +1468,12 @@ app.get('/api/content/:collectionSlug', async (c) => {
     const sort = c.req.query('sort')?.trim() || 'created_at';
     const order = c.req.query('order')?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
-    const conditions: string[] = ['collection_slug = ?', "status = 'published'"];
-    const params: any[] = [slug];
+    const conditions: string[] = [
+      'collection_slug = ?',
+      "status = 'published'",
+      '(workspace_id = ? OR (workspace_id = "ws_default" AND ? = "ws_default") OR workspace_id IS NULL)'
+    ];
+    const params: any[] = [slug, wsId, wsId];
 
     if (search) {
       conditions.push('(data LIKE ? OR id LIKE ?)');
@@ -1317,6 +1510,7 @@ app.get('/api/content/:collectionSlug', async (c) => {
     const items = rows.results.map((r: any) => ({
       id: r.id,
       collection_slug: r.collection_slug,
+      workspace_id: r.workspace_id,
       data: JSON.parse(r.data || '{}'),
       created_at: r.created_at,
       updated_at: r.updated_at
@@ -1344,15 +1538,20 @@ app.get('/api/content/:collectionSlug', async (c) => {
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to fetch published content' }, 500);
   }
-});
+}
 
-// Public: Get single published item
-app.get('/api/content/:collectionSlug/:id', async (c) => {
+async function handleGetSingleContentItem(c: any, explicitWsSlug?: string) {
   try {
     const { collectionSlug, id } = c.req.param();
+    const ws = explicitWsSlug
+      ? await c.env.DB.prepare(`SELECT id, slug FROM workspaces WHERE slug = ? OR id = ? LIMIT 1`).bind(explicitWsSlug, explicitWsSlug).first<{ id: string; slug: string }>()
+      : await resolveWorkspace(c);
+
+    const wsId = ws?.id || 'ws_default';
+
     const row = await c.env.DB.prepare(
-      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ? AND status = 'published'`
-    ).bind(collectionSlug, id).first<any>();
+      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ? AND status = 'published' AND (workspace_id = ? OR (workspace_id = "ws_default" AND ? = "ws_default") OR workspace_id IS NULL)`
+    ).bind(collectionSlug, id, wsId, wsId).first<any>();
 
     if (!row) {
       return c.json({ error: 'Content item not found' }, 404);
@@ -1361,6 +1560,7 @@ app.get('/api/content/:collectionSlug/:id', async (c) => {
     return c.json({
       id: row.id,
       collection_slug: row.collection_slug,
+      workspace_id: row.workspace_id,
       data: JSON.parse(row.data || '{}'),
       created_at: row.created_at,
       updated_at: row.updated_at
@@ -1368,6 +1568,14 @@ app.get('/api/content/:collectionSlug/:id', async (c) => {
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to fetch content item' }, 500);
   }
-});
+}
+
+// Multi-tenant scoped public endpoints (e.g. /api/v1/nike/content/blogs)
+app.get('/api/v1/:workspaceSlug/content/:collectionSlug', (c) => handleGetContentItems(c, c.req.param('workspaceSlug')));
+app.get('/api/v1/:workspaceSlug/content/:collectionSlug/:id', (c) => handleGetSingleContentItem(c, c.req.param('workspaceSlug')));
+
+// Default/Header-resolved public endpoints (e.g. /api/content/blogs)
+app.get('/api/content/:collectionSlug', (c) => handleGetContentItems(c));
+app.get('/api/content/:collectionSlug/:id', (c) => handleGetSingleContentItem(c));
 
 export default app;

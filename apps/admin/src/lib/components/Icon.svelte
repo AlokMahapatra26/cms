@@ -62,6 +62,9 @@
   {:else if name === 'edit'}
     <!-- Pencil / Edit -->
     <path fill-rule="evenodd" d="M15.22 3.22a2.5 2.5 0 0 1 3.54 3.54l-9.5 9.5a1.5 1.5 0 0 1-.68.4l-4 1a.75.75 0 0 1-.9-.9l1-4a1.5 1.5 0 0 1 .4-.68l9.5-9.5Zm2.48 2.48a1 1 0 0 0-1.41-1.41L15 5.58 16.41 7l1.29-1.3ZM15.35 8.06 13.94 6.65 6.13 14.46a.5.5 0 0 0-.13.23l-.62 2.48 2.48-.62a.5.5 0 0 0 .23-.13l7.26-7.36Z" clip-rule="evenodd" />
+  {:else if name === 'workspace' || name === 'building'}
+    <!-- Building / Workspace -->
+    <path fill-rule="evenodd" d="M4 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-2a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4Zm3 1a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V5Zm5-1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-1ZM7 9a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9Zm5-1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-1Z" clip-rule="evenodd" />
   {:else if name === 'plus'}
     <!-- Plus + -->
     <path fill-rule="evenodd" d="M10 4.25a.75.75 0 0 1 .75.75v4.25H15a.75.75 0 0 1 0 1.5h-4.25V15a.75.75 0 0 1-1.5 0v-4.25H5a.75.75 0 0 1 0-1.5h4.25V5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
