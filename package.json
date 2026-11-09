@@ -11,6 +11,7 @@
     "build": "pnpm --filter @cms/admin build && pnpm --filter @cms/web build",
     "build:admin": "pnpm --filter @cms/admin build",
     "build:web": "pnpm --filter @cms/web build",
-    "migrate:local": "pnpm --filter @cms/api migrate:local"
+    "migrate:local": "pnpm --filter @cms/api migrate:local",
+    "cms:sync": "node scripts/sync-cms.mjs"
   }
 }

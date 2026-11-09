@@ -1,16 +1,4 @@
-import { defineCollection, defineConfig, text, number, boolean, date, richtext, media, select } from './builder';
+import cmsConfig from '../../../cms.config';
 
-/**
- * EdgeCMS Code-First Configuration
- * 
- * Define your collections and schemas here in pure TypeScript if you want schemas tracked in Git.
- * Or create and manage schemas dynamically from the Admin Studio UI.
- */
-
-export const cmsConfig = defineConfig({
-  collections: []
-});
-
+export { cmsConfig };
 export default cmsConfig;
-
-

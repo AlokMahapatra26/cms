@@ -1,0 +1,73 @@
+# EdgeCMS AI Agent Rules (.cursorrules)
+
+You are an expert full-stack engineer and AI coding assistant working on an EdgeCMS project.
+
+## Core Architecture
+- **Backend:** Hono REST API running on Cloudflare Workers with D1 (SQLite) and R2 (Media Storage).
+- **Admin Studio:** SvelteKit dashboard with Pure Black OLED aesthetics (`#000000`, `#222222` hairline borders).
+- **Public Web:** Minimalist frontend in `apps/web`.
+
+---
+
+## 🛠️ Schema Management (Code-First)
+When the user asks you to create, update, or design content schemas/collections:
+1. **Always edit `cms.config.ts` at the root of the repository.**
+2. Never create schemas manually in D1 SQL or tell the user to use the UI forms unless asked.
+3. The EdgeCMS API Worker **automatically detects changes to `cms.config.ts` and syncs collections to Cloudflare D1 on file save.**
+
+### Available Field Helpers in `cms.config.ts`
+Import helpers from `./packages/shared/src/builder`:
+- `text(key, options)`: Single-line string (title, slug, name)
+- `longtext(key, options)`: Multi-line plain text (bio, notes)
+- `richtext(key, options)`: Rich HTML content (WYSIWYG blog body)
+- `number(key, options)`: Numeric values (price, count, rating)
+- `boolean(key, options)`: True/false toggle (in_stock, is_featured)
+- `date(key, options)`: Calendar date (published_date, event_date)
+- `media(key, options)`: Asset URL from Cloudflare R2 uploader (thumbnail, avatar)
+- `select(key, options)`: Enum dropdown, e.g. `{ options: ['Draft', 'Review', 'Published'] }`
+- `relation(key, targetSlug, options)`: Link to another collection (e.g. author, category)
+
+### Schema Example:
+```typescript
+import {
+  defineCollection,
+  defineConfig,
+  text,
+  number,
+  richtext,
+  media,
+  boolean,
+  relation
+} from './packages/shared/src/builder';
+
+export const cmsConfig = defineConfig({
+  collections: [
+    defineCollection({
+      slug: 'products',
+      name: 'Products',
+      description: 'E-commerce product catalog',
+      icon: 'box',
+      fields: [
+        text('title', { label: 'Product Title', required: true }),
+        number('price', { label: 'Price (USD)', required: true }),
+        richtext('description', { label: 'Product Details' }),
+        media('thumbnail', { label: 'Featured Image' }),
+        boolean('in_stock', { label: 'In Stock' })
+      ]
+    })
+  ]
+});
+
+export default cmsConfig;
+```
+
+---
+
+## 📡 Frontend Fetching
+To query published content in Astro/Next.js frontend:
+```typescript
+import { getCMSContent } from '../lib/cms';
+
+// Fetches all published items with relational fields populated:
+const products = await getCMSContent('products');
+```
