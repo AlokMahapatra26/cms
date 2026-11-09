@@ -109,7 +109,7 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-{#if workspacesStore.list.length > 1}
+{#if workspacesStore.enabled && workspacesStore.list.length > 1}
   <div class="workspace-switcher-container">
     <span class="workspace-divider">/</span>
 

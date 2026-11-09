@@ -10,10 +10,13 @@ import { goto } from '$app/navigation';
 import { collectionsStore } from '$lib/collections.svelte';
 import type { Workspace, CreateWorkspaceInput, UpdateWorkspaceInput } from '@cms/shared';
 
+const MULTI_TENANT_ENABLED_KEY = 'edgecms_multi_tenant_enabled';
+
 class WorkspacesStore {
   list = $state<Workspace[]>([]);
   activeSlug = $state<string>('default');
   loading = $state(false);
+  enabled = $state<boolean>(true);
 
   get active(): Workspace {
     const found = this.list.find((w) => w.slug === this.activeSlug);
@@ -43,6 +46,13 @@ class WorkspacesStore {
         this.activeSlug = this.list[0].slug;
         setActiveWorkspaceSlug(this.activeSlug);
       }
+
+      const savedEnabled = typeof window !== 'undefined' ? localStorage.getItem(MULTI_TENANT_ENABLED_KEY) : null;
+      if (savedEnabled !== null) {
+        this.enabled = savedEnabled === 'true';
+      } else {
+        this.enabled = this.list.length > 1;
+      }
     } catch (e) {
       // ignore
     } finally {
@@ -61,9 +71,20 @@ class WorkspacesStore {
     }
   }
 
+  toggleMultiTenant(enable?: boolean) {
+    this.enabled = enable !== undefined ? enable : !this.enabled;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(MULTI_TENANT_ENABLED_KEY, String(this.enabled));
+    }
+    if (!this.enabled && this.activeSlug !== 'default') {
+      this.switchWorkspace('default');
+    }
+  }
+
   async create(input: CreateWorkspaceInput): Promise<Workspace> {
     const created = await createWorkspace(input);
     this.list = [...this.list, created];
+    this.toggleMultiTenant(true);
     this.switchWorkspace(created.slug);
     return created;
   }

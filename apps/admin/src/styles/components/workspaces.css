@@ -225,3 +225,45 @@
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-sm);
 }
+
+.workspace-toggle-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.workspace-toggle-track {
+  width: 38px;
+  height: 22px;
+  background-color: var(--color-hairline);
+  border-radius: var(--radius-pill);
+  position: relative;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  border: 1px solid var(--color-hairline);
+  cursor: pointer;
+  padding: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.workspace-toggle-track.active {
+  background-color: var(--color-ink);
+  border-color: var(--color-ink);
+}
+
+.workspace-toggle-thumb {
+  width: 16px;
+  height: 16px;
+  background-color: var(--color-canvas);
+  border-radius: var(--radius-full);
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.workspace-toggle-track.active .workspace-toggle-thumb {
+  transform: translateX(16px);
+  background-color: var(--color-canvas);
+}

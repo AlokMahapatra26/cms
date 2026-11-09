@@ -113,7 +113,7 @@ export type ${recordName} = CmsRecord<${typeName}>;`;
   const agentPrompt = $derived.by(() => {
     const cols = collections;
     const base = cleanApiBase;
-    const isMultiTenant = workspacesStore.list.length > 1;
+    const isMultiTenant = workspacesStore.enabled && workspacesStore.list.length > 1;
     const wsSlug = workspacesStore.active.slug;
     const wsName = workspacesStore.active.name;
 
@@ -248,7 +248,7 @@ ${collectionInstructions}
       <h2 class="text-base font-semibold text-dark m-0">Public Delivery Endpoints</h2>
       <p class="text-xs text-muted m-0">Zero-authentication endpoints for high-speed edge delivery from Cloudflare D1 & R2.</p>
     </div>
-    {#if workspacesStore.list.length > 1}
+    {#if isMultiTenant}
       <div class="workspace-badge-pill">
         <Icon name="workspace" size={12} />
         <span>Active: <strong>{workspacesStore.active.name}</strong> (<code>{workspacesStore.active.slug}</code>)</span>
@@ -272,7 +272,7 @@ ${collectionInstructions}
             <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
-            {#if workspacesStore.list.length > 1}
+            {#if isMultiTenant}
               <code class="font-semibold text-dark text-sm">/api/v1/{workspacesStore.active.slug}/content/:slug</code>
             {:else}
               <code class="font-semibold text-dark text-sm">/api/content/:slug</code>
@@ -288,7 +288,7 @@ ${collectionInstructions}
             <button
               type="button"
               class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(workspacesStore.list.length > 1 ? `${cleanApiBase}/api/v1/${workspacesStore.active.slug}/content/${collections[0]?.slug || 'blogs'}` : `${cleanApiBase}/api/content/${collections[0]?.slug || 'blogs'}`, 'ep-list')}
+              onclick={() => copyToClipboard(isMultiTenant ? `${cleanApiBase}/api/v1/${workspacesStore.active.slug}/content/${collections[0]?.slug || 'blogs'}` : `${cleanApiBase}/api/content/${collections[0]?.slug || 'blogs'}`, 'ep-list')}
             >
               <Icon name={copied === 'ep-list' ? 'check' : 'copy'} size={12} />
               <span>{copied === 'ep-list' ? 'Copied' : 'Copy URL'}</span>
@@ -301,7 +301,7 @@ ${collectionInstructions}
             <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
-            {#if workspacesStore.list.length > 1}
+            {#if isMultiTenant}
               <code class="font-semibold text-dark text-sm">/api/v1/{workspacesStore.active.slug}/content/:slug/:id</code>
             {:else}
               <code class="font-semibold text-dark text-sm">/api/content/:slug/:id</code>
@@ -314,7 +314,7 @@ ${collectionInstructions}
             <button
               type="button"
               class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(workspacesStore.list.length > 1 ? `${cleanApiBase}/api/v1/${workspacesStore.active.slug}/content/${collections[0]?.slug || 'blogs'}/:id` : `${cleanApiBase}/api/content/${collections[0]?.slug || 'blogs'}/:id`, 'ep-single')}
+              onclick={() => copyToClipboard(isMultiTenant ? `${cleanApiBase}/api/v1/${workspacesStore.active.slug}/content/${collections[0]?.slug || 'blogs'}/:id` : `${cleanApiBase}/api/content/${collections[0]?.slug || 'blogs'}/:id`, 'ep-single')}
             >
               <Icon name={copied === 'ep-single' ? 'check' : 'copy'} size={12} />
               <span>{copied === 'ep-single' ? 'Copied' : 'Copy URL'}</span>

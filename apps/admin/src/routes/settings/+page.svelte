@@ -4,8 +4,8 @@
   import { getMe, updateProfile, changePassword } from '$lib/api';
   import { Icon } from '$lib/components';
   import { workspacesStore } from '$lib/workspaces.svelte';
+  import { modal } from '$lib/modal.svelte';
   import Modal from '$lib/components/Modal.svelte';
-  import ConfirmModal from '$lib/ConfirmModal.svelte';
   import type { User, Workspace } from '@cms/shared';
 
   let user = $state<User | null>(null);
@@ -39,10 +39,6 @@
   let editWsSlug = $state('');
   let isUpdatingWs = $state(false);
   let editWsError = $state('');
-
-  let showDeleteConfirm = $state(false);
-  let deleteTargetWs = $state<Workspace | null>(null);
-  let isDeletingWs = $state(false);
 
   function handleWsNameInput(e: Event) {
     const val = (e.target as HTMLInputElement).value;
@@ -106,22 +102,25 @@
     }
   }
 
-  function openDeleteWsConfirm(ws: Workspace) {
-    deleteTargetWs = ws;
-    showDeleteConfirm = true;
-  }
+  async function handleDeleteWs(ws: Workspace) {
+    const confirmed = await modal.confirm({
+      title: `Delete Workspace "${ws.name}"?`,
+      message: `Are you sure you want to permanently delete "${ws.name}" (slug: /${ws.slug})? All collections and content items inside this workspace will be deleted immediately. This action cannot be undone.`,
+      confirmText: 'Delete Workspace',
+      cancelText: 'Cancel',
+      variant: 'danger'
+    });
 
-  async function handleConfirmDeleteWs() {
-    if (!deleteTargetWs) return;
-    isDeletingWs = true;
-    try {
-      await workspacesStore.remove(deleteTargetWs.id);
-      showDeleteConfirm = false;
-      deleteTargetWs = null;
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete workspace');
-    } finally {
-      isDeletingWs = false;
+    if (confirmed) {
+      try {
+        await workspacesStore.remove(ws.id);
+      } catch (err: any) {
+        await modal.alert({
+          title: 'Error',
+          message: err.message || 'Failed to delete workspace',
+          variant: 'danger'
+        });
+      }
     }
   }
 
@@ -385,99 +384,132 @@
             Manage isolated client websites or project environments on your single Cloudflare deployment.
           </p>
         </div>
-        <button
-          type="button"
-          class="btn btn-secondary btn-sm"
-          onclick={() => (showCreateWsModal = true)}
-        >
-          <Icon name="plus" size={12} />
-          <span>New Client Workspace</span>
-        </button>
+
+        <div class="flex items-center gap-3">
+          <div class="workspace-toggle-wrapper">
+            <span class="text-xs text-muted font-medium">
+              {workspacesStore.enabled ? 'Multi-Client Mode: ON' : 'Multi-Client Mode: OFF'}
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={workspacesStore.enabled}
+              class="workspace-toggle-track {workspacesStore.enabled ? 'active' : ''}"
+              onclick={() => workspacesStore.toggleMultiTenant()}
+              title={workspacesStore.enabled ? 'Disable Multi-Client Mode' : 'Enable Multi-Client Mode'}
+            >
+              <span class="workspace-toggle-thumb"></span>
+            </button>
+          </div>
+
+          {#if workspacesStore.enabled}
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              onclick={() => (showCreateWsModal = true)}
+            >
+              <Icon name="plus" size={12} />
+              <span>New Client Workspace</span>
+            </button>
+          {/if}
+        </div>
       </div>
 
-      {#if workspacesStore.list.length <= 1}
-        <div class="workspace-solo-callout mb-4">
+      {#if !workspacesStore.enabled}
+        <div class="workspace-solo-callout">
           <div class="flex items-center gap-2 text-sm font-medium text-dark mb-1">
             <Icon name="workspace" size={14} />
-            <span>Single Project Mode (Default)</span>
+            <span>Single Project Mode (Multi-Client Disabled)</span>
           </div>
           <p class="text-xs text-muted m-0">
-            You are currently running in single-project mode. Your top navigation is streamlined and clean. When you add a client workspace, a quick-switcher will automatically appear in your header.
+            Multi-client mode is currently disabled. All collections and content are managed under your primary workspace, and the top navigation switcher is hidden. Toggle the switch above anytime to activate multi-client isolation.
           </p>
         </div>
-      {/if}
+      {:else}
+        {#if workspacesStore.list.length <= 1}
+          <div class="workspace-solo-callout mb-4">
+            <div class="flex items-center gap-2 text-sm font-medium text-dark mb-1">
+              <Icon name="workspace" size={14} />
+              <span>Only 1 Workspace Present</span>
+            </div>
+            <p class="text-xs text-muted m-0">
+              You currently only have the primary workspace. Click "New Client Workspace" above to add your first client project. The top navigation switcher will appear once 2 or more workspaces exist.
+            </p>
+          </div>
+        {/if}
 
-      <div class="shopify-table-container">
-        <table class="shopify-table">
-          <thead>
-            <tr>
-              <th>Workspace</th>
-              <th>Slug / API Path</th>
-              <th>Status</th>
-              <th class="col-actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each workspacesStore.list as ws (ws.id)}
+        <div class="shopify-table-container">
+          <table class="shopify-table">
+            <thead>
               <tr>
-                <td>
-                  <div class="flex items-center gap-2">
-                    <div class="workspace-trigger-icon">
-                      <Icon name="workspace" size={12} />
+                <th>Workspace</th>
+                <th>Slug / API Path</th>
+                <th>Status</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each workspacesStore.list as ws (ws.id)}
+                <tr>
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <div class="workspace-trigger-icon">
+                        <Icon name="workspace" size={12} />
+                      </div>
+                      <div>
+                        <div class="font-medium text-sm text-dark">{ws.name}</div>
+                        {#if ws.id === 'ws_default'}
+                          <div class="text-xs text-muted">Primary Root Workspace</div>
+                        {/if}
+                      </div>
                     </div>
-                    <div>
-                      <div class="font-medium text-sm text-dark">{ws.name}</div>
-                      {#if ws.id === 'ws_default'}
-                        <div class="text-xs text-muted">Primary Root Workspace</div>
-                      {/if}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <code class="font-mono text-xs">/{ws.slug}</code>
-                </td>
-                <td>
-                  {#if workspacesStore.activeSlug === ws.slug}
-                    <span class="pill-tag-mint">Active</span>
-                  {:else}
-                    <button
-                      type="button"
-                      class="btn btn-secondary btn-sm"
-                      onclick={() => workspacesStore.switchWorkspace(ws.slug)}
-                    >
-                      Switch
-                    </button>
-                  {/if}
-                </td>
-                <td class="text-right">
-                  <div class="flex items-center justify-end gap-1">
-                    <button
-                      type="button"
-                      class="btn btn-secondary btn-sm"
-                      title="Rename Workspace"
-                      onclick={() => openEditWsModal(ws)}
-                    >
-                      <Icon name="edit" size={12} />
-                      <span>Rename</span>
-                    </button>
-
-                    {#if ws.id !== 'ws_default' && ws.slug !== 'default'}
+                  </td>
+                  <td>
+                    <code class="font-mono text-xs">/{ws.slug}</code>
+                  </td>
+                  <td>
+                    {#if workspacesStore.activeSlug === ws.slug}
+                      <span class="pill-tag-mint">Active</span>
+                    {:else}
                       <button
                         type="button"
-                        class="btn btn-secondary btn-sm text-danger"
-                        title="Delete Workspace"
-                        onclick={() => openDeleteWsConfirm(ws)}
+                        class="btn btn-secondary btn-sm"
+                        onclick={() => workspacesStore.switchWorkspace(ws.slug)}
                       >
-                        <Icon name="trash" size={12} />
+                        Switch
                       </button>
                     {/if}
-                  </div>
-                </td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+                  </td>
+                  <td class="text-right">
+                    <div class="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        title="Rename Workspace"
+                        onclick={() => openEditWsModal(ws)}
+                      >
+                        <Icon name="edit" size={12} />
+                        <span>Rename</span>
+                      </button>
+
+                      {#if ws.id !== 'ws_default' && ws.slug !== 'default'}
+                        <button
+                          type="button"
+                          class="btn btn-secondary btn-sm text-danger"
+                          title="Delete Workspace"
+                          onclick={() => handleDeleteWs(ws)}
+                        >
+                          <Icon name="trash" size={12} />
+                        </button>
+                      {/if}
+                    </div>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/if}
     </div>
 
   </div>
@@ -598,18 +630,4 @@
       </div>
     </form>
   </Modal>
-{/if}
-
-<!-- Modal: Confirm Delete Workspace -->
-{#if showDeleteConfirm && deleteTargetWs}
-  <ConfirmModal
-    open={showDeleteConfirm}
-    title="Delete Workspace '{deleteTargetWs.name}'?"
-    message="This will permanently delete this client workspace along with all its collections and content items. This action cannot be undone."
-    confirmText={isDeletingWs ? 'Deleting...' : 'Delete Workspace'}
-    cancelText="Cancel"
-    danger={true}
-    onconfirm={handleConfirmDeleteWs}
-    oncancel={() => { showDeleteConfirm = false; deleteTargetWs = null; }}
-  />
 {/if}
