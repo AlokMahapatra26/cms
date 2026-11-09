@@ -29,6 +29,7 @@
   let modalError = $state<string | null>(null);
 
   // New Field Sub-Form State
+  let editingFieldId = $state<string | null>(null);
   let newFieldLabel = $state('');
   let newFieldKey = $state('');
   let newFieldType = $state<FieldType>('text');
@@ -102,6 +103,7 @@
   }
 
   function autoSlugField() {
+    if (editingFieldId) return;
     newFieldKey = newFieldLabel
       .toLowerCase()
       .trim()
@@ -139,12 +141,73 @@
   }
 
   function resetFieldInputs() {
+    editingFieldId = null;
     newFieldLabel = '';
     newFieldKey = '';
     newFieldType = 'text';
     newFieldRequired = false;
     newFieldPlaceholder = '';
     newFieldOptions = '';
+  }
+
+  function startEditField(field: FieldDefinition) {
+    editingFieldId = field.id;
+    newFieldLabel = field.label;
+    newFieldKey = field.key;
+    newFieldType = field.type;
+    newFieldRequired = !!field.required;
+    newFieldPlaceholder = field.placeholder || '';
+    newFieldOptions = (field.options || []).join(', ');
+    modalError = null;
+  }
+
+  function cancelFieldEdit() {
+    resetFieldInputs();
+    modalError = null;
+  }
+
+  function updateFieldInModel() {
+    if (!editingFieldId) return;
+    if (!newFieldLabel.trim()) {
+      modalError = 'Field label is required';
+      return;
+    }
+    if (!newFieldKey.trim()) {
+      modalError = 'Field key (API property name) is required';
+      return;
+    }
+
+    const key = newFieldKey.trim().toLowerCase();
+    if (modelFields.some((f) => f.id !== editingFieldId && f.key === key)) {
+      modalError = `Field with key "${key}" already exists in this schema`;
+      return;
+    }
+
+    modelFields = modelFields.map((f) => {
+      if (f.id !== editingFieldId) return f;
+      const updated: FieldDefinition = {
+        ...f,
+        key,
+        label: newFieldLabel.trim(),
+        type: newFieldType,
+        required: newFieldRequired,
+        placeholder: newFieldPlaceholder.trim() || undefined
+      };
+
+      if (newFieldType === 'select' && newFieldOptions.trim()) {
+        updated.options = newFieldOptions
+          .split(',')
+          .map((o) => o.trim())
+          .filter(Boolean);
+      } else {
+        delete (updated as any).options;
+      }
+
+      return updated;
+    });
+
+    resetFieldInputs();
+    modalError = null;
   }
 
   function addFieldToModel() {
@@ -185,6 +248,9 @@
   }
 
   function removeField(fieldId: string) {
+    if (editingFieldId === fieldId) {
+      cancelFieldEdit();
+    }
     modelFields = modelFields.filter((f) => f.id !== fieldId);
   }
 
@@ -558,7 +624,14 @@ ${fieldLines}
                 {:else}
                   <div class="schema-fields-scroll-list">
                     {#each modelFields as f (f.id)}
-                      <div class="field-item-row">
+                      <!-- svelte-ignore a11y_click_events_have_key_events -->
+                      <div
+                        class="field-item-row {editingFieldId === f.id ? 'is-editing' : ''}"
+                        onclick={() => startEditField(f)}
+                        role="button"
+                        tabindex="0"
+                        title="Click to edit field settings"
+                      >
                         <div class="field-item-left">
                           <div class="field-type-icon-box">
                             <Icon name={f.type} size={13} />
@@ -569,6 +642,9 @@ ${fieldLines}
                               {#if f.required}
                                 <span class="badge-required">Required</span>
                               {/if}
+                              {#if editingFieldId === f.id}
+                                <span class="builder-badge-editing">Editing</span>
+                              {/if}
                             </div>
                             <div class="field-item-meta">
                               <span class="field-item-key">{f.key}</span>
@@ -578,14 +654,37 @@ ${fieldLines}
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          class="field-delete-btn"
-                          onclick={() => removeField(f.id)}
-                          title="Remove field"
-                        >
-                          <Icon name="close" size={12} />
-                        </button>
+                        <div class="field-item-actions">
+                          <button
+                            type="button"
+                            class="field-action-btn {editingFieldId === f.id ? 'active' : ''}"
+                            onclick={(e) => {
+                              e.stopPropagation();
+                              if (editingFieldId === f.id) {
+                                cancelFieldEdit();
+                              } else {
+                                startEditField(f);
+                              }
+                            }}
+                            title={editingFieldId === f.id ? 'Cancel editing' : 'Edit field'}
+                            aria-label="Edit field"
+                          >
+                            <Icon name="edit" size={12} />
+                          </button>
+
+                          <button
+                            type="button"
+                            class="field-action-btn delete"
+                            onclick={(e) => {
+                              e.stopPropagation();
+                              removeField(f.id);
+                            }}
+                            title="Remove field"
+                            aria-label="Remove field"
+                          >
+                            <Icon name="close" size={12} />
+                          </button>
+                        </div>
                       </div>
                     {/each}
                   </div>
@@ -595,9 +694,27 @@ ${fieldLines}
 
             <!-- Right Column: Field Configurator / Builder -->
             <div class="schema-panel-card builder-card">
-              <h4 class="schema-panel-heading">Add New Field</h4>
+              <div class="builder-header-row">
+                <h4 class="schema-panel-heading m-0">
+                  {editingFieldId ? `Edit Field: ${newFieldLabel || 'Field'}` : 'Add New Field'}
+                </h4>
+                {#if editingFieldId}
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    onclick={cancelFieldEdit}
+                    title="Switch back to Add New Field"
+                  >
+                    <Icon name="plus" size={11} />
+                    <span>New Field</span>
+                  </button>
+                {/if}
+              </div>
+
               <p class="text-xs text-muted mb-3">
-                Pick a data type and configure its API property settings
+                {editingFieldId
+                  ? 'Modify data type, label, API key, and validation settings'
+                  : 'Pick a data type and configure its API property settings'}
               </p>
 
               <!-- Field Types Grid (8 types, clean Vercel cards) -->
@@ -659,22 +776,43 @@ ${fieldLines}
                 </div>
               {/if}
 
-              <!-- Options & Add Action -->
+              <!-- Options & Actions -->
               <div class="form-add-footer-row">
                 <label class="form-checkbox-label">
                   <input type="checkbox" bind:checked={newFieldRequired} />
                   <span>Mark as required field</span>
                 </label>
 
-                <button
-                  type="button"
-                  class="btn btn-secondary btn-sm"
-                  disabled={!newFieldLabel.trim() || !newFieldKey.trim()}
-                  onclick={addFieldToModel}
-                >
-                  <Icon name="plus" size={12} />
-                  <span>Add Field</span>
-                </button>
+                <div class="builder-actions-group">
+                  {#if editingFieldId}
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      onclick={cancelFieldEdit}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      disabled={!newFieldLabel.trim() || !newFieldKey.trim()}
+                      onclick={updateFieldInModel}
+                    >
+                      <Icon name="check" size={12} />
+                      <span>Update Field</span>
+                    </button>
+                  {:else}
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      disabled={!newFieldLabel.trim() || !newFieldKey.trim()}
+                      onclick={addFieldToModel}
+                    >
+                      <Icon name="plus" size={12} />
+                      <span>Add Field</span>
+                    </button>
+                  {/if}
+                </div>
               </div>
             </div>
           </div>

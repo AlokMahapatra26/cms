@@ -119,6 +119,14 @@
   {:else if name === 'info'}
     <!-- Information Circle -->
     <path fill-rule="evenodd" d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm-.75 4.5a.75.75 0 0 1 1.5 0v.5a.75.75 0 0 1-1.5 0V6.5Zm0 3.25a.75.75 0 0 1 1.5 0v4.5a.75.75 0 0 1-1.5 0v-4.5Z" clip-rule="evenodd" />
+  {:else if name === 'copy'}
+    <!-- Copy / Clipboard -->
+    <rect x="6" y="6" width="10" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none" />
+    <path d="M4 14V4a1.5 1.5 0 0 1 1.5-1.5H13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" />
+  {:else if name === 'sparkles' || name === 'ai'}
+    <!-- AI Sparkles -->
+    <path d="M10 2L11.5 6.5L16 8L11.5 9.5L10 14L8.5 9.5L4 8L8.5 6.5L10 2Z" fill="currentColor" />
+    <path d="M15 13L15.75 15.25L18 16L15.75 16.75L15 19L14.25 16.75L12 16L14.25 15.25L15 13Z" fill="currentColor" />
   {:else}
     <!-- Generic Dot Glyph -->
     <circle cx="10" cy="10" r="4" />

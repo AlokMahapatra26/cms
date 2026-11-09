@@ -3,14 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter \"./apps/*\" --parallel dev",
+    "dev": "pnpm --filter @cms/api --filter @cms/admin --parallel dev",
     "dev:cms": "pnpm --filter @cms/api --filter @cms/admin --parallel dev",
     "dev:api": "pnpm --filter @cms/api dev",
     "dev:admin": "pnpm --filter @cms/admin dev",
-    "dev:web": "pnpm --filter @cms/web dev",
-    "build": "pnpm --filter @cms/admin build && pnpm --filter @cms/web build",
+    "build": "pnpm --filter @cms/admin build",
     "build:admin": "pnpm --filter @cms/admin build",
-    "build:web": "pnpm --filter @cms/web build",
     "migrate:local": "pnpm --filter @cms/api migrate:local"
   }
 }

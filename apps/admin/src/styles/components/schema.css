@@ -274,11 +274,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-fast);
+  cursor: pointer;
 }
 
 .field-item-row:hover {
   border-color: var(--color-mute);
+}
+
+.field-item-row.is-editing {
+  border-color: var(--color-ink);
+  background-color: var(--color-hairline-soft);
+  box-shadow: 0 0 0 1px var(--color-ink);
 }
 
 .field-item-left {
@@ -330,6 +337,19 @@
   line-height: 1;
 }
 
+.builder-badge-editing {
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-ink);
+  color: var(--color-on-primary);
+  line-height: 1.1;
+}
+
 .field-item-meta {
   font-size: 11px;
   color: var(--color-mute);
@@ -355,9 +375,17 @@
   color: var(--color-mute);
 }
 
+.field-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.field-action-btn,
 .field-delete-btn {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   color: var(--color-mute);
   padding: 4px;
   border-radius: var(--radius-xs);
@@ -368,9 +396,36 @@
   transition: all var(--transition-fast);
 }
 
+.field-action-btn:hover {
+  background-color: var(--color-hairline);
+  color: var(--color-ink);
+}
+
+.field-action-btn.active {
+  background-color: var(--color-ink);
+  color: var(--color-on-primary);
+  border-color: var(--color-ink);
+}
+
+.field-action-btn.delete:hover,
 .field-delete-btn:hover {
   background-color: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
   color: var(--color-error);
+}
+
+.builder-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.builder-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .empty-fields-state {

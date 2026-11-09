@@ -1,10 +1,38 @@
 <script lang="ts">
-  import { Card, Button, Badge } from '$lib/components';
+  import { onMount } from 'svelte';
+  import { collectionsStore } from '$lib/collections.svelte';
+  import { Icon } from '$lib/components';
+  import type { Collection, FieldDefinition } from '@cms/shared';
 
   let copied = $state<string | null>(null);
-  let activeTab = $state<'fetch' | 'nextjs' | 'curl'>('fetch');
+  let apiBase = $state('http://localhost:8787');
 
-  const API_BASE = 'http://localhost:8787';
+  const cleanApiBase = $derived(apiBase.trim().replace(/\/+$/, '') || 'http://localhost:8787');
+
+  onMount(() => {
+    collectionsStore.load();
+    const saved = localStorage.getItem('cms_api_base');
+    if (saved) {
+      apiBase = saved;
+    }
+  });
+
+  function handleApiBaseChange(e: Event) {
+    const target = e.target as HTMLInputElement;
+    apiBase = target.value;
+    if (target.value.trim() && target.value.trim() !== 'http://localhost:8787') {
+      localStorage.setItem('cms_api_base', target.value.trim());
+    } else {
+      localStorage.removeItem('cms_api_base');
+    }
+  }
+
+  function resetApiBase() {
+    apiBase = 'http://localhost:8787';
+    localStorage.removeItem('cms_api_base');
+  }
+
+  const collections = $derived(collectionsStore.list);
 
   function copyToClipboard(text: string, id: string) {
     navigator.clipboard.writeText(text);
@@ -14,93 +42,197 @@
     }, 2000);
   }
 
-  const fetchSnippet = `// 1. Fetch paginated collection records (e.g. 'products', 'articles')
-const res = await fetch('${API_BASE}/api/content/products?page=1&limit=10&sort=created_at&order=desc');
-const { data, pagination } = await res.json();
+  function toPascalCase(str: string): string {
+    return str
+      .replace(/[-_](\w)/g, (_, c) => c.toUpperCase())
+      .replace(/^\w/, (c) => c.toUpperCase());
+  }
 
-console.log('Records:', data);
-console.log(\`Showing page \${pagination.page} of \${pagination.totalPages} (\${pagination.total} total items)\`);
+  function getTsType(f: FieldDefinition): string {
+    switch (f.type) {
+      case 'text':
+      case 'longtext':
+        return 'string';
+      case 'richtext':
+        return 'string; // Rich text HTML';
+      case 'number':
+        return 'number';
+      case 'boolean':
+        return 'boolean';
+      case 'date':
+        return 'string; // ISO Date (YYYY-MM-DD)';
+      case 'media':
+        return 'string; // Cloudflare R2 Media URL';
+      case 'select':
+        if (f.options && f.options.length > 0) {
+          return f.options.map((o) => `'${o}'`).join(' | ');
+        }
+        return 'string';
+      default:
+        return 'any';
+    }
+  }
 
-// 2. Fetch single record by ID
-const single = await fetch('${API_BASE}/api/content/products/3608c4ee-6351-4e90-9833-1d8cb5f0a9ad');
-const item = await single.json();
+  function generateInterface(col: Collection): string {
+    const typeName = `${toPascalCase(col.slug)}Data`;
+    const recordName = `${toPascalCase(col.slug)}Record`;
+    const fields = col.fields || [];
 
-console.log(item.data);`;
+    const fieldLines = fields
+      .map((f) => `    ${f.key}${f.required ? '' : '?'}: ${getTsType(f)};`)
+      .join('\n');
 
-  const nextjsSnippet = `// app/catalog/page.tsx (Next.js 14/15 App Router with Pagination)
-export default async function CatalogPage({
-  searchParams
-}: {
-  searchParams: Promise<{ page?: string; search?: string }>
-}) {
-  const { page = '1', search = '' } = await searchParams;
-  const res = await fetch(
-    \`${API_BASE}/api/content/products?page=\${page}&limit=12&search=\${encodeURIComponent(search)}\`,
-    { next: { revalidate: 60 } } // Edge cache & revalidation
-  );
-  const { data, pagination } = await res.json();
+    return `// Schema for collection '${col.name}' (slug: '${col.slug}')
+export interface ${typeName} {
+${fieldLines || '    [key: string]: any;'}
+}
 
-  return (
-    <main className="p-8">
-      <h1 className="text-2xl font-bold">Dynamic Catalog</h1>
-      <p className="text-gray-500">Total Items: {pagination.total}</p>
+export type ${recordName} = CmsRecord<${typeName}>;`;
+  }
 
-      <div className="grid grid-cols-3 gap-4 mt-6">
-        {data.map((entry: any) => (
-          <div key={entry.id} className="border p-4 rounded-lg">
-            <h2>{entry.data.name || entry.data.title}</h2>
-            <p className="text-gray-600">{entry.data.description || 'No description'}</p>
-          </div>
-        ))}
-      </div>
-    </main>
-  );
-}`;
+  const generatedTypes = $derived.by(() => {
+    let output = `export interface CmsRecord<T = Record<string, any>> {
+  id: string;
+  collection_slug: string;
+  data: T;
+  created_at: string;
+  updated_at: string;
+}\n\n`;
 
-  const curlSnippet = `# 1. Query with Pagination, Sorting & Keyword Search (Public Edge)
-curl -X GET "${API_BASE}/api/content/products?page=1&limit=10&sort=created_at&order=desc&search=keyword"
+    if (collections.length === 0) {
+      output += `// No collections defined yet. Visit /schemas to create content models.\n`;
+    } else {
+      output += collections.map(generateInterface).join('\n\n');
+    }
 
-# 2. Get unpaginated records array (Backwards-compatible)
-curl -X GET ${API_BASE}/api/content/products
+    return output;
+  });
 
-# 3. Get specific record by ID (Public Edge)
-curl -X GET ${API_BASE}/api/content/products/:id
+  const agentPrompt = $derived.by(() => {
+    const cols = collections;
+    const base = cleanApiBase;
 
-# 4. Authenticate Admin (Get Bearer Token)
-curl -X POST ${API_BASE}/api/auth/login \\
-  -H "Content-Type: application/json" \\
-  -d '{"email":"admin@example.com","password":"password123"}'
+    const endpointsList = cols.length === 0
+      ? `- \`GET ${base}/api/content/:slug\` (List published records)\n- \`GET ${base}/api/content/:slug/:id\` (Get single record by ID or slug)`
+      : cols.map((col) => {
+          const pascal = toPascalCase(col.slug);
+          return `### ${col.name} (\`${col.slug}\`)
+- **List All**: \`GET ${base}/api/content/${col.slug}?page=1&limit=12&sort=created_at&order=desc\`
+  - Query parameters: \`?page\`, \`?limit\`, \`?sort\`, \`?order\`, \`?search\`
+  - Returns: \`${pascal}Record[]\`
+- **Single Record**: \`GET ${base}/api/content/${col.slug}/:id\`
+  - Returns: \`${pascal}Record\``;
+        }).join('\n\n');
 
-# 5. Admin Query with Status Filter & Pagination
-curl -X GET "${API_BASE}/api/admin/content/products?status=all&page=1&limit=20" \\
-  -H "Authorization: Bearer <YOUR_SESSION_TOKEN>"
+    const collectionInstructions = cols.length === 0
+      ? `   - Create catalog listing pages and detail pages for your CMS collections.`
+      : cols.map((c) => `   - **${c.name}**: Create listing page (\`/${c.slug}\`) and detail page (\`/${c.slug}/[id]\`). Render title, thumbnail, and defined fields.`).join('\n');
 
-# 6. Create Record in Collection (Admin)
-curl -X POST ${API_BASE}/api/admin/content/products \\
-  -H "Authorization: Bearer <YOUR_SESSION_TOKEN>" \\
-  -H "Content-Type: application/json" \\
-  -d '{"data": {"title": "Demo Product", "price": 49.99}, "status": "published"}'`;
+    return `# EdgeCMS Headless API Integration Spec for AI Agent
+
+## 1. System Overview
+You are tasked with connecting our frontend application (Next.js / Astro / React / SvelteKit / Nuxt) to our EdgeCMS Headless API.
+- **Base API URL**: \`${base}\` (configured via environment variable \`PUBLIC_API_URL\` or \`NEXT_PUBLIC_API_URL\`)
+- **Backend Architecture**: Cloudflare Workers + Cloudflare D1 (SQL) + Cloudflare R2 (Media Storage)
+- **Delivery**: All public content endpoints are edge-cached globally and return standard JSON.
+
+---
+
+## 2. TypeScript Data Types
+Add these types to your frontend project (e.g. in \`types/cms.ts\` or \`lib/cms.ts\`):
+
+\`\`\`typescript
+${generatedTypes}
+\`\`\`
+
+---
+
+## 3. Active Collections & Public Delivery Endpoints
+
+${endpointsList}
+
+### Media Assets (Images / Files)
+- Media files uploaded to Cloudflare R2 are accessible directly via:
+  \`${base}/api/media/*\` (stored in media and thumbnail fields).
+
+---
+
+## 4. Implementation Steps for AI Agent
+1. **Environment Setup**: In your frontend project root, configure \`.env.local\` (or \`.env\`):
+   \`\`\`env
+   PUBLIC_API_URL=${base}
+   \`\`\`
+   (Use \`NEXT_PUBLIC_API_URL=${base}\` if using Next.js).
+2. **CMS Client**: Create a data fetching helper using \`PUBLIC_API_URL\` with typed returns.
+3. **Collection Pages**:
+${collectionInstructions}
+4. **Rich Text / HTML**: If a collection has rich text HTML, render it safely with semantic prose styles.
+5. **Resilience**: Handle loading states, empty states ("No published items yet"), and error states cleanly.`;
+  });
 </script>
 
 <svelte:head>
-  <title>API Reference - EdgeCMS Headless Engine</title>
+  <title>Agent Prompt Studio - EdgeCMS</title>
 </svelte:head>
 
 <!-- Header -->
 <div class="shopify-page-header">
   <div>
-    <h1 class="shopify-page-title">Headless REST API</h1>
+    <h1 class="shopify-page-title">Agent Prompt Studio</h1>
     <p class="shopify-page-subtitle">
-      Query and distribute dynamic schema records, media assets, and collections worldwide.
+      One-click prompt to paste into Cursor, Claude Code, or Windsurf to build your complete frontend automatically.
     </p>
   </div>
 </div>
 
-<!-- Public Edge Endpoints -->
+<!-- Main AI Prompt Card -->
+<div class="shopify-card mb-6">
+  <div class="prompt-banner-header">
+    <div class="api-base-control">
+      <label for="api-base-input" class="api-base-label">API Base URL:</label>
+      <div class="api-base-input-wrapper">
+        <input
+          id="api-base-input"
+          type="text"
+          class="shopify-input api-base-input"
+          value={apiBase}
+          oninput={handleApiBaseChange}
+          placeholder="http://localhost:8787"
+          spellcheck="false"
+        />
+        {#if apiBase.trim() !== 'http://localhost:8787' && apiBase.trim() !== ''}
+          <button
+            type="button"
+            class="api-base-reset-btn"
+            title="Reset to local default (http://localhost:8787)"
+            onclick={resetApiBase}
+          >
+            Reset
+          </button>
+        {/if}
+      </div>
+    </div>
+
+    <!-- Copy Agent Prompt Button -->
+    <button
+      type="button"
+      class="btn btn-primary"
+      onclick={() => copyToClipboard(agentPrompt, 'agent-prompt')}
+    >
+      <Icon name={copied === 'agent-prompt' ? 'check' : 'copy'} size={14} />
+      <span>{copied === 'agent-prompt' ? 'Prompt Copied to Clipboard!' : 'Copy Agent Prompt'}</span>
+    </button>
+  </div>
+
+  <!-- Prompt Content Preview -->
+  <pre class="prompt-code-block"><code>{agentPrompt}</code></pre>
+</div>
+
+<!-- Essential Public Delivery Endpoints -->
 <div class="mb-6">
   <div class="mb-3">
     <h2 class="text-base font-semibold text-dark m-0">Public Delivery Endpoints</h2>
-    <p class="text-xs text-muted m-0">No API key required. High-speed cache on Cloudflare edge.</p>
+    <p class="text-xs text-muted m-0">Zero-authentication endpoints for high-speed edge delivery from Cloudflare D1 & R2.</p>
   </div>
 
   <div class="shopify-table-container">
@@ -119,20 +251,22 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
             <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
-            <code class="font-semibold text-dark text-sm">/api/content/:collectionSlug</code>
+            <code class="font-semibold text-dark text-sm">/api/content/:slug</code>
             <div class="text-xs text-muted mt-1 font-mono">
-              Query params: <code>?page</code>, <code>?limit</code>, <code>?sort</code>, <code>?order</code>, <code>?search</code>
+              Params: <code>?page</code>, <code>?limit</code>, <code>?sort</code>, <code>?order</code>, <code>?search</code>
             </div>
           </td>
           <td class="text-muted text-sm">
-            Fetch published records with pagination, custom sorting, and keyword search.
+            Fetch published collection items with pagination and keyword filtering.
           </td>
           <td class="text-right">
             <button
+              type="button"
               class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/content/:collectionSlug`, 'content-list')}
+              onclick={() => copyToClipboard(`${cleanApiBase}/api/content/${collections[0]?.slug || 'blogs'}`, 'ep-list')}
             >
-              {copied === 'content-list' ? 'Copied!' : 'Copy URL'}
+              <Icon name={copied === 'ep-list' ? 'check' : 'copy'} size={12} />
+              <span>{copied === 'ep-list' ? 'Copied' : 'Copy URL'}</span>
             </button>
           </td>
         </tr>
@@ -142,17 +276,19 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
             <span class="font-mono text-xs font-semibold text-dark">GET</span>
           </td>
           <td>
-            <code class="font-semibold text-dark text-sm">/api/content/:collectionSlug/:id</code>
+            <code class="font-semibold text-dark text-sm">/api/content/:slug/:id</code>
           </td>
           <td class="text-muted text-sm">
-            Retrieve a single published record by unique ID or slug.
+            Retrieve a single published record by unique record ID or slug.
           </td>
           <td class="text-right">
             <button
+              type="button"
               class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/content/:collectionSlug/:id`, 'content-single')}
+              onclick={() => copyToClipboard(`${cleanApiBase}/api/content/${collections[0]?.slug || 'blogs'}/:id`, 'ep-single')}
             >
-              {copied === 'content-single' ? 'Copied!' : 'Copy URL'}
+              <Icon name={copied === 'ep-single' ? 'check' : 'copy'} size={12} />
+              <span>{copied === 'ep-single' ? 'Copied' : 'Copy URL'}</span>
             </button>
           </td>
         </tr>
@@ -165,14 +301,16 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
             <code class="font-semibold text-dark text-sm">/api/media/*</code>
           </td>
           <td class="text-muted text-sm">
-            Stream media assets and graphics stored directly in Cloudflare R2 bucket.
+            Direct high-speed asset streaming from Cloudflare R2 bucket.
           </td>
           <td class="text-right">
             <button
+              type="button"
               class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/media/`, 'media')}
+              onclick={() => copyToClipboard(`${cleanApiBase}/api/media/uploads/`, 'ep-media')}
             >
-              {copied === 'media' ? 'Copied!' : 'Copy URL'}
+              <Icon name={copied === 'ep-media' ? 'check' : 'copy'} size={12} />
+              <span>{copied === 'ep-media' ? 'Copied' : 'Copy URL'}</span>
             </button>
           </td>
         </tr>
@@ -180,182 +318,3 @@ curl -X POST ${API_BASE}/api/admin/content/products \\
     </table>
   </div>
 </div>
-
-<!-- Authenticated Management Endpoints -->
-<div class="mb-6">
-  <div class="mb-3">
-    <h2 class="text-base font-semibold text-dark m-0">Authenticated Admin Endpoints</h2>
-    <p class="text-xs text-muted m-0">Bearer token required. Manage schemas, write drafts, and upload files.</p>
-  </div>
-
-  <div class="shopify-table-container">
-    <table class="shopify-table">
-      <thead>
-        <tr>
-          <th class="col-method">Method</th>
-          <th class="col-endpoint">Endpoint</th>
-          <th>Description</th>
-          <th class="col-actions">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <span class="font-mono text-xs font-semibold text-dark">POST</span>
-          </td>
-          <td>
-            <code class="font-semibold text-dark text-sm">/api/auth/login</code>
-          </td>
-          <td class="text-muted text-sm">
-            Authenticate admin credentials and retrieve a 7-day session token.
-          </td>
-          <td class="text-right">
-            <button
-              class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/auth/login`, 'auth-login')}
-            >
-              {copied === 'auth-login' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <span class="font-mono text-xs font-semibold text-dark">GET</span>
-          </td>
-          <td>
-            <code class="font-semibold text-dark text-sm">/api/admin/collections</code>
-          </td>
-          <td class="text-muted text-sm">
-            List all dynamic collection schema models and their field definitions.
-          </td>
-          <td class="text-right">
-            <button
-              class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/collections`, 'admin-collections')}
-            >
-              {copied === 'admin-collections' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <span class="font-mono text-xs font-semibold text-dark">POST</span>
-          </td>
-          <td>
-            <code class="font-semibold text-dark text-sm">/api/admin/collections</code>
-          </td>
-          <td class="text-muted text-sm">
-            Create a new collection model with dynamic field definitions.
-          </td>
-          <td class="text-right">
-            <button
-              class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/collections`, 'admin-create-col')}
-            >
-              {copied === 'admin-create-col' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <span class="font-mono text-xs font-semibold text-dark">GET</span>
-          </td>
-          <td>
-            <code class="font-semibold text-dark text-sm">/api/admin/content/:collectionSlug</code>
-          </td>
-          <td class="text-muted text-sm">
-            Fetch all records in a collection including drafts and unpublished items.
-          </td>
-          <td class="text-right">
-            <button
-              class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/content/:collectionSlug`, 'admin-content-list')}
-            >
-              {copied === 'admin-content-list' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <span class="font-mono text-xs font-semibold text-dark">POST</span>
-          </td>
-          <td>
-            <code class="font-semibold text-dark text-sm">/api/admin/content/:collectionSlug</code>
-          </td>
-          <td class="text-muted text-sm">
-            Create a new record in a collection with custom dynamic fields payload.
-          </td>
-          <td class="text-right">
-            <button
-              class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/content/:collectionSlug`, 'admin-create-item')}
-            >
-              {copied === 'admin-create-item' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <span class="font-mono text-xs font-semibold text-dark">POST</span>
-          </td>
-          <td>
-            <code class="font-semibold text-dark text-sm">/api/admin/upload</code>
-          </td>
-          <td class="text-muted text-sm">
-            Direct multipart file upload to Cloudflare R2 object storage.
-          </td>
-          <td class="text-right">
-            <button
-              class="btn btn-secondary btn-sm"
-              onclick={() => copyToClipboard(`${API_BASE}/api/admin/upload`, 'admin-upload')}
-            >
-              {copied === 'admin-upload' ? 'Copied!' : 'Copy URL'}
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Code Integration Card -->
-<Card class="p-6">
-  <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
-    <div>
-      <h2 class="text-lg font-semibold text-dark m-0 mb-1">Frontend Integration Code</h2>
-      <p class="text-sm text-muted m-0">Drop directly into Next.js, Astro, Nuxt, or mobile apps.</p>
-    </div>
-
-    <!-- Segmented Tabs -->
-    <div class="shopify-segmented">
-      <button
-        class="shopify-segment-btn {activeTab === 'fetch' ? 'active' : ''}"
-        onclick={() => (activeTab = 'fetch')}
-      >
-        Fetch / JS
-      </button>
-      <button
-        class="shopify-segment-btn {activeTab === 'nextjs' ? 'active' : ''}"
-        onclick={() => (activeTab = 'nextjs')}
-      >
-        Next.js App Router
-      </button>
-      <button
-        class="shopify-segment-btn {activeTab === 'curl' ? 'active' : ''}"
-        onclick={() => (activeTab = 'curl')}
-      >
-        cURL / CLI
-      </button>
-    </div>
-  </div>
-
-  <div class="relative">
-    {#if activeTab === 'fetch'}
-      <pre class="m-0 p-4 rounded-md text-sm text-dark bg-cream overflow-x-auto border"><code>{fetchSnippet}</code></pre>
-    {:else if activeTab === 'nextjs'}
-      <pre class="m-0 p-4 rounded-md text-sm text-dark bg-cream overflow-x-auto border"><code>{nextjsSnippet}</code></pre>
-    {:else if activeTab === 'curl'}
-      <pre class="m-0 p-4 rounded-md text-sm text-dark bg-cream overflow-x-auto border"><code>{curlSnippet}</code></pre>
-    {/if}
-  </div>
-</Card>
