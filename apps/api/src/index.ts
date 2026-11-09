@@ -1226,6 +1226,80 @@ app.delete('/api/admin/collections/:slug', async (c) => {
 // DYNAMIC CONTENT ITEMS (Records in collections)
 // -------------------------------------------------------------
 
+async function populateContentRelations(
+  db: D1Database,
+  items: Array<{ id: string; collection_slug: string; data: Record<string, any> }>,
+  collectionSlug: string,
+  wsId: string
+) {
+  if (!items || items.length === 0) return items;
+
+  try {
+    const colRow = await db
+      .prepare(
+        `SELECT fields FROM collections WHERE slug = ? AND (workspace_id = ? OR workspace_id = 'ws_default' OR workspace_id IS NULL) LIMIT 1`
+      )
+      .bind(collectionSlug, wsId)
+      .first<{ fields: string }>();
+
+    if (!colRow?.fields) return items;
+
+    let fields: any[] = [];
+    try {
+      fields = JSON.parse(colRow.fields);
+    } catch {
+      return items;
+    }
+
+    const relationFields = fields.filter((f) => f.type === 'relation');
+    if (relationFields.length === 0) return items;
+
+    const targetIds = new Set<string>();
+    for (const item of items) {
+      for (const rf of relationFields) {
+        const val = item.data?.[rf.key];
+        if (typeof val === 'string' && val.trim()) {
+          targetIds.add(val.trim());
+        }
+      }
+    }
+
+    if (targetIds.size === 0) return items;
+
+    const idArray = Array.from(targetIds);
+    const placeholders = idArray.map(() => '?').join(',');
+    const query = `SELECT id, collection_slug, data, status FROM content_items WHERE id IN (${placeholders})`;
+    const relRows = await db.prepare(query).bind(...idArray).all<any>();
+
+    const relMap = new Map<string, any>();
+    for (const row of relRows.results || []) {
+      let parsedData = {};
+      try {
+        parsedData = JSON.parse(row.data || '{}');
+      } catch {}
+      relMap.set(row.id, {
+        id: row.id,
+        collection_slug: row.collection_slug,
+        status: row.status,
+        ...parsedData
+      });
+    }
+
+    for (const item of items) {
+      for (const rf of relationFields) {
+        const val = item.data?.[rf.key];
+        if (typeof val === 'string' && relMap.has(val)) {
+          item.data[rf.key] = relMap.get(val);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to populate relations:', e);
+  }
+
+  return items;
+}
+
 // List content items in collection (supports ?page, ?limit, ?status, ?search, ?sort, ?order)
 app.get('/api/admin/content/:collectionSlug', async (c) => {
   try {
@@ -1295,6 +1369,10 @@ app.get('/api/admin/content/:collectionSlug', async (c) => {
       data: JSON.parse(r.data || '{}')
     }));
 
+    if (c.req.query('populate') === 'true' || c.req.query('depth') === '1') {
+      await populateContentRelations(c.env.DB, items, slug, wsId);
+    }
+
     c.header('X-Total-Count', String(total));
     c.header('X-Total-Pages', String(totalPages));
     c.header('X-Current-Page', String(page));
@@ -1334,10 +1412,16 @@ app.get('/api/admin/content/:collectionSlug/:id', async (c) => {
       return c.json({ error: 'Content item not found' }, 404);
     }
 
-    return c.json({
+    const item = {
       ...row,
       data: JSON.parse(row.data || '{}')
-    });
+    };
+
+    if (c.req.query('populate') === 'true' || c.req.query('depth') === '1') {
+      await populateContentRelations(c.env.DB, [item], collectionSlug, wsId);
+    }
+
+    return c.json(item);
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to fetch content item' }, 500);
   }
@@ -1450,7 +1534,7 @@ app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
 
 async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
   try {
-    const slug = c.req.param('collectionSlug');
+    const slug = c.req.param('collectionSlug') || '';
     const ws = explicitWsSlug
       ? await c.env.DB.prepare(`SELECT id, slug FROM workspaces WHERE slug = ? OR id = ? LIMIT 1`).bind(explicitWsSlug, explicitWsSlug).first<{ id: string; slug: string }>()
       : await resolveWorkspace(c);
@@ -1518,6 +1602,10 @@ async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
       updated_at: r.updated_at
     }));
 
+    if (c.req.query('populate') === 'true' || c.req.query('depth') === '1') {
+      await populateContentRelations(c.env.DB, items, slug, wsId);
+    }
+
     c.header('X-Total-Count', String(total));
     c.header('X-Total-Pages', String(totalPages));
     c.header('X-Current-Page', String(page));
@@ -1544,7 +1632,8 @@ async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
 
 async function handleGetSingleContentItem(c: AppContext, explicitWsSlug?: string) {
   try {
-    const { collectionSlug, id } = c.req.param();
+    const collectionSlug = c.req.param('collectionSlug') || '';
+    const id = c.req.param('id') || '';
     const ws = explicitWsSlug
       ? await c.env.DB.prepare(`SELECT id, slug FROM workspaces WHERE slug = ? OR id = ? LIMIT 1`).bind(explicitWsSlug, explicitWsSlug).first<{ id: string; slug: string }>()
       : await resolveWorkspace(c);
@@ -1559,14 +1648,20 @@ async function handleGetSingleContentItem(c: AppContext, explicitWsSlug?: string
       return c.json({ error: 'Content item not found' }, 404);
     }
 
-    return c.json({
+    const item = {
       id: row.id,
       collection_slug: row.collection_slug,
       workspace_id: row.workspace_id,
       data: JSON.parse(row.data || '{}'),
       created_at: row.created_at,
       updated_at: row.updated_at
-    });
+    };
+
+    if (c.req.query('populate') === 'true' || c.req.query('depth') === '1') {
+      await populateContentRelations(c.env.DB, [item], collectionSlug, wsId);
+    }
+
+    return c.json(item);
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to fetch content item' }, 500);
   }

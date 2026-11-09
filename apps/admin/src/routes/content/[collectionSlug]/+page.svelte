@@ -413,6 +413,15 @@
                     <span class="font-mono text-xs font-medium shopify-table-cell-truncate">
                       {item.data?.[col.key] !== undefined ? item.data[col.key] : '—'}
                     </span>
+                  {:else if col.type === 'relation'}
+                    {#if item.data?.[col.key]}
+                      <span class="badge-neutral text-xs font-mono inline-flex items-center gap-1">
+                        <Icon name="link" size={11} />
+                        <span>{String(item.data[col.key]).slice(0, 10)}</span>
+                      </span>
+                    {:else}
+                      <span class="text-faint text-xs">—</span>
+                    {/if}
                   {:else}
                     <span class="text-xs text-muted shopify-table-cell-truncate">
                       {item.data?.[col.key] !== undefined ? String(item.data[col.key]).replace(/<[^>]*>?/gm, '') : '—'}

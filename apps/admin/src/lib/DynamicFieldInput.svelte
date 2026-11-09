@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { FieldDefinition } from '@cms/shared';
-  import { uploadMedia } from '$lib/api';
+  import { uploadMedia, fetchContentItems, type ContentItem } from '$lib/api';
   import { Icon } from '$lib/components';
   import RichTextEditor from '$lib/RichTextEditor.svelte';
 
@@ -14,6 +14,30 @@
 
   let uploadingMedia = $state(false);
   let mediaError = $state<string | null>(null);
+
+  // Relationship state
+  let relationItems = $state<ContentItem[]>([]);
+  let loadingRelation = $state(false);
+  let relationError = $state<string | null>(null);
+
+  $effect(() => {
+    if (field.type === 'relation' && field.relationCollectionSlug) {
+      loadRelationItems(field.relationCollectionSlug);
+    }
+  });
+
+  async function loadRelationItems(colSlug: string) {
+    loadingRelation = true;
+    relationError = null;
+    try {
+      const items = await fetchContentItems(colSlug);
+      relationItems = items;
+    } catch (err: any) {
+      relationError = err.message || 'Failed to load referenced items';
+    } finally {
+      loadingRelation = false;
+    }
+  }
 
   async function handleMediaUpload(e: Event) {
     const target = e.target as HTMLInputElement;
@@ -181,5 +205,57 @@
     <div class="border rounded-md overflow-hidden">
       <RichTextEditor bind:content={value} placeholder={field.placeholder} />
     </div>
+
+  <!-- 9. Relation / Reference to Another Collection -->
+  {:else if field.type === 'relation'}
+    {#if !field.relationCollectionSlug}
+      <div class="field-hint text-danger">
+        No target collection configured for this relationship.
+      </div>
+    {:else}
+      <div class="relation-field-container">
+        <div class="relation-input-row">
+          <select
+            id="field-{field.key}"
+            class="shopify-input"
+            bind:value={value}
+            required={field.required}
+            disabled={loadingRelation}
+          >
+            <option value="">{loadingRelation ? 'Loading choices...' : '-- None / Unassigned --'}</option>
+            {#each relationItems as item (item.id)}
+              {@const label = item.data?.title || item.data?.name || item.data?.heading || item.data?.label || item.data?.slug || item.id}
+              <option value={item.id}>
+                {label} {item.status === 'draft' ? '(Draft)' : ''}
+              </option>
+            {/each}
+          </select>
+
+          {#if value}
+            <a
+              href="/content/{field.relationCollectionSlug}/{value}"
+              target="_blank"
+              rel="noreferrer"
+              class="relation-view-btn"
+              title="Open referenced record in new tab"
+            >
+              <Icon name="link" size={12} />
+              <span>View</span>
+            </a>
+          {/if}
+        </div>
+
+        {#if relationError}
+          <span class="text-danger text-xs">{relationError}</span>
+        {:else if relationItems.length === 0 && !loadingRelation}
+          <p class="relation-empty-hint">
+            No records found in "{field.relationCollectionSlug}".
+            <a href="/content/{field.relationCollectionSlug}/new" target="_blank" class="relation-create-link">
+              + Add {field.relationCollectionSlug}
+            </a>
+          </p>
+        {/if}
+      </div>
+    {/if}
   {/if}
 </div>

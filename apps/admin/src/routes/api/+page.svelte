@@ -71,6 +71,8 @@
           return f.options.map((o) => `'${o}'`).join(' | ');
         }
         return 'string';
+      case 'relation':
+        return `string | ${toPascalCase(f.relationCollectionSlug || 'Record')}Record; // Reference ID (or populated object with ?populate=true)`;
       default:
         return 'any';
     }
@@ -131,9 +133,10 @@ export type ${recordName} = CmsRecord<${typeName}>;`;
             : `${base}/api/content/${col.slug}/:id`;
           return `### ${col.name} (\`${col.slug}\`)
 - **List All**: \`GET ${listUrl}\`
-  - Query parameters: \`?page\`, \`?limit\`, \`?sort\`, \`?order\`, \`?search\`
+  - Query parameters: \`?page\`, \`?limit\`, \`?sort\`, \`?order\`, \`?search\`, \`?populate=true\`
   - Returns: \`${pascal}Record[]\`
 - **Single Record**: \`GET ${singleUrl}\`
+  - Query parameters: \`?populate=true\` (expands referenced collection data)
   - Returns: \`${pascal}Record\``;
         }).join('\n\n');
 
@@ -278,7 +281,7 @@ ${collectionInstructions}
               <code class="font-semibold text-dark text-sm">/api/content/:slug</code>
             {/if}
             <div class="text-xs text-muted mt-1 font-mono">
-              Params: <code>?page</code>, <code>?limit</code>, <code>?sort</code>, <code>?order</code>, <code>?search</code>
+              Params: <code>?page</code>, <code>?limit</code>, <code>?sort</code>, <code>?order</code>, <code>?search</code>, <code>?populate=true</code>
             </div>
           </td>
           <td class="text-muted text-sm">
@@ -306,6 +309,9 @@ ${collectionInstructions}
             {:else}
               <code class="font-semibold text-dark text-sm">/api/content/:slug/:id</code>
             {/if}
+            <div class="text-xs text-muted mt-1 font-mono">
+              Params: <code>?populate=true</code> (expands related collection records)
+            </div>
           </td>
           <td class="text-muted text-sm">
             Retrieve a single published record by unique record ID or slug.

@@ -36,6 +36,7 @@
   let newFieldRequired = $state(false);
   let newFieldPlaceholder = $state('');
   let newFieldOptions = $state('');
+  let newFieldRelationCollectionSlug = $state('');
 
   // TypeScript Code Modal State
   let codeModalOpen = $state(false);
@@ -51,7 +52,8 @@
     { type: 'media', label: 'Media Asset', icon: 'media', desc: 'Images & files on Cloudflare R2' },
     { type: 'boolean', label: 'Boolean', icon: 'boolean', desc: 'Yes/No switch, active status' },
     { type: 'date', label: 'Date', icon: 'date', desc: 'Calendar date, milestone' },
-    { type: 'select', label: 'Dropdown', icon: 'select', desc: 'Selection from choices' }
+    { type: 'select', label: 'Dropdown', icon: 'select', desc: 'Selection from choices' },
+    { type: 'relation', label: 'Relationship', icon: 'link', desc: 'Reference another collection (Author, Category)' }
   ];
 
   async function loadData() {
@@ -148,6 +150,7 @@
     newFieldRequired = false;
     newFieldPlaceholder = '';
     newFieldOptions = '';
+    newFieldRelationCollectionSlug = '';
   }
 
   function startEditField(field: FieldDefinition) {
@@ -158,6 +161,7 @@
     newFieldRequired = !!field.required;
     newFieldPlaceholder = field.placeholder || '';
     newFieldOptions = (field.options || []).join(', ');
+    newFieldRelationCollectionSlug = field.relationCollectionSlug || '';
     modalError = null;
   }
 
@@ -174,6 +178,10 @@
     }
     if (!newFieldKey.trim()) {
       modalError = 'Field key (API property name) is required';
+      return;
+    }
+    if (newFieldType === 'relation' && !newFieldRelationCollectionSlug) {
+      modalError = 'Please select a target collection to reference';
       return;
     }
 
@@ -203,6 +211,12 @@
         delete (updated as any).options;
       }
 
+      if (newFieldType === 'relation' && newFieldRelationCollectionSlug) {
+        updated.relationCollectionSlug = newFieldRelationCollectionSlug;
+      } else {
+        delete (updated as any).relationCollectionSlug;
+      }
+
       return updated;
     });
 
@@ -217,6 +231,10 @@
     }
     if (!newFieldKey.trim()) {
       modalError = 'Field key (API property name) is required';
+      return;
+    }
+    if (newFieldType === 'relation' && !newFieldRelationCollectionSlug) {
+      modalError = 'Please select a target collection to reference';
       return;
     }
 
@@ -240,6 +258,10 @@
         .split(',')
         .map((o) => o.trim())
         .filter(Boolean);
+    }
+
+    if (newFieldType === 'relation' && newFieldRelationCollectionSlug) {
+      newField.relationCollectionSlug = newFieldRelationCollectionSlug;
     }
 
     modelFields = [...modelFields, newField];
@@ -337,11 +359,14 @@
         if (f.options && f.options.length > 0) opts.push(`options: ${JSON.stringify(f.options)}`);
 
         const optsStr = opts.length > 0 ? `, { ${opts.join(', ')} }` : '';
+        if (f.type === 'relation') {
+          return `    relation('${f.key}', '${f.relationCollectionSlug || ''}'${optsStr})`;
+        }
         return `    ${f.type}('${f.key}'${optsStr})`;
       })
       .join(',\n');
 
-    return `import { defineCollection, text, number, boolean, date, richtext, media, select } from '@cms/shared';
+    return `import { defineCollection, text, number, boolean, date, richtext, media, select, relation } from '@cms/shared';
 
 export const ${col.name.replace(/[^a-zA-Z0-9]/g, '')} = defineCollection({
   name: '${col.name}',
@@ -463,7 +488,7 @@ ${fieldLines}
             {#each (col.fields || []) as field}
               <span class="schema-field-chip" title="{field.label} ({field.type})">
                 <span class="schema-field-chip-key">{field.key}</span>
-                <span class="schema-field-chip-type">({field.type})</span>
+                <span class="schema-field-chip-type">({field.type}{field.relationCollectionSlug ? ` → ${field.relationCollectionSlug}` : ''})</span>
               </span>
             {/each}
           </div>
@@ -650,6 +675,10 @@ ${fieldLines}
                               <span class="field-item-key">{f.key}</span>
                               <span class="meta-dot">&bull;</span>
                               <span class="field-item-type">{f.type}</span>
+                              {#if f.type === 'relation' && f.relationCollectionSlug}
+                                <span class="meta-dot">&bull;</span>
+                                <span class="field-item-relation">→ {f.relationCollectionSlug}</span>
+                              {/if}
                             </div>
                           </div>
                         </div>
@@ -773,6 +802,25 @@ ${fieldLines}
                     bind:value={newFieldOptions}
                     placeholder="e.g. In Stock, Pre-order, Sold Out"
                   />
+                </div>
+              {/if}
+
+              {#if newFieldType === 'relation'}
+                <div class="mb-3">
+                  <label for="nf-relation" class="form-label">Target Collection to Reference *</label>
+                  <select
+                    id="nf-relation"
+                    class="shopify-input"
+                    bind:value={newFieldRelationCollectionSlug}
+                  >
+                    <option value="">-- Choose collection to reference --</option>
+                    {#each collections as col}
+                      <option value={col.slug}>{col.name} (/{col.slug})</option>
+                    {/each}
+                  </select>
+                  <p class="field-hint">
+                    Editors will select a record from the <strong>{newFieldRelationCollectionSlug || 'chosen'}</strong> collection.
+                  </p>
                 </div>
               {/if}
 

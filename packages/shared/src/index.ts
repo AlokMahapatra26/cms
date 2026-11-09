@@ -131,7 +131,8 @@ export type FieldType =
   | 'boolean'
   | 'date'
   | 'media'
-  | 'select';
+  | 'select'
+  | 'relation';
 
 export interface FieldDefinition {
   id: string;
@@ -141,6 +142,7 @@ export interface FieldDefinition {
   required?: boolean;
   placeholder?: string;
   options?: string[]; // for select dropdown
+  relationCollectionSlug?: string; // target collection slug for relation
   description?: string;
 }
 

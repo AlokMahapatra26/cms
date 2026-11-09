@@ -102,3 +102,66 @@
   color: var(--color-ink);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
+
+/* -------------------------------------------------------------
+   Relationship / Reference Field Styles
+   ------------------------------------------------------------- */
+.relation-field-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.relation-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.relation-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink);
+  background-color: var(--color-canvas-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.relation-view-btn:hover {
+  background-color: var(--color-hairline-soft);
+  border-color: var(--color-mute);
+  color: var(--color-ink);
+}
+
+.relation-empty-hint {
+  font-size: 11px;
+  color: var(--color-mute);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.relation-create-link {
+  color: var(--color-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.relation-create-link:hover {
+  color: var(--color-mute);
+}
+
+.field-item-relation {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-mute);
+}

@@ -5,6 +5,7 @@ export interface FieldOptions {
   required?: boolean;
   placeholder?: string;
   options?: string[]; // for select
+  relationCollectionSlug?: string; // target collection for relation
   description?: string;
 }
 
@@ -57,6 +58,23 @@ export const select = (
 ): FieldDefinition => {
   const helper = createFieldHelper('select');
   return helper(keyOrOpts as any, maybeOpts as any);
+};
+
+export const relation = (
+  key: string,
+  targetCollectionSlug: string,
+  opts?: FieldOptions
+): FieldDefinition => {
+  return {
+    id: `f_${key || Math.random().toString(36).substring(2, 9)}`,
+    key,
+    label: opts?.label || formatDefaultLabel(key),
+    type: 'relation',
+    required: opts?.required ?? false,
+    placeholder: opts?.placeholder,
+    relationCollectionSlug: targetCollectionSlug,
+    description: opts?.description
+  };
 };
 
 export type FieldsInput =
