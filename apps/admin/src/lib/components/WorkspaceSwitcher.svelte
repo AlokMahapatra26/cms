@@ -119,7 +119,7 @@
 </div>
 
 {#if showCreateModal}
-  <Modal title="Create Client Workspace" onclose={() => (showCreateModal = false)}>
+  <Modal open={showCreateModal} title="Create Client Workspace" onclose={() => (showCreateModal = false)}>
     <form onsubmit={handleCreateWorkspace}>
       {#if errorMessage}
         <div class="error-banner mb-3">{errorMessage}</div>
