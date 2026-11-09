@@ -7,7 +7,7 @@ interface Props {
 }
 
 const {
-  title = "My Website",
+  title = "EdgeCMS Web",
   description = "Astro frontend powered by EdgeCMS"
 } = Astro.props;
 
@@ -32,7 +32,6 @@ const isDev = import.meta.env.DEV;
           <span class="brand-text">EdgeCMS Web</span>
         </a>
         <nav class="nav-links">
-          <a href="/" class="nav-link">Home</a>
           {isDev && (
             <a href="http://localhost:5173" target="_blank" rel="noopener noreferrer" class="studio-link" title="Open EdgeCMS Admin Studio">
               <span>Studio</span>
@@ -53,8 +52,6 @@ const isDev = import.meta.env.DEV;
     <footer class="app-footer">
       <div class="footer-inner">
         <span>Powered by EdgeCMS & Astro</span>
-        <span class="footer-dot">•</span>
-        <span>All-in-One Fullstack CMS</span>
       </div>
     </footer>
   </body>
@@ -107,17 +104,6 @@ const isDev = import.meta.env.DEV;
     gap: 16px;
   }
 
-  .nav-link {
-    font-size: 13px;
-    color: #888888;
-    text-decoration: none;
-    transition: color 0.15s ease;
-  }
-
-  .nav-link:hover {
-    color: #ffffff;
-  }
-
   .studio-link {
     display: inline-flex;
     align-items: center;
@@ -154,12 +140,7 @@ const isDev = import.meta.env.DEV;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
     font-size: 12px;
     color: #52525b;
-  }
-
-  .footer-dot {
-    color: #27272a;
   }
 </style>

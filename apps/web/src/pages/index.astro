@@ -2,240 +2,103 @@
 import Layout from '../layouts/Layout.astro';
 import { getCMSContent } from '../lib/cms';
 
-const posts = await getCMSContent('blogs');
+// 💡 Quick Start: Fetch any collection created in EdgeCMS Studio
+// const items = await getCMSContent('your-collection-slug');
 ---
 
-<Layout title="EdgeCMS — Blank Canvas">
-  <div class="site-container">
-    <header class="site-header">
-      <div class="site-tag">Fullstack Edge Website</div>
-      <h1 class="site-title">Minimalist Canvas</h1>
-      <p class="site-desc">
-        Connected directly to your local EdgeCMS D1 database. Content updates in Studio are reflected here instantly.
-      </p>
-    </header>
+<Layout title="EdgeCMS Blank Canvas">
+  <main class="canvas-container">
+    <div class="badge">EdgeCMS Blank Canvas</div>
+    <h1 class="canvas-title">Your Frontend Starts Here</h1>
+    <p class="canvas-desc">
+      Build whatever you want—SaaS, Blog, E-commerce, or Portfolio. 
+      Create collections in EdgeCMS Studio and fetch them using <code>getCMSContent()</code>.
+    </p>
 
-    <main class="posts-list">
-      {posts.length === 0 ? (
-        <div class="empty-state">
-          <p class="empty-title">No published content found</p>
-          <p class="empty-desc">Create collections and publish articles in EdgeCMS Studio to render them here.</p>
-        </div>
-      ) : (
-        posts.map((post) => {
-          const title = post.data?.title || post.data?.name || 'Untitled Article';
-          const description = post.data?.description || '';
-          const author = post.data?.auther;
-          const authorName = typeof author === 'object' && author ? author.title : (typeof author === 'string' ? author : null);
-          const authorAvatar = typeof author === 'object' && author?.profile ? author.profile : null;
-          const thumbnail = post.data?.thumbnail;
-          const date = post.data?.published || post.created_at;
+    <div class="code-box">
+      <span class="code-label">Quick Example:</span>
+      <pre><code>import &#123; getCMSContent &#125; from '../lib/cms';
 
-          return (
-            <article class="post-card">
-              <a href={`/blogs/${post.id}`} class="post-link">
-                {thumbnail && (
-                  <div class="thumbnail-wrap">
-                    <img src={thumbnail} alt={title} class="thumbnail-img" loading="lazy" />
-                  </div>
-                )}
-                
-                <div class="post-content">
-                  <h2 class="post-title">{title}</h2>
-                  {description && <p class="post-summary">{description}</p>}
-
-                  <div class="post-meta">
-                    {authorName && (
-                      <span class="author-tag">
-                        {authorAvatar && <img src={authorAvatar} alt={authorName} class="author-avatar" />}
-                        <span>{authorName}</span>
-                      </span>
-                    )}
-                    {authorName && <span class="meta-sep">•</span>}
-                    <time class="meta-date">{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</time>
-                  </div>
-                </div>
-              </a>
-            </article>
-          );
-        })
-      )}
-    </main>
-  </div>
+// Fetch published items from any collection:
+const items = await getCMSContent('products');</code></pre>
+    </div>
+  </main>
 </Layout>
 
 <style>
-  .site-container {
-    max-width: 680px;
-    margin: 60px auto;
-    padding: 0 20px;
+  .canvas-container {
+    max-width: 600px;
+    margin: 120px auto;
+    padding: 0 24px;
+    text-align: center;
   }
 
-  .site-header {
-    margin-bottom: 44px;
-    border-bottom: 1px solid #1a1a1a;
-    padding-bottom: 28px;
-  }
-
-  .site-tag {
+  .badge {
     display: inline-block;
     font-size: 11px;
     font-weight: 500;
     color: #a1a1aa;
     background-color: #121212;
     border: 1px solid #27272a;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 3px 10px;
+    border-radius: 9999px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 12px;
+    margin-bottom: 20px;
   }
 
-  .site-title {
-    font-size: 32px;
+  .canvas-title {
+    font-size: 36px;
     font-weight: 700;
     color: #ffffff;
-    margin: 0 0 8px;
     letter-spacing: -0.03em;
-    line-height: 1.2;
+    margin: 0 0 12px;
   }
 
-  .site-desc {
-    color: #888888;
-    font-size: 14px;
-    line-height: 1.6;
-    margin: 0;
-  }
-
-  .posts-list {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .post-card {
-    border: 1px solid #1c1c1c;
-    background-color: #0a0a0a;
-    border-radius: 12px;
-    overflow: hidden;
-    transition: all 0.15s ease;
-  }
-
-  .post-card:hover {
-    border-color: #333333;
-    background-color: #0e0e0e;
-    transform: translateY(-1px);
-  }
-
-  .post-link {
-    display: flex;
-    flex-direction: column;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .thumbnail-wrap {
-    width: 100%;
-    height: 180px;
-    overflow: hidden;
-    background-color: #121212;
-    border-bottom: 1px solid #1c1c1c;
-  }
-
-  .thumbnail-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.2s ease;
-  }
-
-  .post-card:hover .thumbnail-img {
-    transform: scale(1.02);
-  }
-
-  .post-content {
-    padding: 20px 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .post-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #ffffff;
-    margin: 0;
-    line-height: 1.35;
-    letter-spacing: -0.01em;
-  }
-
-  .post-card:hover .post-title {
-    color: #ffffff;
-  }
-
-  .post-summary {
-    font-size: 13.5px;
-    color: #999999;
-    line-height: 1.55;
-    margin: 0;
-  }
-
-  .post-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: #666666;
-    margin-top: 6px;
-    padding-top: 10px;
-    border-top: 1px solid #161616;
-  }
-
-  .author-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: #d1d5db;
-    font-weight: 500;
-  }
-
-  .author-avatar {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid #27272a;
-  }
-
-  .meta-sep {
-    color: #3f3f46;
-  }
-
-  .meta-date {
-    font-family: var(--font-mono, monospace);
-    font-size: 11.5px;
-    color: #71717a;
-  }
-
-  .empty-state {
-    padding: 60px 20px;
-    text-align: center;
-    background-color: #0a0a0a;
-    border: 1px dashed #222222;
-    border-radius: 12px;
-  }
-
-  .empty-title {
+  .canvas-desc {
     font-size: 15px;
-    font-weight: 600;
-    color: #ffffff;
-    margin: 0 0 6px;
+    color: #888888;
+    line-height: 1.6;
+    margin: 0 0 32px;
   }
 
-  .empty-desc {
-    font-size: 13px;
-    color: #666666;
+  .canvas-desc code {
+    color: #ffffff;
+    background-color: #18181b;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.9em;
+  }
+
+  .code-box {
+    text-align: left;
+    background-color: #0c0c0c;
+    border: 1px solid #222222;
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+
+  .code-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #71717a;
+    margin-bottom: 8px;
+  }
+
+  .code-box pre {
     margin: 0;
+    font-family: var(--font-mono, monospace);
+    font-size: 13px;
+    color: #d4d4d8;
+    line-height: 1.5;
+    overflow-x: auto;
+  }
+
+  .code-box code {
+    font-family: inherit;
   }
 </style>
