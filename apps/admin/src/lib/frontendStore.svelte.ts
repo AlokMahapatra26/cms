@@ -19,3 +19,4 @@ class FrontendStore {
 }
 
 export const frontendStore = new FrontendStore();
+

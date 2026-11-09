@@ -1,0 +1,291 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCMSContent, getCMSContentItem } from '../../lib/cms';
+
+export async function getStaticPaths() {
+  const posts = await getCMSContent('blogs');
+  return posts.map((post) => ({
+    params: { id: post.id },
+    props: { post }
+  }));
+}
+
+const { id } = Astro.params;
+let post = Astro.props.post;
+
+if (!post && id) {
+  post = await getCMSContentItem('blogs', id);
+}
+
+if (!post) {
+  return Astro.redirect('/');
+}
+
+const title = post.data?.title || post.data?.name || 'Untitled Article';
+const description = post.data?.description || '';
+const author = post.data?.auther;
+const authorName = typeof author === 'object' && author ? author.title : (typeof author === 'string' ? author : null);
+const authorAvatar = typeof author === 'object' && author?.profile ? author.profile : null;
+const authorBio = typeof author === 'object' && author?.description ? author.description : null;
+const thumbnail = post.data?.thumbnail;
+const date = post.data?.published || post.created_at;
+const htmlContent = post.data?.blog || post.data?.content || '';
+---
+
+<Layout title={`${title} — EdgeCMS Web`} description={description}>
+  <article class="article-page">
+    <div class="article-nav">
+      <a href="/" class="back-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>Back to articles</span>
+      </a>
+    </div>
+
+    <header class="article-header">
+      <h1 class="article-title">{title}</h1>
+      
+      {description && (
+        <p class="article-lead">{description}</p>
+      )}
+
+      <div class="article-byline">
+        {authorName && (
+          <div class="author-block">
+            {authorAvatar ? (
+              <img src={authorAvatar} alt={authorName} class="author-img" />
+            ) : (
+              <div class="author-fallback">{authorName[0]?.toUpperCase()}</div>
+            )}
+            <div class="author-text">
+              <span class="author-name">{authorName}</span>
+              {authorBio && <span class="author-bio">{authorBio}</span>}
+            </div>
+          </div>
+        )}
+
+        <time class="publish-date">
+          {new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        </time>
+      </div>
+    </header>
+
+    {thumbnail && (
+      <div class="featured-media">
+        <img src={thumbnail} alt={title} class="featured-img" />
+      </div>
+    )}
+
+    {htmlContent ? (
+      <div class="article-body rich-text" set:html={htmlContent} />
+    ) : (
+      <div class="article-empty">
+        <p>No content body provided for this article.</p>
+      </div>
+    )}
+  </article>
+</Layout>
+
+<style>
+  .article-page {
+    max-width: 680px;
+    margin: 40px auto 80px;
+    padding: 0 20px;
+  }
+
+  .article-nav {
+    margin-bottom: 32px;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #888888;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .back-link:hover {
+    color: #ffffff;
+  }
+
+  .article-header {
+    margin-bottom: 32px;
+  }
+
+  .article-title {
+    font-size: 34px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.25;
+    letter-spacing: -0.03em;
+    margin: 0 0 12px;
+  }
+
+  .article-lead {
+    font-size: 16px;
+    color: #a1a1aa;
+    line-height: 1.6;
+    margin: 0 0 20px;
+  }
+
+  .article-byline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #1a1a1a;
+  }
+
+  .author-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .author-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #27272a;
+  }
+
+  .author-fallback {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #1f1f23;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .author-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .author-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .author-bio {
+    font-size: 11px;
+    color: #71717a;
+  }
+
+  .publish-date {
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    color: #71717a;
+  }
+
+  .featured-media {
+    margin: 28px 0 36px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #222222;
+    background-color: #0d0d0d;
+  }
+
+  .featured-img {
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .article-body {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #d4d4d8;
+  }
+
+  /* Rich text styling */
+  .article-body :global(p) {
+    margin-bottom: 1.5em;
+  }
+
+  .article-body :global(h2) {
+    font-size: 22px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 2em 0 0.8em;
+    letter-spacing: -0.02em;
+  }
+
+  .article-body :global(h3) {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 1.6em 0 0.6em;
+  }
+
+  .article-body :global(blockquote) {
+    border-left: 2px solid #3f3f46;
+    padding-left: 16px;
+    margin: 1.5em 0;
+    color: #a1a1aa;
+    font-style: italic;
+  }
+
+  .article-body :global(pre) {
+    background-color: #0c0c0c;
+    border: 1px solid #222222;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1.5em 0;
+    font-size: 13px;
+    font-family: var(--font-mono, monospace);
+  }
+
+  .article-body :global(code) {
+    font-family: var(--font-mono, monospace);
+    background-color: #18181b;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  .article-body :global(ul), .article-body :global(ol) {
+    padding-left: 24px;
+    margin-bottom: 1.5em;
+  }
+
+  .article-body :global(li) {
+    margin-bottom: 0.5em;
+  }
+
+  .article-body :global(hr) {
+    border: 0;
+    border-top: 1px solid #222222;
+    margin: 2em 0;
+  }
+
+  .article-body :global(img) {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 1.5em 0;
+  }
+
+  .article-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: #71717a;
+    font-size: 14px;
+    border: 1px dashed #222;
+    border-radius: 8px;
+  }
+</style>
