@@ -1,0 +1,129 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCMSContent } from '../../lib/cms';
+
+export async function getStaticPaths() {
+  const cmsArticles = await getCMSContent('blogs');
+  const defaultSlugs = [
+    'architecting-zero-cost-headless-cms',
+    'why-ssg-beats-ssr-2026',
+    'building-client-proof-workspaces'
+  ];
+
+  const slugs = new Set([...defaultSlugs, ...cmsArticles.map(a => a.data?.slug || a.id)]);
+
+  return Array.from(slugs).map(slug => ({
+    params: { slug }
+  }));
+}
+
+const { slug } = Astro.params;
+const cmsArticles = await getCMSContent('blogs');
+const item = cmsArticles.find(a => (a.data?.slug || a.id) === slug);
+
+const title = item?.data?.title || 'Architecting a Zero-Cost Headless CMS on Cloudflare D1 & R2';
+const content = item?.data?.content || item?.data?.description || `
+Modern web development is undergoing a silent revolution. The era of bulky, expensive hosting instances that charge $50–$300 per month for idle compute is coming to an end.
+
+By pairing Cloudflare D1 (global serverless SQLite) with Cloudflare R2 (S3-compatible zero-egress asset storage) and an Astro frontend, engineering teams can achieve true 100/100 Core Web Vitals at zero monthly operational cost.
+`;
+const date = item?.created_at ? new Date(item.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : 'November 9, 2026';
+const cover = item?.data?.cover_image || 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&auto=format&fit=crop&q=80';
+---
+
+<Layout title={title} activeTemplate="blog">
+  <article class="article-reader container">
+    <a href="/templates/blog" class="back-link">← Back to All Stories</a>
+    
+    <div class="article-header">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="badge badge-emerald">Architecture</span>
+        <span class="text-xs text-muted">{date}</span>
+      </div>
+      <h1 class="article-page-title">{title}</h1>
+      <div class="flex items-center gap-3 mt-4">
+        <div class="avatar-circle">A</div>
+        <div>
+          <div class="text-xs font-semibold text-white">Alok Mahapatra</div>
+          <div class="text-2xs text-muted">Staff Platform Architect</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="article-hero-media">
+      <img src={cover} alt={title} class="article-hero-img" />
+    </div>
+
+    <div class="article-body">
+      <p class="article-lead">
+        Exploring the architectural evolution of edge computing, persistent relational SQLite databases, and how EdgeCMS delivers instant Jamstack builds.
+      </p>
+
+      <div class="prose">
+        {content}
+      </div>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  .article-reader {
+    max-width: 800px;
+    margin: 40px auto 80px;
+  }
+  .back-link {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: inline-block;
+    margin-bottom: 24px;
+    transition: color 0.15s ease;
+  }
+  .back-link:hover { color: #ffffff; }
+  .article-header { margin-bottom: 32px; }
+  .article-page-title {
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    color: #ffffff;
+  }
+  .avatar-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  .text-2xs { font-size: 11px; }
+  .article-hero-media {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    height: 400px;
+    margin-bottom: 40px;
+    border: 1px solid var(--border-hairline);
+  }
+  .article-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .article-lead {
+    font-size: 18px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 32px;
+    font-weight: 400;
+  }
+  .prose {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #d4d4d8;
+    white-space: pre-line;
+  }
+</style>

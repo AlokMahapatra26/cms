@@ -1,0 +1,288 @@
+---
+const features = [
+  {
+    icon: '⚡',
+    title: 'Sub-millisecond Edge Latency',
+    desc: 'Powered by Cloudflare D1 and global SQLite replication across 300+ edge locations worldwide.'
+  },
+  {
+    icon: '📦',
+    title: 'Zero-Egress Asset Pipeline',
+    desc: 'Native R2 bucket asset pipeline with on-the-fly image transformations and zero download bandwidth fees.'
+  },
+  {
+    icon: '🔐',
+    title: 'Client-Proof RBAC Workspaces',
+    desc: 'Multi-tenant boundaries guarantee complete client isolation with dedicated login credentials.'
+  },
+  {
+    icon: '🚀',
+    title: 'Instant Jamstack Rebuilds',
+    desc: 'Asynchronous webhook pings notify Vercel and Netlify in the background whenever content is published.'
+  }
+];
+
+const tiers = [
+  {
+    name: 'Starter',
+    price: '$0',
+    period: '/ forever',
+    desc: 'Ideal for solo developers, personal blogs, and freelance portfolios.',
+    features: ['1 Workspace', 'Up to 5 Collections', '10,000 Monthly Reads', 'Community Support'],
+    cta: 'Get Started Free',
+    highlighted: false
+  },
+  {
+    name: 'Pro Agency',
+    price: '$49',
+    period: '/ month',
+    desc: 'Engineered for digital agencies managing high-traffic client platforms.',
+    features: ['Unlimited Workspaces', 'Client Portal RBAC Logins', 'Custom Domains', 'Outgoing Webhooks', 'Priority SLA'],
+    cta: 'Start 14-Day Free Trial',
+    highlighted: true
+  },
+  {
+    name: 'Enterprise',
+    price: '$299',
+    period: '/ month',
+    desc: 'For organizations demanding custom audit trails and bespoke compliance.',
+    features: ['Dedicated Edge Isolation', 'Custom SSO / SAML', '99.99% Uptime Guarantee', 'Dedicated Slack Channel'],
+    cta: 'Talk to Architecture Team',
+    highlighted: false
+  }
+];
+---
+
+<div class="saas-template">
+  <!-- SaaS Hero -->
+  <section class="section-hero text-center">
+    <div class="container saas-hero-container">
+      <div class="inline-flex items-center gap-2 mb-4">
+        <span class="badge badge-emerald">EdgeCMS v2.0 Platform</span>
+        <span class="text-xs text-muted">Cloudflare D1 + R2 Powered</span>
+      </div>
+      <h1 class="saas-hero-title">
+        The Modern Content Engine <br />for Performance-Obsessed Teams.
+      </h1>
+      <p class="saas-hero-desc">
+        Store, model, and distribute your content at the edge with sub-millisecond query execution, zero egress costs, and automated Jamstack deployment hooks.
+      </p>
+
+      <div class="flex justify-center items-center gap-3 mt-6">
+        <a href="http://localhost:5173/login" target="_blank" class="btn btn-primary">
+          Launch Cloud Studio →
+        </a>
+        <a href="http://localhost:8787/api/posts" target="_blank" class="btn btn-secondary">
+          Explore REST API
+        </a>
+      </div>
+
+      <!-- Live Terminal Snippet Box -->
+      <div class="saas-terminal card mt-10">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span class="terminal-title">curl -X GET /api/v1/content/articles</span>
+        </div>
+        <pre class="terminal-code"><code><span class="token-comment">// 200 OK • Resolved in 1.4ms from Cloudflare Edge</span>
+{`{`}
+  <span class="token-key">"status"</span>: <span class="token-val">"published"</span>,
+  <span class="token-key">"workspace"</span>: <span class="token-val">"production-edge"</span>,
+  <span class="token-key">"cache_hit"</span>: <span class="token-bool">true</span>,
+  <span class="token-key">"data"</span>: {`{`}
+    <span class="token-key">"title"</span>: <span class="token-val">"How to Eat Banana"</span>,
+    <span class="token-key">"rebuild_webhook"</span>: <span class="token-val">"triggered"</span>
+  {`}`}
+{`}`}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bento Features Grid -->
+  <section class="section container">
+    <div class="text-center mb-10">
+      <span class="badge badge-cyan mb-2">Core Capabilities</span>
+      <h2 class="text-3xl font-bold text-white mb-2">Built for Developer Velocity</h2>
+      <p class="text-sm text-secondary">Everything you need to ship blazing fast web applications.</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6">
+      {features.map((feat) => (
+        <div class="card card-hover saas-feature-card">
+          <div class="feature-icon-badge">{feat.icon}</div>
+          <h3 class="text-lg font-semibold text-white mb-2">{feat.title}</h3>
+          <p class="text-sm text-secondary m-0 leading-relaxed">{feat.desc}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Pricing Tiers Matrix -->
+  <section class="section container">
+    <div class="text-center mb-10">
+      <span class="badge badge-purple mb-2">Transparent Pricing</span>
+      <h2 class="text-3xl font-bold text-white mb-2">Predictable Costs. Zero Surprise Egress.</h2>
+      <p class="text-sm text-secondary">Runs 100% on Cloudflare Free Tier with no vendor lock-in.</p>
+    </div>
+
+    <div class="grid grid-cols-3 gap-6">
+      {tiers.map((tier) => (
+        <div class={`card flex flex-col justify-between pricing-card ${tier.highlighted ? 'highlighted' : ''}`}>
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-base font-bold text-white">{tier.name}</h3>
+              {tier.highlighted && <span class="badge badge-emerald">Most Popular</span>}
+            </div>
+            <p class="text-xs text-muted mb-4">{tier.desc}</p>
+
+            <div class="flex items-baseline gap-1 mb-6">
+              <span class="text-3xl font-extrabold text-white">{tier.price}</span>
+              <span class="text-xs text-muted">{tier.period}</span>
+            </div>
+
+            <ul class="tier-features-list">
+              {tier.features.map((f) => (
+                <li class="tier-feature-item">
+                  <span class="check-icon">✓</span>
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <button class={`btn mt-6 w-full ${tier.highlighted ? 'btn-primary' : 'btn-secondary'}`}>
+            {tier.cta}
+          </button>
+        </div>
+      ))}
+    </div>
+  </section>
+</div>
+
+<style>
+  .saas-hero-container {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+
+  .saas-hero-title {
+    font-size: 46px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.15;
+    color: #ffffff;
+    margin-bottom: 16px;
+  }
+
+  .saas-hero-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .saas-terminal {
+    background: #050505;
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-md);
+    padding: 0;
+    text-align: left;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: #0f0f0f;
+    border-bottom: 1px solid var(--border-hairline);
+  }
+
+  .terminal-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .dot-red { background: #ef4444; }
+  .dot-yellow { background: #f59e0b; }
+  .dot-green { background: #10b981; }
+
+  .terminal-title {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+
+  .terminal-code {
+    padding: 16px 20px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #e4e4e7;
+    margin: 0;
+  }
+
+  .token-key { color: #38bdf8; }
+  .token-val { color: #a3e635; }
+  .token-bool { color: #f43f5e; }
+  .token-comment { color: #64748b; font-style: italic; }
+
+  .feature-icon-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-hover);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    margin-bottom: 14px;
+  }
+
+  .pricing-card {
+    padding: 28px;
+    position: relative;
+  }
+
+  .pricing-card.highlighted {
+    border-color: #38bdf8;
+    background: linear-gradient(180deg, #0e1726 0%, #0a0a0a 100%);
+    box-shadow: 0 0 30px rgba(56, 189, 248, 0.1);
+  }
+
+  .tier-features-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tier-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+
+  .check-icon {
+    color: #10b981;
+    font-weight: 700;
+  }
+
+  .w-full { width: 100%; }
+
+  @media (max-width: 900px) {
+    .saas-hero-title { font-size: 34px; }
+  }
+</style>

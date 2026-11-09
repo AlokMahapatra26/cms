@@ -138,6 +138,17 @@
             <span class="font-medium text-xs">{currentUser.name}</span>
           </a>
 
+          <a
+            href="http://localhost:4321"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-secondary btn-sm"
+            title="Open Live Astro Website"
+          >
+            <span>Website</span>
+            <Icon name="external" size={11} />
+          </a>
+
           {#if currentUser.role === 'admin'}
             <a
               href="/api"

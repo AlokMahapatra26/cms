@@ -914,6 +914,98 @@
           </div>
         {/if}
       </div>
+
+      <!-- Frontend Website & Industry Templates Showcase Card -->
+      <div class="shopify-card col-span-2">
+        <div class="workspace-settings-header mb-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <h2 class="text-base font-semibold m-0">Astro Frontend & 5 Industry Templates</h2>
+              <span class="pill-tag-mint">Live at :4321</span>
+            </div>
+            <p class="text-xs text-muted m-0">
+              One-click production Astro 5.0 websites connected to EdgeCMS. Choose any template or preview live.
+            </p>
+          </div>
+
+          <a
+            href="http://localhost:4321"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-secondary btn-sm"
+          >
+            <span>Launch Live Website</span>
+            <Icon name="external" size={11} />
+          </a>
+        </div>
+
+        <div class="templates-preview-grid">
+          <div class="template-preview-card">
+            <div class="template-preview-header">
+              <span class="text-lg">📰</span>
+              <div>
+                <div class="font-semibold text-sm text-dark">Tech Blog & Magazine</div>
+                <div class="text-2xs text-muted">Editorial, reading time, author tags</div>
+              </div>
+            </div>
+            <a href="http://localhost:4321/templates/blog" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs mt-3 w-full">
+              Preview Blog ↗
+            </a>
+          </div>
+
+          <div class="template-preview-card">
+            <div class="template-preview-header">
+              <span class="text-lg">🛍️</span>
+              <div>
+                <div class="font-semibold text-sm text-dark">E-Commerce Storefront</div>
+                <div class="text-2xs text-muted">Product grid, badges, prices, quick-add</div>
+              </div>
+            </div>
+            <a href="http://localhost:4321/templates/ecommerce" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs mt-3 w-full">
+              Preview Store ↗
+            </a>
+          </div>
+
+          <div class="template-preview-card">
+            <div class="template-preview-header">
+              <span class="text-lg">⚡</span>
+              <div>
+                <div class="font-semibold text-sm text-dark">SaaS Product Landing</div>
+                <div class="text-2xs text-muted">Terminal snippet, bento grid, pricing tiers</div>
+              </div>
+            </div>
+            <a href="http://localhost:4321/templates/saas" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs mt-3 w-full">
+              Preview SaaS ↗
+            </a>
+          </div>
+
+          <div class="template-preview-card">
+            <div class="template-preview-header">
+              <span class="text-lg">🎨</span>
+              <div>
+                <div class="font-semibold text-sm text-dark">Agency & Portfolio</div>
+                <div class="text-2xs text-muted">Case studies, live stats, inquiry form</div>
+              </div>
+            </div>
+            <a href="http://localhost:4321/templates/agency" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs mt-3 w-full">
+              Preview Agency ↗
+            </a>
+          </div>
+
+          <div class="template-preview-card">
+            <div class="template-preview-header">
+              <span class="text-lg">🩺</span>
+              <div>
+                <div class="font-semibold text-sm text-dark">Local Clinic & Business</div>
+                <div class="text-2xs text-muted">Care menu, fees, specialists, booking</div>
+              </div>
+            </div>
+            <a href="http://localhost:4321/templates/local" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs mt-3 w-full">
+              Preview Local ↗
+            </a>
+          </div>
+        </div>
+      </div>
     {/if}
 
   </div>

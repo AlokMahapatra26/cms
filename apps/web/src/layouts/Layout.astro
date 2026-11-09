@@ -1,0 +1,238 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  activeTemplate?: 'blog' | 'ecommerce' | 'saas' | 'agency' | 'local';
+}
+
+const {
+  title,
+  description = "Lightning-fast website powered by EdgeCMS and Astro.",
+  activeTemplate = 'blog'
+} = Astro.props;
+
+const templates = [
+  { id: 'blog', name: 'Editorial Blog', icon: '📰' },
+  { id: 'ecommerce', name: 'E-Commerce Store', icon: '🛍️' },
+  { id: 'saas', name: 'SaaS Startup', icon: '⚡' },
+  { id: 'agency', name: 'Agency Studio', icon: '🎨' },
+  { id: 'local', name: 'Local Business', icon: '🩺' }
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} — EdgeCMS Astro</title>
+    <meta name="description" content={description} />
+  </head>
+  <body>
+    <!-- Floating Universal Template Switcher Bar -->
+    <header class="template-switcher-bar">
+      <div class="switcher-inner">
+        <div class="switcher-brand">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="24" height="24" rx="5" fill="#ffffff" />
+            <path d="M7 12H17M7 7H17M7 17H13" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="switcher-brand-name">EdgeCMS Astro</span>
+          <span class="switcher-pill">5 Templates</span>
+        </div>
+
+        <nav class="switcher-nav">
+          {templates.map((t) => (
+            <a
+              href={`/templates/${t.id}`}
+              class={`switcher-tab ${activeTemplate === t.id ? 'active' : ''}`}
+            >
+              <span class="tab-icon">{t.icon}</span>
+              <span class="tab-name">{t.name}</span>
+            </a>
+          ))}
+        </nav>
+
+        <div class="switcher-actions">
+          <a
+            href="http://localhost:5173"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="switcher-admin-btn"
+            title="Open EdgeCMS Admin Studio"
+          >
+            <span>CMS Admin</span>
+            <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 0 0 1.06 0L12 9.06V13a.75.75 0 0 0 1.5 0V7.25a.75.75 0 0 0-.75-.75H7a.75.75 0 0 0 0 1.5h3.94l-5.72 5.72a.75.75 0 0 0 0 1.06Z" clip-rule="evenodd" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content Container -->
+    <main class="main-content">
+      <slot />
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="site-footer">
+      <div class="container flex justify-between items-center footer-inner">
+        <div class="flex items-center gap-2">
+          <span class="font-medium text-xs">EdgeCMS + Astro 5.0</span>
+          <span class="text-faint text-xs">•</span>
+          <span class="text-muted text-xs">Pure Jamstack on Cloudflare ($0 Cost)</span>
+        </div>
+        <div class="flex items-center gap-4 text-xs text-muted">
+          <a href="http://localhost:5173/schemas" target="_blank" class="hover-white">Schemas</a>
+          <a href="http://localhost:5173/settings" target="_blank" class="hover-white">Workspaces</a>
+          <a href="http://localhost:8787/api/posts" target="_blank" class="hover-white">Live API</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  /* Fixed Top Switcher Bar */
+  .template-switcher-bar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-hairline);
+    padding: 8px 16px;
+  }
+
+  .switcher-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .switcher-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .switcher-brand-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .switcher-pill {
+    font-size: 10.5px;
+    font-weight: 500;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-hairline);
+  }
+
+  .switcher-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-primary);
+    padding: 3px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-hairline);
+    overflow-x: auto;
+  }
+
+  .switcher-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .switcher-tab:hover {
+    color: var(--text-primary);
+    background: var(--bg-surface);
+  }
+
+  .switcher-tab.active {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-hairline);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+
+  .tab-icon {
+    font-size: 13px;
+  }
+
+  .switcher-actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .switcher-admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 5px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    transition: all 0.15s ease;
+  }
+
+  .switcher-admin-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-subtle);
+  }
+
+  .main-content {
+    min-height: calc(100vh - 120px);
+  }
+
+  .site-footer {
+    border-top: 1px solid var(--border-hairline);
+    padding: 24px 0;
+    background: var(--bg-surface);
+  }
+
+  .footer-inner {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .hover-white:hover {
+    color: #ffffff;
+  }
+
+  @media (max-width: 900px) {
+    .tab-name {
+      display: none;
+    }
+    .switcher-tab {
+      padding: 6px 10px;
+    }
+  }
+</style>
