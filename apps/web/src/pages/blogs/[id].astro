@@ -1,42 +1,52 @@
 ---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
 import Layout from '../../layouts/Layout.astro';
-import { getCMSContent, getCMSContentItem } from '../../lib/cms';
+import { getCMSContent } from '../../lib/cms';
 
-export async function getStaticPaths() {
+export const getStaticPaths = (async () => {
   const posts = await getCMSContent('blogs');
   return posts.map((post) => ({
-    params: { id: post.id },
+    params: { id: String(post.id) },
     props: { post }
   }));
-}
+}) satisfies GetStaticPaths;
 
-const { id } = Astro.params;
-let post = Astro.props.post;
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
-if (!post && id) {
-  post = await getCMSContentItem('blogs', id);
-}
+const { post } = Astro.props;
 
-if (!post) {
-  return Astro.redirect('/');
-}
-
-const title = post.data?.title || post.data?.name || 'Untitled Article';
-const description = post.data?.description || '';
-const author = post.data?.auther;
-const authorName = typeof author === 'object' && author ? author.title : (typeof author === 'string' ? author : null);
-const authorAvatar = typeof author === 'object' && author?.profile ? author.profile : null;
-const authorBio = typeof author === 'object' && author?.description ? author.description : null;
-const thumbnail = post.data?.thumbnail;
-const date = post.data?.published || post.created_at;
-const htmlContent = post.data?.blog || post.data?.content || '';
+const title = post?.data?.title || post?.data?.name || 'Untitled Article';
+const description = post?.data?.description || '';
+const author = post?.data?.auther;
+const authorName =
+  typeof author === 'object' && author
+    ? author.title
+    : typeof author === 'string'
+      ? author
+      : null;
+const authorAvatar =
+  typeof author === 'object' && author?.profile ? author.profile : null;
+const authorBio =
+  typeof author === 'object' && author?.description ? author.description : null;
+const thumbnail = post?.data?.thumbnail;
+const date = post?.data?.published || post?.created_at;
+const htmlContent = post?.data?.blog || post?.data?.content || '';
 ---
 
 <Layout title={`${title} — EdgeCMS Web`} description={description}>
   <article class="article-page">
     <div class="article-nav">
       <a href="/" class="back-link">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
@@ -46,45 +56,57 @@ const htmlContent = post.data?.blog || post.data?.content || '';
 
     <header class="article-header">
       <h1 class="article-title">{title}</h1>
-      
-      {description && (
-        <p class="article-lead">{description}</p>
-      )}
+
+      {description && <p class="article-lead">{description}</p>}
 
       <div class="article-byline">
-        {authorName && (
-          <div class="author-block">
-            {authorAvatar ? (
-              <img src={authorAvatar} alt={authorName} class="author-img" />
-            ) : (
-              <div class="author-fallback">{authorName[0]?.toUpperCase()}</div>
-            )}
-            <div class="author-text">
-              <span class="author-name">{authorName}</span>
-              {authorBio && <span class="author-bio">{authorBio}</span>}
+        {
+          authorName && (
+            <div class="author-block">
+              {authorAvatar ? (
+                <img src={authorAvatar} alt={authorName} class="author-img" />
+              ) : (
+                <div class="author-fallback">
+                  {authorName[0]?.toUpperCase()}
+                </div>
+              )}
+              <div class="author-text">
+                <span class="author-name">{authorName}</span>
+                {authorBio && <span class="author-bio">{authorBio}</span>}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         <time class="publish-date">
-          {new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          {
+            date ? new Date(date).toLocaleDateString('en-US', {
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
+            }) : ''
+          }
         </time>
       </div>
     </header>
 
-    {thumbnail && (
-      <div class="featured-media">
-        <img src={thumbnail} alt={title} class="featured-img" />
-      </div>
-    )}
+    {
+      thumbnail && (
+        <div class="featured-media">
+          <img src={thumbnail} alt={title} class="featured-img" />
+        </div>
+      )
+    }
 
-    {htmlContent ? (
-      <div class="article-body rich-text" set:html={htmlContent} />
-    ) : (
-      <div class="article-empty">
-        <p>No content body provided for this article.</p>
-      </div>
-    )}
+    {
+      htmlContent ? (
+        <div class="article-body rich-text" set:html={htmlContent} />
+      ) : (
+        <div class="article-empty">
+          <p>No content body provided for this article.</p>
+        </div>
+      )
+    }
   </article>
 </Layout>
 
@@ -259,7 +281,8 @@ const htmlContent = post.data?.blog || post.data?.content || '';
     font-size: 0.9em;
   }
 
-  .article-body :global(ul), .article-body :global(ol) {
+  .article-body :global(ul),
+  .article-body :global(ol) {
     padding-left: 24px;
     margin-bottom: 1.5em;
   }

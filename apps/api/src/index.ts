@@ -1954,10 +1954,17 @@ async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
 
     const conditions: string[] = [
       'collection_slug = ?',
-      "status = 'published'",
-      '(workspace_id = ? OR (workspace_id = "ws_default" AND ? = "ws_default") OR workspace_id IS NULL)'
+      "status = 'published'"
     ];
-    const params: any[] = [slug, wsId, wsId];
+    const params: any[] = [slug];
+
+    if (wsId && wsId !== 'ws_default') {
+      conditions.push('(workspace_id = ? OR workspace_id IS NULL)');
+      params.push(wsId);
+    } else {
+      conditions.push('(workspace_id = ? OR workspace_id = ? OR workspace_id IS NULL)');
+      params.push(wsId, 'ws_default');
+    }
 
     if (search) {
       conditions.push('(data LIKE ? OR id LIKE ?)');
@@ -2039,8 +2046,8 @@ async function handleGetSingleContentItem(c: AppContext, explicitWsSlug?: string
     const wsId = ws?.id || 'ws_default';
 
     const row = await c.env.DB.prepare(
-      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ? AND status = 'published' AND (workspace_id = ? OR (workspace_id = "ws_default" AND ? = "ws_default") OR workspace_id IS NULL)`
-    ).bind(collectionSlug, id, wsId, wsId).first<any>();
+      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ? AND status = 'published' AND (workspace_id = ? OR workspace_id = 'ws_default' OR workspace_id IS NULL)`
+    ).bind(collectionSlug, id, wsId).first<any>();
 
     if (!row) {
       return c.json({ error: 'Content item not found' }, 404);
