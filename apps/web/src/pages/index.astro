@@ -2,103 +2,42 @@
 import Layout from '../layouts/Layout.astro';
 import { getCMSContent } from '../lib/cms';
 
-// 💡 Quick Start: Fetch any collection created in EdgeCMS Studio
+// Fetch any collection from EdgeCMS:
 // const items = await getCMSContent('your-collection-slug');
 ---
 
-<Layout title="EdgeCMS Blank Canvas">
-  <main class="canvas-container">
-    <div class="badge">EdgeCMS Blank Canvas</div>
-    <h1 class="canvas-title">Your Frontend Starts Here</h1>
-    <p class="canvas-desc">
-      Build whatever you want—SaaS, Blog, E-commerce, or Portfolio. 
-      Create collections in EdgeCMS Studio and fetch them using <code>getCMSContent()</code>.
-    </p>
-
-    <div class="code-box">
-      <span class="code-label">Quick Example:</span>
-      <pre><code>import &#123; getCMSContent &#125; from '../lib/cms';
-
-// Fetch published items from any collection:
-const items = await getCMSContent('products');</code></pre>
-    </div>
+<Layout title="My App">
+  <main class="page">
+    <h1>My App</h1>
+    <p>Start editing <code>src/pages/index.astro</code> to build your frontend.</p>
   </main>
 </Layout>
 
 <style>
-  .canvas-container {
-    max-width: 600px;
-    margin: 120px auto;
-    padding: 0 24px;
-    text-align: center;
+  .page {
+    max-width: 720px;
+    margin: 80px auto;
+    padding: 0 20px;
   }
 
-  .badge {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 500;
-    color: #a1a1aa;
-    background-color: #121212;
-    border: 1px solid #27272a;
-    padding: 3px 10px;
-    border-radius: 9999px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 20px;
-  }
-
-  .canvas-title {
-    font-size: 36px;
+  h1 {
+    font-size: 32px;
     font-weight: 700;
-    color: #ffffff;
-    letter-spacing: -0.03em;
-    margin: 0 0 12px;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
   }
 
-  .canvas-desc {
-    font-size: 15px;
+  p {
     color: #888888;
-    line-height: 1.6;
-    margin: 0 0 32px;
+    font-size: 15px;
+    margin: 0;
   }
 
-  .canvas-desc code {
-    color: #ffffff;
-    background-color: #18181b;
+  code {
+    background-color: #1a1a1a;
     padding: 2px 6px;
     border-radius: 4px;
+    color: #ffffff;
     font-family: var(--font-mono, monospace);
-    font-size: 0.9em;
-  }
-
-  .code-box {
-    text-align: left;
-    background-color: #0c0c0c;
-    border: 1px solid #222222;
-    border-radius: 10px;
-    padding: 16px 20px;
-  }
-
-  .code-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #71717a;
-    margin-bottom: 8px;
-  }
-
-  .code-box pre {
-    margin: 0;
-    font-family: var(--font-mono, monospace);
-    font-size: 13px;
-    color: #d4d4d8;
-    line-height: 1.5;
-    overflow-x: auto;
-  }
-
-  .code-box code {
-    font-family: inherit;
   }
 </style>
