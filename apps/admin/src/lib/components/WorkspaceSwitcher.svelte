@@ -3,13 +3,24 @@
   import { workspacesStore } from '$lib/workspaces.svelte';
   import { Icon } from '$lib/components';
   import Modal from '$lib/components/Modal.svelte';
+  import type { Workspace } from '@cms/shared';
 
   let open = $state(false);
+
+  // Create Workspace Modal state
   let showCreateModal = $state(false);
   let newName = $state('');
   let newSlug = $state('');
   let isCreating = $state(false);
   let errorMessage = $state('');
+
+  // Edit / Rename Workspace Modal state
+  let showEditModal = $state(false);
+  let editingWorkspace = $state<Workspace | null>(null);
+  let editName = $state('');
+  let editSlug = $state('');
+  let isUpdating = $state(false);
+  let editErrorMessage = $state('');
 
   onMount(() => {
     workspacesStore.load();
@@ -55,6 +66,39 @@
     }
   }
 
+  function openEditModal(ws: Workspace) {
+    editingWorkspace = ws;
+    editName = ws.name;
+    editSlug = ws.slug;
+    editErrorMessage = '';
+    showEditModal = true;
+    open = false;
+  }
+
+  async function handleEditWorkspace(e: Event) {
+    e.preventDefault();
+    if (!editingWorkspace) return;
+    if (!editName.trim()) {
+      editErrorMessage = 'Please provide a workspace name.';
+      return;
+    }
+
+    isUpdating = true;
+    editErrorMessage = '';
+    try {
+      await workspacesStore.update(editingWorkspace.id, {
+        name: editName.trim(),
+        slug: editingWorkspace.id === 'ws_default' ? 'default' : editSlug.trim()
+      });
+      showEditModal = false;
+      editingWorkspace = null;
+    } catch (err: any) {
+      editErrorMessage = err.message || 'Failed to update workspace';
+    } finally {
+      isUpdating = false;
+    }
+  }
+
   function handleClickOutside(e: MouseEvent) {
     const target = e.target as HTMLElement;
     if (!target.closest('.workspace-switcher-container')) {
@@ -86,22 +130,48 @@
       <div class="workspace-dropdown-header">Client Workspaces</div>
 
       {#each workspacesStore.list as ws (ws.id)}
-        <button
-          type="button"
-          class="workspace-item {workspacesStore.activeSlug === ws.slug ? 'selected' : ''}"
-          onclick={() => handleSelect(ws.slug)}
-        >
-          <div class="workspace-item-info">
-            <span class="workspace-item-name">{ws.name}</span>
-            <span class="workspace-item-slug">/{ws.slug}</span>
-          </div>
-          {#if workspacesStore.activeSlug === ws.slug}
-            <Icon name="check" size={13} />
-          {/if}
-        </button>
+        <div class="workspace-item-row {workspacesStore.activeSlug === ws.slug ? 'selected' : ''}">
+          <button
+            type="button"
+            class="workspace-item"
+            onclick={() => handleSelect(ws.slug)}
+          >
+            <div class="workspace-item-info">
+              <span class="workspace-item-name">{ws.name}</span>
+              <span class="workspace-item-slug">/{ws.slug}</span>
+            </div>
+            {#if workspacesStore.activeSlug === ws.slug}
+              <Icon name="check" size={13} />
+            {/if}
+          </button>
+
+          <button
+            type="button"
+            class="workspace-item-edit-btn"
+            title="Rename '{ws.name}'"
+            onclick={(e) => {
+              e.stopPropagation();
+              openEditModal(ws);
+            }}
+          >
+            <Icon name="edit" size={12} />
+          </button>
+        </div>
       {/each}
 
       <div class="workspace-dropdown-divider"></div>
+
+      <button
+        type="button"
+        class="workspace-add-btn"
+        onclick={() => {
+          open = false;
+          openEditModal(workspacesStore.active);
+        }}
+      >
+        <Icon name="edit" size={13} />
+        <span>Rename Active Workspace</span>
+      </button>
 
       <button
         type="button"
@@ -118,6 +188,7 @@
   {/if}
 </div>
 
+<!-- Modal: Create Workspace -->
 {#if showCreateModal}
   <Modal open={showCreateModal} title="Create Client Workspace" onclose={() => (showCreateModal = false)}>
     <form onsubmit={handleCreateWorkspace}>
@@ -167,6 +238,67 @@
           disabled={isCreating}
         >
           {isCreating ? 'Creating...' : 'Create Workspace'}
+        </button>
+      </div>
+    </form>
+  </Modal>
+{/if}
+
+<!-- Modal: Edit / Rename Workspace -->
+{#if showEditModal && editingWorkspace}
+  <Modal open={showEditModal} title="Rename Workspace" onclose={() => { showEditModal = false; editingWorkspace = null; }}>
+    <form onsubmit={handleEditWorkspace}>
+      {#if editErrorMessage}
+        <div class="error-banner mb-3">{editErrorMessage}</div>
+      {/if}
+
+      <div class="form-group">
+        <label for="edit-ws-name" class="form-label">Workspace / Brand Name *</label>
+        <input
+          id="edit-ws-name"
+          type="text"
+          class="shopify-input"
+          placeholder="e.g. My Main Agency, Personal Brand"
+          bind:value={editName}
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="edit-ws-slug" class="form-label">Workspace Slug</label>
+        <input
+          id="edit-ws-slug"
+          type="text"
+          class="shopify-input font-mono"
+          bind:value={editSlug}
+          disabled={editingWorkspace.id === 'ws_default'}
+          required
+        />
+        {#if editingWorkspace.id === 'ws_default'}
+          <div class="field-hint">
+            The default workspace uses <code>default</code> (and root <code>/api/content/*</code>) for backward compatibility.
+          </div>
+        {:else}
+          <div class="field-hint">
+            Used in frontend delivery URLs: <code>/api/v1/:slug/content/...</code>
+          </div>
+        {/if}
+      </div>
+
+      <div class="shopify-actions-bar">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={() => { showEditModal = false; editingWorkspace = null; }}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          disabled={isUpdating}
+        >
+          {isUpdating ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
     </form>

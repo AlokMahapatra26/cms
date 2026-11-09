@@ -1,13 +1,14 @@
 import {
   fetchWorkspaces,
   createWorkspace,
+  updateWorkspace,
   deleteWorkspace,
   getActiveWorkspaceSlug,
   setActiveWorkspaceSlug
 } from '$lib/api';
 import { goto } from '$app/navigation';
 import { collectionsStore } from '$lib/collections.svelte';
-import type { Workspace, CreateWorkspaceInput } from '@cms/shared';
+import type { Workspace, CreateWorkspaceInput, UpdateWorkspaceInput } from '@cms/shared';
 
 class WorkspacesStore {
   list = $state<Workspace[]>([]);
@@ -65,6 +66,15 @@ class WorkspacesStore {
     this.list = [...this.list, created];
     this.switchWorkspace(created.slug);
     return created;
+  }
+
+  async update(id: string, input: UpdateWorkspaceInput): Promise<Workspace> {
+    const updated = await updateWorkspace(id, input);
+    this.list = this.list.map((w) => (w.id === id ? updated : w));
+    if (this.active.id === id && updated.slug !== this.activeSlug) {
+      this.switchWorkspace(updated.slug);
+    }
+    return updated;
   }
 
   async remove(id: string) {

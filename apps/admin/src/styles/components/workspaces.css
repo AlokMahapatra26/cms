@@ -81,6 +81,58 @@
   padding: 6px 8px 4px;
 }
 
+.workspace-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border-radius: var(--radius-xs);
+  transition: background-color var(--transition-fast);
+}
+
+.workspace-item-row:hover {
+  background-color: var(--color-hairline-soft);
+}
+
+.workspace-item-row.selected {
+  font-weight: 600;
+}
+
+.workspace-item-row .workspace-item {
+  flex: 1;
+  background: transparent;
+}
+
+.workspace-item-row .workspace-item:hover {
+  background: transparent;
+}
+
+.workspace-item-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  border: none;
+  color: var(--color-mute);
+  cursor: pointer;
+  margin-right: 4px;
+  opacity: 0;
+  transition: all var(--transition-fast);
+}
+
+.workspace-item-row:hover .workspace-item-edit-btn {
+  opacity: 1;
+}
+
+.workspace-item-edit-btn:hover {
+  background-color: var(--color-hairline);
+  color: var(--color-ink);
+}
+
 .workspace-item {
   display: flex;
   align-items: center;

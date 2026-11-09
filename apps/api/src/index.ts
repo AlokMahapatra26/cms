@@ -968,7 +968,7 @@ app.put('/api/admin/workspaces/:id', async (c) => {
 
     const name = body.name?.trim() || existing.name;
     let slug = existing.slug;
-    if (body.slug) {
+    if (body.slug && id !== 'ws_default') {
       slug = body.slug.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
       const conflict = await c.env.DB.prepare(
         `SELECT id FROM workspaces WHERE slug = ? AND id != ?`
