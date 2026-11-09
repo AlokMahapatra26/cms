@@ -19,12 +19,13 @@ const BANNER = `
 ${bold}${cyan}▲ EdgeCMS${reset} ${dim}- Cloudflare Workers + D1 + R2 Native Headless CMS${reset}
 `;
 
-function detectPackageManager() {
-  const userAgent = process.env.npm_config_user_agent || '';
-  if (userAgent.startsWith('pnpm')) return 'pnpm';
-  if (userAgent.startsWith('yarn')) return 'yarn';
-  if (userAgent.startsWith('bun')) return 'bun';
-  return 'npm';
+function hasGlobalPnpm() {
+  try {
+    execSync('pnpm --version', { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function printHelp() {
@@ -127,7 +128,11 @@ async function main() {
     process.exit(1);
   }
 
-  const pkgManager = detectPackageManager();
+  const hasPnpm = hasGlobalPnpm();
+  const installDisplay = hasPnpm ? 'pnpm' : 'pnpm (via npx)';
+  const installCmd = hasPnpm ? 'pnpm install' : 'npx pnpm install';
+  const devCmd = hasPnpm ? 'pnpm run dev' : 'npx pnpm run dev';
+
   let shouldInstall = false;
 
   if (skipInstall) {
@@ -135,21 +140,21 @@ async function main() {
   } else if (isYes) {
     shouldInstall = true;
   } else {
-    const installAnswer = await rl.question(`\n${bold}Install dependencies with ${pkgManager}?${reset} ${dim}(Y/n)${reset} `);
+    const installAnswer = await rl.question(`\n${bold}Install dependencies with ${installDisplay}?${reset} ${dim}(Y/n)${reset} `);
     shouldInstall = installAnswer.trim().toLowerCase() !== 'n';
   }
   rl.close();
 
   if (shouldInstall) {
-    console.log(`\n${dim}Installing dependencies using ${pkgManager}...${reset}\n`);
+    console.log(`\n${dim}Installing dependencies with ${installCmd}...${reset}\n`);
     try {
-      execSync(`${pkgManager} install`, {
+      execSync(installCmd, {
         cwd: projectPath,
         stdio: 'inherit'
       });
       console.log(`\n${green}✔${reset} Dependencies installed.`);
     } catch (installErr) {
-      console.log(`\n${yellow}Note:${reset} Automatic install failed. Run ${bold}${pkgManager} install${reset} manually inside the folder.`);
+      console.log(`\n${yellow}Note:${reset} Automatic install failed. Run ${bold}${installCmd}${reset} manually inside the folder.`);
     }
   }
 
@@ -160,7 +165,7 @@ ${bold}${green}🎉 Success! Created ${projectName} at ${projectPath}${reset}
 ${bold}Get started by running:${reset}
 
   ${cyan}cd ${targetDir}${reset}
-  ${!shouldInstall ? `${cyan}${pkgManager} install${reset}\n  ` : ''}${cyan}${pkgManager} run dev${reset}
+  ${!shouldInstall ? `${cyan}${installCmd}${reset}\n  ` : ''}${cyan}${devCmd}${reset}
 
 ${bold}Services:${reset}
   ${dim}Admin Dashboard:${reset}  http://localhost:5173
@@ -171,7 +176,7 @@ ${bold}AI Agent Integration:${reset}
   to let Cursor or Claude build your frontend instantly!
 
 ${dim}Deploy to Cloudflare Workers:${reset}
-  ${cyan}${pkgManager} --filter @cms/api deploy${reset}
+  ${cyan}${hasPnpm ? 'pnpm' : 'npx pnpm'} --filter @cms/api deploy${reset}
 `);
 }
 
