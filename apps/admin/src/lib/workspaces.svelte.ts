@@ -3,6 +3,7 @@ import {
   createWorkspace,
   updateWorkspace,
   deleteWorkspace,
+  triggerWorkspaceDeploy,
   getActiveWorkspaceSlug,
   setActiveWorkspaceSlug
 } from '$lib/api';
@@ -96,6 +97,16 @@ class WorkspacesStore {
       this.switchWorkspace(updated.slug);
     }
     return updated;
+  }
+
+  async deploy(id: string): Promise<{ success: boolean; status: string; timestamp: string }> {
+    const res = await triggerWorkspaceDeploy(id);
+    this.list = this.list.map((w) =>
+      w.id === id
+        ? { ...w, last_deployed_at: res.timestamp, last_deploy_status: res.status }
+        : w
+    );
+    return res;
   }
 
   async remove(id: string) {

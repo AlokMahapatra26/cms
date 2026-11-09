@@ -658,6 +658,10 @@ app.post('/api/admin/posts', async (c) => {
       .bind(id)
       .first<Post>();
 
+    if (status === 'published') {
+      dispatchDeployWebhook(c, 'ws_default', 'post.published', { postId: id });
+    }
+
     return c.json(created, 201);
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to create post' }, 500);
@@ -711,6 +715,10 @@ app.put('/api/admin/posts/:id', async (c) => {
       .bind(title, slug, excerpt, content, cover_image, status, meta_title, meta_description, og_image, canonical_url, now, id)
       .run();
 
+    if (status === 'published' || existing.status === 'published') {
+      dispatchDeployWebhook(c, 'ws_default', status === 'published' ? 'post.published' : 'post.unpublished', { postId: id });
+    }
+
     const updated = await c.env.DB.prepare(`SELECT * FROM posts WHERE id = ?`)
       .bind(id)
       .first<Post>();
@@ -725,6 +733,7 @@ app.put('/api/admin/posts/:id', async (c) => {
 app.delete('/api/admin/posts/:id', async (c) => {
   const id = c.req.param('id');
   await c.env.DB.prepare(`DELETE FROM posts WHERE id = ?`).bind(id).run();
+  dispatchDeployWebhook(c, 'ws_default', 'post.deleted', { postId: id });
   return c.json({ success: true, id });
 });
 
@@ -928,6 +937,91 @@ async function resolveWorkspace(c: AppContext): Promise<{ id: string; name: stri
   return defaultWs || { id: 'ws_default', name: 'Default Workspace', slug: 'default' };
 }
 
+// -------------------------------------------------------------
+// DEPLOY WEBHOOK ENGINE (Instant Jamstack Builds: Vercel, Netlify, Cloudflare Pages)
+// -------------------------------------------------------------
+
+async function triggerWorkspaceDeployWebhook(
+  db: D1Database,
+  workspaceId: string,
+  event: string,
+  meta?: Record<string, any>
+): Promise<{ success: boolean; status: string }> {
+  try {
+    const ws = await db.prepare(
+      `SELECT id, name, slug, deploy_webhook_url, auto_deploy FROM workspaces WHERE id = ? OR slug = ? LIMIT 1`
+    ).bind(workspaceId, workspaceId).first<{
+      id: string;
+      name: string;
+      slug: string;
+      deploy_webhook_url?: string | null;
+      auto_deploy?: number | boolean;
+    }>();
+
+    if (!ws || !ws.deploy_webhook_url) {
+      return { success: false, status: 'No webhook configured' };
+    }
+
+    const isAutoDeploy = ws.auto_deploy === 1 || ws.auto_deploy === true || ws.auto_deploy === null || ws.auto_deploy === undefined;
+    if (event !== 'manual_deploy' && !isAutoDeploy) {
+      return { success: false, status: 'Auto-deploy disabled' };
+    }
+
+    const payload = {
+      event,
+      workspace: { id: ws.id, name: ws.name, slug: ws.slug },
+      timestamp: new Date().toISOString(),
+      ...(meta || {})
+    };
+
+    const now = new Date().toISOString();
+    let statusText = '';
+    let isSuccess = false;
+
+    try {
+      const response = await fetch(ws.deploy_webhook_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'EdgeCMS-Webhook/1.0'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        statusText = `Success (${response.status})`;
+        isSuccess = true;
+      } else {
+        statusText = `Failed (${response.status} ${response.statusText})`;
+      }
+    } catch (netErr: any) {
+      statusText = `Failed: ${netErr.message || 'Network error'}`;
+    }
+
+    await db.prepare(
+      `UPDATE workspaces SET last_deployed_at = ?, last_deploy_status = ?, updated_at = ? WHERE id = ?`
+    ).bind(now, statusText, now, ws.id).run();
+
+    return {
+      success: isSuccess,
+      status: statusText
+    };
+  } catch (err: any) {
+    return { success: false, status: `Error: ${err.message}` };
+  }
+}
+
+function dispatchDeployWebhook(c: AppContext, workspaceId: string, event: string, meta?: Record<string, any>) {
+  try {
+    const promise = triggerWorkspaceDeployWebhook(c.env.DB, workspaceId, event, meta);
+    if (c.executionCtx && typeof c.executionCtx.waitUntil === 'function') {
+      c.executionCtx.waitUntil(promise);
+    }
+  } catch (e) {
+    console.error('Error dispatching deploy webhook:', e);
+  }
+}
+
 // List all workspaces
 app.get('/api/admin/workspaces', async (c) => {
   try {
@@ -960,6 +1054,8 @@ app.post('/api/admin/workspaces', async (c) => {
     const body = await c.req.json<CreateWorkspaceInput>();
     const name = body.name?.trim();
     let slug = body.slug?.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
+    const deploy_webhook_url = body.deploy_webhook_url?.trim() || null;
+    const auto_deploy = body.auto_deploy === false ? 0 : 1;
 
     if (!name || !slug) {
       return c.json({ error: 'Workspace name and slug are required' }, 400);
@@ -978,11 +1074,22 @@ app.post('/api/admin/workspaces', async (c) => {
     const now = new Date().toISOString();
 
     await c.env.DB.prepare(
-      `INSERT INTO workspaces (id, name, slug, api_key, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(id, name, slug, apiKey, now, now).run();
+      `INSERT INTO workspaces (id, name, slug, api_key, deploy_webhook_url, auto_deploy, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, name, slug, apiKey, deploy_webhook_url, auto_deploy, now, now).run();
 
-    const created: Workspace = { id, name, slug, api_key: apiKey, created_at: now, updated_at: now };
+    const created: Workspace = {
+      id,
+      name,
+      slug,
+      api_key: apiKey,
+      deploy_webhook_url,
+      auto_deploy: auto_deploy === 1,
+      last_deployed_at: null,
+      last_deploy_status: null,
+      created_at: now,
+      updated_at: now
+    };
     return c.json(created, 201);
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to create workspace' }, 500);
@@ -1020,14 +1127,50 @@ app.put('/api/admin/workspaces/:id', async (c) => {
       }
     }
 
+    const deploy_webhook_url = body.deploy_webhook_url !== undefined ? (body.deploy_webhook_url?.trim() || null) : existing.deploy_webhook_url;
+    const auto_deploy = body.auto_deploy !== undefined ? (body.auto_deploy ? 1 : 0) : (existing.auto_deploy !== undefined ? (existing.auto_deploy ? 1 : 0) : 1);
+
     const now = new Date().toISOString();
     await c.env.DB.prepare(
-      `UPDATE workspaces SET name = ?, slug = ?, updated_at = ? WHERE id = ?`
-    ).bind(name, slug, now, id).run();
+      `UPDATE workspaces SET name = ?, slug = ?, deploy_webhook_url = ?, auto_deploy = ?, updated_at = ? WHERE id = ?`
+    ).bind(name, slug, deploy_webhook_url, auto_deploy, now, id).run();
 
-    return c.json({ ...existing, name, slug, updated_at: now });
+    return c.json({
+      ...existing,
+      name,
+      slug,
+      deploy_webhook_url,
+      auto_deploy: auto_deploy === 1,
+      updated_at: now
+    });
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to update workspace' }, 500);
+  }
+});
+
+// Manual deploy trigger for workspace webhook
+app.post('/api/admin/workspaces/:id/deploy', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    const id = c.req.param('id');
+
+    // Allow admin or client editor of this workspace
+    if (currentUser?.role === 'client_editor' && currentUser.workspace_id !== id) {
+      return c.json({ error: 'Forbidden: Access restricted to your own workspace' }, 403);
+    }
+
+    const result = await triggerWorkspaceDeployWebhook(c.env.DB, id, 'manual_deploy');
+    if (!result.success && result.status === 'No webhook configured') {
+      return c.json({ error: 'No deploy webhook URL configured for this workspace' }, 400);
+    }
+
+    return c.json({
+      success: result.success,
+      status: result.status,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Deploy trigger failed' }, 500);
   }
 });
 
@@ -1695,6 +1838,10 @@ app.post('/api/admin/content/:collectionSlug', async (c) => {
        VALUES (?, ?, ?, ?, ?, ?, ?)`
     ).bind(id, wsId, slug, status, data, now, now).run();
 
+    if (status === 'published') {
+      dispatchDeployWebhook(c, wsId, 'content.published', { collection: slug, itemId: id });
+    }
+
     return c.json({
       id,
       workspace_id: wsId,
@@ -1734,6 +1881,14 @@ app.put('/api/admin/content/:collectionSlug/:id', async (c) => {
       `UPDATE content_items SET status = ?, data = ?, updated_at = ? WHERE id = ?`
     ).bind(status, JSON.stringify(updatedData), now, id).run();
 
+    if (status === 'published' || existing.status === 'published') {
+      dispatchDeployWebhook(c, existing.workspace_id || wsId, status === 'published' ? 'content.published' : 'content.unpublished', {
+        collection: collectionSlug,
+        itemId: id,
+        status
+      });
+    }
+
     return c.json({
       id,
       workspace_id: existing.workspace_id,
@@ -1762,6 +1917,8 @@ app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
     if (collectionSlug === 'articles') {
       await c.env.DB.prepare(`DELETE FROM posts WHERE id = ?`).bind(id).run();
     }
+
+    dispatchDeployWebhook(c, wsId, 'content.deleted', { collection: collectionSlug, itemId: id });
 
     return c.json({ success: true, id });
   } catch (err: any) {

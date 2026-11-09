@@ -123,6 +123,10 @@ export interface Workspace {
   name: string;
   slug: string;
   api_key: string;
+  deploy_webhook_url?: string | null;
+  auto_deploy?: boolean | number;
+  last_deployed_at?: string | null;
+  last_deploy_status?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -130,11 +134,15 @@ export interface Workspace {
 export interface CreateWorkspaceInput {
   name: string;
   slug: string;
+  deploy_webhook_url?: string;
+  auto_deploy?: boolean;
 }
 
 export interface UpdateWorkspaceInput {
   name?: string;
   slug?: string;
+  deploy_webhook_url?: string | null;
+  auto_deploy?: boolean;
 }
 
 // -------------------------------------------------------------

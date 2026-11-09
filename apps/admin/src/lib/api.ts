@@ -635,6 +635,25 @@ export async function deleteWorkspace(id: string): Promise<void> {
   }
 }
 
+export async function triggerWorkspaceDeploy(id: string): Promise<{ success: boolean; status: string; timestamp: string }> {
+  const res = await fetch(`${API_BASE}/api/admin/workspaces/${id}/deploy`, {
+    method: 'POST',
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to trigger deploy');
+  }
+
+  return data;
+}
+
 // -------------------------------------------------------------
 // TEAM & CLIENT USERS API (RBAC)
 // -------------------------------------------------------------

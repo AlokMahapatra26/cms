@@ -130,6 +130,12 @@
     <!-- AI Sparkles -->
     <path d="M10 2L11.5 6.5L16 8L11.5 9.5L10 14L8.5 9.5L4 8L8.5 6.5L10 2Z" fill="currentColor" />
     <path d="M15 13L15.75 15.25L18 16L15.75 16.75L15 19L14.25 16.75L12 16L14.25 15.25L15 13Z" fill="currentColor" />
+  {:else if name === 'play'}
+    <!-- Play Triangle -->
+    <path fill-rule="evenodd" d="M6.3 3.841A1.5 1.5 0 0 1 8.572 2.54l7.65 4.96a1.5 1.5 0 0 1 0 2.52l-7.65 4.96A1.5 1.5 0 0 1 6.3 13.72V3.84Z" clip-rule="evenodd" />
+  {:else if name === 'webhook' || name === 'bolt'}
+    <!-- Lightning Bolt / Webhook -->
+    <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0 1 12 2v5h4a1 1 0 0 1 .82 1.573l-7 10A1 1 0 0 1 8 18v-5H4a1 1 0 0 1-.82-1.573l7-10a1 1 0 0 1 1.12-.381Z" clip-rule="evenodd" />
   {:else}
     <!-- Generic Dot Glyph -->
     <circle cx="10" cy="10" r="4" />

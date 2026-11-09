@@ -312,3 +312,71 @@
 .workspace-toggle-track.active .workspace-toggle-thumb {
   transform: translateX(20px);
 }
+
+/* ==========================================================================
+   Deploy Webhook & Instant Jamstack Trigger Styles
+   ========================================================================== */
+
+.webhook-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.webhook-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  color: var(--color-ink);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-dot.active {
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+}
+
+.status-dot.inactive {
+  background-color: var(--color-mute);
+}
+
+.webhook-deploy-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.webhook-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  font-weight: 500;
+}
+
+.webhook-status-tag.success {
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.webhook-status-tag.failed {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.webhook-status-tag.idle {
+  color: var(--color-mute);
+}

@@ -38,6 +38,8 @@
   let showCreateWsModal = $state(false);
   let newWsName = $state('');
   let newWsSlug = $state('');
+  let newWsWebhook = $state('');
+  let newWsAutoDeploy = $state(true);
   let isCreatingWs = $state(false);
   let createWsError = $state('');
 
@@ -45,8 +47,13 @@
   let editingWs = $state<Workspace | null>(null);
   let editWsName = $state('');
   let editWsSlug = $state('');
+  let editWsWebhook = $state('');
+  let editWsAutoDeploy = $state(true);
   let isUpdatingWs = $state(false);
   let editWsError = $state('');
+
+  let deployingWsId = $state<string | null>(null);
+  let deployFeedback = $state<Record<string, { success: boolean; message: string }>>({});
 
   // Team & Client Users state
   let teamUsers = $state<User[]>([]);
@@ -77,6 +84,15 @@
     newWsSlug = val.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
   }
 
+  function openCreateWsModal() {
+    newWsName = '';
+    newWsSlug = '';
+    newWsWebhook = '';
+    newWsAutoDeploy = true;
+    createWsError = '';
+    showCreateWsModal = true;
+  }
+
   async function handleCreateWs(e: Event) {
     e.preventDefault();
     if (!newWsName.trim() || !newWsSlug.trim()) {
@@ -89,10 +105,14 @@
     try {
       await workspacesStore.create({
         name: newWsName.trim(),
-        slug: newWsSlug.trim()
+        slug: newWsSlug.trim(),
+        deploy_webhook_url: newWsWebhook.trim() || undefined,
+        auto_deploy: newWsAutoDeploy
       });
       newWsName = '';
       newWsSlug = '';
+      newWsWebhook = '';
+      newWsAutoDeploy = true;
       showCreateWsModal = false;
     } catch (err: any) {
       createWsError = err.message || 'Failed to create workspace';
@@ -105,6 +125,8 @@
     editingWs = ws;
     editWsName = ws.name;
     editWsSlug = ws.slug;
+    editWsWebhook = ws.deploy_webhook_url || '';
+    editWsAutoDeploy = ws.auto_deploy === 1 || ws.auto_deploy === true || ws.auto_deploy === undefined;
     editWsError = '';
     showEditWsModal = true;
   }
@@ -122,7 +144,9 @@
     try {
       await workspacesStore.update(editingWs.id, {
         name: editWsName.trim(),
-        slug: editingWs.id === 'ws_default' ? 'default' : editWsSlug.trim()
+        slug: editingWs.id === 'ws_default' ? 'default' : editWsSlug.trim(),
+        deploy_webhook_url: editWsWebhook.trim() || null,
+        auto_deploy: editWsAutoDeploy
       });
       showEditWsModal = false;
       editingWs = null;
@@ -130,6 +154,40 @@
       editWsError = err.message || 'Failed to update workspace';
     } finally {
       isUpdatingWs = false;
+    }
+  }
+
+  async function handleDeployWs(ws: Workspace) {
+    if (!ws.deploy_webhook_url) {
+      openEditWsModal(ws);
+      return;
+    }
+
+    deployingWsId = ws.id;
+    try {
+      const res = await workspacesStore.deploy(ws.id);
+      deployFeedback = {
+        ...deployFeedback,
+        [ws.id]: {
+          success: res.success,
+          message: res.status
+        }
+      };
+    } catch (err: any) {
+      deployFeedback = {
+        ...deployFeedback,
+        [ws.id]: {
+          success: false,
+          message: err.message || 'Deploy trigger failed'
+        }
+      };
+    } finally {
+      deployingWsId = null;
+      setTimeout(() => {
+        const next = { ...deployFeedback };
+        delete next[ws.id];
+        deployFeedback = next;
+      }, 5000);
     }
   }
 
@@ -554,7 +612,7 @@
             <button
               type="button"
               class="btn btn-secondary btn-sm"
-              onclick={() => (showCreateWsModal = true)}
+              onclick={openCreateWsModal}
             >
               <Icon name="plus" size={12} />
               <span>New Client Workspace</span>
@@ -623,6 +681,7 @@
                 <tr>
                   <th>Workspace</th>
                   <th>Slug / API Path</th>
+                  <th>Deploy Webhook</th>
                   <th>Status</th>
                   <th class="col-actions">Actions</th>
                 </tr>
@@ -647,6 +706,57 @@
                       <code class="font-mono text-xs">/{ws.slug}</code>
                     </td>
                     <td>
+                      {#if ws.deploy_webhook_url}
+                        <div class="webhook-cell">
+                          <div class="webhook-badge">
+                            <span class="status-dot active"></span>
+                            <span class="truncate max-w-xs" title={ws.deploy_webhook_url}>
+                              {ws.deploy_webhook_url.replace(/^https?:\/\//, '').slice(0, 26)}...
+                            </span>
+                          </div>
+                          <div class="webhook-deploy-row">
+                            <button
+                              type="button"
+                              class="btn btn-secondary btn-xs"
+                              disabled={deployingWsId === ws.id}
+                              onclick={() => handleDeployWs(ws)}
+                              title="Trigger an immediate deploy build on your hosting platform"
+                            >
+                              {#if deployingWsId === ws.id}
+                                <span>Deploying...</span>
+                              {:else}
+                                <Icon name="play" size={10} />
+                                <span>Deploy Now</span>
+                              {/if}
+                            </button>
+
+                            {#if deployFeedback[ws.id]}
+                              <span class="webhook-status-tag {deployFeedback[ws.id].success ? 'success' : 'failed'}">
+                                {deployFeedback[ws.id].message}
+                              </span>
+                            {:else if ws.last_deploy_status}
+                              <span
+                                class="webhook-status-tag {ws.last_deploy_status.includes('Success') ? 'success' : 'idle'}"
+                                title={ws.last_deployed_at ? `Last deploy: ${new Date(ws.last_deployed_at).toLocaleString()}` : ''}
+                              >
+                                {ws.last_deploy_status}
+                              </span>
+                            {/if}
+                          </div>
+                        </div>
+                      {:else}
+                        <button
+                          type="button"
+                          class="btn btn-secondary btn-xs text-muted"
+                          onclick={() => openEditWsModal(ws)}
+                          title="Configure Vercel, Netlify, or Cloudflare Pages deploy hook"
+                        >
+                          <Icon name="plus" size={10} />
+                          <span>Add Deploy Hook</span>
+                        </button>
+                      {/if}
+                    </td>
+                    <td>
                       {#if workspacesStore.activeSlug === ws.slug}
                         <span class="pill-tag-mint">Active</span>
                       {:else}
@@ -664,11 +774,11 @@
                         <button
                           type="button"
                           class="btn btn-secondary btn-sm"
-                          title="Rename Workspace"
+                          title="Configure Workspace & Webhook"
                           onclick={() => openEditWsModal(ws)}
                         >
                           <Icon name="edit" size={12} />
-                          <span>Rename</span>
+                          <span>Configure</span>
                         </button>
 
                         {#if ws.id !== 'ws_default' && ws.slug !== 'default'}
@@ -852,6 +962,30 @@
         </div>
       </div>
 
+      <div class="form-group">
+        <label for="settings-ws-webhook" class="form-label">Deploy Webhook URL (Optional)</label>
+        <input
+          id="settings-ws-webhook"
+          type="url"
+          class="shopify-input font-mono"
+          placeholder="https://api.vercel.com/v1/integrations/deploy/prj_.../..."
+          bind:value={newWsWebhook}
+        />
+        <div class="field-hint">
+          Outgoing webhook to instantly trigger frontend rebuilds (Vercel, Netlify, Cloudflare Pages).
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-checkbox-label">
+          <input
+            type="checkbox"
+            bind:checked={newWsAutoDeploy}
+          />
+          <span>Auto-trigger deploy webhook whenever content is published or updated</span>
+        </label>
+      </div>
+
       <div class="shopify-actions-bar">
         <button
           type="button"
@@ -872,9 +1006,9 @@
   </Modal>
 {/if}
 
-<!-- Modal: Edit / Rename Workspace -->
+<!-- Modal: Edit / Configure Workspace -->
 {#if showEditWsModal && editingWs}
-  <Modal open={showEditWsModal} title="Rename Workspace" onclose={() => { showEditWsModal = false; editingWs = null; }}>
+  <Modal open={showEditWsModal} title="Configure Workspace" onclose={() => { showEditWsModal = false; editingWs = null; }}>
     <form onsubmit={handleSaveWs}>
       {#if editWsError}
         <div class="error-banner mb-3">{editWsError}</div>
@@ -911,6 +1045,30 @@
             Used in frontend delivery URLs: <code>/api/v1/:slug/content/...</code>
           </div>
         {/if}
+      </div>
+
+      <div class="form-group">
+        <label for="settings-edit-webhook" class="form-label">Deploy Webhook URL (Vercel, Netlify, Cloudflare Pages)</label>
+        <input
+          id="settings-edit-webhook"
+          type="url"
+          class="shopify-input font-mono"
+          placeholder="https://api.vercel.com/v1/integrations/deploy/prj_.../..."
+          bind:value={editWsWebhook}
+        />
+        <div class="field-hint">
+          Instant rebuild trigger for client frontend whenever content is published or updated.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-checkbox-label">
+          <input
+            type="checkbox"
+            bind:checked={editWsAutoDeploy}
+          />
+          <span>Auto-trigger deploy webhook whenever content is published or updated</span>
+        </label>
       </div>
 
       <div class="shopify-actions-bar">
