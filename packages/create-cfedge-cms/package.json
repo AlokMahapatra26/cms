@@ -4,7 +4,7 @@
   "description": "Scaffold a high-speed CFEdge-CMS project powered by Cloudflare Workers, D1 & R2",
   "type": "module",
   "bin": {
-    "create-cfedge-cms": "./bin/index.js"
+    "create-cfedge-cms": "bin/index.js"
   },
   "files": [
     "bin",
@@ -24,7 +24,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AlokMahapatra26/cms.git"
+    "url": "git+https://github.com/AlokMahapatra26/cms.git"
   },
   "bugs": {
     "url": "https://github.com/AlokMahapatra26/cms/issues"
