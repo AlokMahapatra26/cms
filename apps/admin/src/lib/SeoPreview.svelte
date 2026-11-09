@@ -188,7 +188,7 @@
         {#if previewMode === 'google'}
           <div class="google-card">
             <div class="google-citation">
-              <div class="google-favicon" style="display: flex; align-items: center; justify-content: center;">
+              <div class="google-favicon flex items-center justify-center">
                 <Icon name="globe" size={12} />
               </div>
               <div class="flex flex-col">

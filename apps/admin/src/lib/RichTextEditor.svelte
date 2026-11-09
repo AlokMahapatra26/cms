@@ -268,14 +268,13 @@
       class="toolbar-btn {isLink ? 'active' : ''}"
       onclick={toggleLink}
       title="Add/Edit Link"
-      style="display: inline-flex; align-items: center; gap: 4px;"
     >
       <Icon name="link" size={13} />
       <span>Link</span>
     </button>
 
     <!-- Insert Image to R2 -->
-    <label class="toolbar-btn cursor-pointer" title="Upload & Insert Image from R2" style="display: inline-flex; align-items: center; gap: 4px;">
+    <label class="toolbar-btn cursor-pointer" title="Upload & Insert Image from R2">
       {#if isUploadingImage}
         <span>Uploading...</span>
       {:else}
