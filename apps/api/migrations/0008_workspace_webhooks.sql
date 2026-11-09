@@ -5,3 +5,4 @@ ALTER TABLE workspaces ADD COLUMN deploy_webhook_url TEXT;
 ALTER TABLE workspaces ADD COLUMN auto_deploy INTEGER DEFAULT 1;
 ALTER TABLE workspaces ADD COLUMN last_deployed_at TEXT;
 ALTER TABLE workspaces ADD COLUMN last_deploy_status TEXT;
+

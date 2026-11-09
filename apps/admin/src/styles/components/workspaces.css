@@ -380,3 +380,17 @@
 .webhook-status-tag.idle {
   color: var(--color-mute);
 }
+
+.webhook-inline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.webhook-test-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}

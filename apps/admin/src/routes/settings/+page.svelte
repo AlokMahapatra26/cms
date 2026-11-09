@@ -681,7 +681,7 @@
                 <tr>
                   <th>Workspace</th>
                   <th>Slug / API Path</th>
-                  <th>Deploy Webhook</th>
+                  <th>Deploy Hook</th>
                   <th>Status</th>
                   <th class="col-actions">Actions</th>
                 </tr>
@@ -707,42 +707,35 @@
                     </td>
                     <td>
                       {#if ws.deploy_webhook_url}
-                        <div class="webhook-cell">
-                          <div class="webhook-badge">
+                        <div class="webhook-inline-badge">
+                          <button
+                            type="button"
+                            class="btn btn-secondary btn-xs"
+                            disabled={deployingWsId === ws.id}
+                            onclick={() => handleDeployWs(ws)}
+                            title={`Trigger immediate rebuild on Vercel/Netlify. URL: ${ws.deploy_webhook_url}`}
+                          >
                             <span class="status-dot active"></span>
-                            <span class="truncate max-w-xs" title={ws.deploy_webhook_url}>
-                              {ws.deploy_webhook_url.replace(/^https?:\/\//, '').slice(0, 26)}...
-                            </span>
-                          </div>
-                          <div class="webhook-deploy-row">
-                            <button
-                              type="button"
-                              class="btn btn-secondary btn-xs"
-                              disabled={deployingWsId === ws.id}
-                              onclick={() => handleDeployWs(ws)}
-                              title="Trigger an immediate deploy build on your hosting platform"
-                            >
-                              {#if deployingWsId === ws.id}
-                                <span>Deploying...</span>
-                              {:else}
-                                <Icon name="play" size={10} />
-                                <span>Deploy Now</span>
-                              {/if}
-                            </button>
-
-                            {#if deployFeedback[ws.id]}
-                              <span class="webhook-status-tag {deployFeedback[ws.id].success ? 'success' : 'failed'}">
-                                {deployFeedback[ws.id].message}
-                              </span>
-                            {:else if ws.last_deploy_status}
-                              <span
-                                class="webhook-status-tag {ws.last_deploy_status.includes('Success') ? 'success' : 'idle'}"
-                                title={ws.last_deployed_at ? `Last deploy: ${new Date(ws.last_deployed_at).toLocaleString()}` : ''}
-                              >
-                                {ws.last_deploy_status}
-                              </span>
+                            {#if deployingWsId === ws.id}
+                              <span>Deploying...</span>
+                            {:else}
+                              <Icon name="play" size={10} />
+                              <span>Deploy</span>
                             {/if}
-                          </div>
+                          </button>
+
+                          {#if deployFeedback[ws.id]}
+                            <span class="webhook-status-tag {deployFeedback[ws.id].success ? 'success' : 'failed'}">
+                              {deployFeedback[ws.id].message}
+                            </span>
+                          {:else if ws.last_deploy_status}
+                            <span
+                              class="webhook-status-tag {ws.last_deploy_status.includes('Success') ? 'success' : 'idle'}"
+                              title={ws.last_deployed_at ? `Last deploy: ${new Date(ws.last_deployed_at).toLocaleString()}` : ''}
+                            >
+                              {ws.last_deploy_status}
+                            </span>
+                          {/if}
                         </div>
                       {:else}
                         <button
@@ -752,7 +745,7 @@
                           title="Configure Vercel, Netlify, or Cloudflare Pages deploy hook"
                         >
                           <Icon name="plus" size={10} />
-                          <span>Add Deploy Hook</span>
+                          <span>Connect Hook</span>
                         </button>
                       {/if}
                     </td>
