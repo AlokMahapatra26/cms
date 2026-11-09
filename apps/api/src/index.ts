@@ -1250,6 +1250,10 @@ app.delete('/api/admin/users/:id', async (c) => {
 // Sync collections defined in cms.config.ts into Cloudflare D1
 app.post('/api/admin/collections/sync', async (c) => {
   try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can sync schemas' }, 403);
+    }
     const ws = await resolveWorkspace(c);
     const wsId = ws?.id || 'ws_default';
     const synced: any[] = [];
@@ -1329,6 +1333,10 @@ app.get('/api/admin/collections/:slug', async (c) => {
 // Create a new collection schema
 app.post('/api/admin/collections', async (c) => {
   try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can create schema collections' }, 403);
+    }
     const body = await c.req.json<CreateCollectionInput>();
     const ws = await resolveWorkspace(c);
     const wsId = body.workspace_id || ws?.id || 'ws_default';
@@ -1379,6 +1387,10 @@ app.post('/api/admin/collections', async (c) => {
 // Update an existing collection schema
 app.put('/api/admin/collections/:slug', async (c) => {
   try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can edit schema collections' }, 403);
+    }
     const currentSlug = c.req.param('slug');
     const ws = await resolveWorkspace(c);
     const wsId = ws?.id || 'ws_default';
@@ -1438,6 +1450,10 @@ app.put('/api/admin/collections/:slug', async (c) => {
 // Delete a collection schema and its items
 app.delete('/api/admin/collections/:slug', async (c) => {
   try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can delete schema collections' }, 403);
+    }
     const slug = c.req.param('slug');
     await c.env.DB.prepare(`DELETE FROM content_items WHERE collection_slug = ?`).bind(slug).run();
     await c.env.DB.prepare(`DELETE FROM collections WHERE slug = ?`).bind(slug).run();

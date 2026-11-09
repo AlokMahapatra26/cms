@@ -3,3 +3,4 @@
 
 ALTER TABLE users ADD COLUMN workspace_id TEXT;
 CREATE INDEX IF NOT EXISTS idx_users_workspace_id ON users(workspace_id);
+

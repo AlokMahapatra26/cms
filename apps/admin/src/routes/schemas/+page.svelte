@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import {
     fetchCollections,
     createCollection,
     updateCollection,
     deleteCollection,
-    syncCollections
+    syncCollections,
+    getMe
   } from '$lib/api';
   import { collectionsStore } from '$lib/collections.svelte';
   import { modal } from '$lib/modal.svelte';
@@ -60,6 +62,12 @@
     loading = true;
     error = null;
     try {
+      const user = await getMe();
+      if (user.role !== 'admin') {
+        const firstCol = collectionsStore.list[0]?.slug;
+        goto(firstCol ? `/content/${firstCol}` : '/media');
+        return;
+      }
       collections = await fetchCollections();
       collectionsStore.list = collections;
     } catch (e: any) {
