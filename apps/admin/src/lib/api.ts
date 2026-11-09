@@ -18,7 +18,9 @@ import type {
   UpdateContentItemInput,
   Workspace,
   CreateWorkspaceInput,
-  UpdateWorkspaceInput
+  UpdateWorkspaceInput,
+  CreateUserInput,
+  UpdateUserInput
 } from '@cms/shared';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8787';
@@ -630,5 +632,84 @@ export async function deleteWorkspace(id: string): Promise<void> {
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error || 'Failed to delete workspace');
+  }
+}
+
+// -------------------------------------------------------------
+// TEAM & CLIENT USERS API (RBAC)
+// -------------------------------------------------------------
+
+export async function fetchUsers(): Promise<User[]> {
+  const res = await fetch(`${API_BASE}/api/admin/users`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to fetch team users');
+  }
+
+  return res.json();
+}
+
+export async function createUser(input: CreateUserInput): Promise<User> {
+  const res = await fetch(`${API_BASE}/api/admin/users`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to create user');
+  }
+
+  return data;
+}
+
+export async function updateUser(id: string, input: UpdateUserInput): Promise<User> {
+  const res = await fetch(`${API_BASE}/api/admin/users/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(input)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update user');
+  }
+
+  return data;
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/admin/users/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to delete user');
   }
 }

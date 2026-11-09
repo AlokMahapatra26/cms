@@ -1,7 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { getMe, updateProfile, changePassword } from '$lib/api';
+  import {
+    getMe,
+    updateProfile,
+    changePassword,
+    fetchUsers,
+    createUser,
+    updateUser,
+    deleteUser
+  } from '$lib/api';
   import { Icon } from '$lib/components';
   import { workspacesStore } from '$lib/workspaces.svelte';
   import { modal } from '$lib/modal.svelte';
@@ -39,6 +47,29 @@
   let editWsSlug = $state('');
   let isUpdatingWs = $state(false);
   let editWsError = $state('');
+
+  // Team & Client Users state
+  let teamUsers = $state<User[]>([]);
+  let loadingUsers = $state(false);
+
+  let showCreateUserModal = $state(false);
+  let newUserName = $state('');
+  let newUserEmail = $state('');
+  let newUserPassword = $state('');
+  let newUserRole = $state<'admin' | 'client_editor'>('client_editor');
+  let newUserWorkspaceId = $state<string>('');
+  let isCreatingUser = $state(false);
+  let createUserError = $state('');
+
+  let showEditUserModal = $state(false);
+  let editingUser = $state<User | null>(null);
+  let editUserName = $state('');
+  let editUserEmail = $state('');
+  let editUserPassword = $state('');
+  let editUserRole = $state<'admin' | 'client_editor'>('client_editor');
+  let editUserWorkspaceId = $state<string>('');
+  let isUpdatingUser = $state(false);
+  let editUserError = $state('');
 
   function handleWsNameInput(e: Event) {
     const val = (e.target as HTMLInputElement).value;
@@ -124,6 +155,136 @@
     }
   }
 
+  async function loadTeamUsers() {
+    loadingUsers = true;
+    try {
+      teamUsers = await fetchUsers();
+    } catch (err: any) {
+      console.error('Failed to load team users:', err);
+    } finally {
+      loadingUsers = false;
+    }
+  }
+
+  function openCreateUserModal() {
+    newUserName = '';
+    newUserEmail = '';
+    newUserPassword = '';
+    newUserRole = 'client_editor';
+    newUserWorkspaceId = workspacesStore.list.find((w) => w.id !== 'ws_default')?.id || workspacesStore.list[0]?.id || '';
+    createUserError = '';
+    showCreateUserModal = true;
+  }
+
+  async function handleCreateUser(e: Event) {
+    e.preventDefault();
+    if (!newUserName.trim() || !newUserEmail.trim() || !newUserPassword) {
+      createUserError = 'Name, email, and password are required.';
+      return;
+    }
+    if (newUserPassword.length < 6) {
+      createUserError = 'Password must be at least 6 characters.';
+      return;
+    }
+    if (newUserRole === 'client_editor' && !newUserWorkspaceId) {
+      createUserError = 'Please select an assigned workspace for the client user.';
+      return;
+    }
+
+    isCreatingUser = true;
+    createUserError = '';
+    try {
+      await createUser({
+        name: newUserName.trim(),
+        email: newUserEmail.trim(),
+        password: newUserPassword,
+        role: newUserRole,
+        workspace_id: newUserRole === 'client_editor' ? newUserWorkspaceId : null
+      });
+      showCreateUserModal = false;
+      await loadTeamUsers();
+    } catch (err: any) {
+      createUserError = err.message || 'Failed to create user';
+    } finally {
+      isCreatingUser = false;
+    }
+  }
+
+  function openEditUserModal(u: User) {
+    editingUser = u;
+    editUserName = u.name;
+    editUserEmail = u.email;
+    editUserPassword = '';
+    editUserRole = (u.role as 'admin' | 'client_editor') || 'client_editor';
+    editUserWorkspaceId = u.workspace_id || workspacesStore.list[0]?.id || '';
+    editUserError = '';
+    showEditUserModal = true;
+  }
+
+  async function handleUpdateUser(e: Event) {
+    e.preventDefault();
+    if (!editingUser) return;
+    if (!editUserName.trim() || !editUserEmail.trim()) {
+      editUserError = 'Name and email are required.';
+      return;
+    }
+    if (editUserPassword && editUserPassword.length < 6) {
+      editUserError = 'Password must be at least 6 characters.';
+      return;
+    }
+
+    isUpdatingUser = true;
+    editUserError = '';
+    try {
+      await updateUser(editingUser.id, {
+        name: editUserName.trim(),
+        email: editUserEmail.trim(),
+        role: editUserRole,
+        workspace_id: editUserRole === 'client_editor' ? editUserWorkspaceId : null,
+        password: editUserPassword ? editUserPassword : undefined
+      });
+      showEditUserModal = false;
+      editingUser = null;
+      await loadTeamUsers();
+    } catch (err: any) {
+      editUserError = err.message || 'Failed to update user';
+    } finally {
+      isUpdatingUser = false;
+    }
+  }
+
+  async function handleDeleteUser(u: User) {
+    if (u.id === user?.id) {
+      await modal.alert({
+        title: 'Action Not Allowed',
+        message: 'You cannot delete your own active administrator account while logged in.',
+        variant: 'danger'
+      });
+      return;
+    }
+
+    const confirmed = await modal.confirm({
+      title: `Delete user "${u.name}"?`,
+      message: `Are you sure you want to permanently delete user "${u.name}" (${u.email})? Their session will be revoked immediately.`,
+      confirmText: 'Delete User',
+      cancelText: 'Cancel',
+      variant: 'danger'
+    });
+
+    if (confirmed) {
+      try {
+        await deleteUser(u.id);
+        await loadTeamUsers();
+      } catch (err: any) {
+        await modal.alert({
+          title: 'Error',
+          message: err.message || 'Failed to delete user',
+          variant: 'danger'
+        });
+      }
+    }
+  }
+
   async function loadUser() {
     loadingUser = true;
     try {
@@ -131,6 +292,9 @@
       user = u;
       name = u.name;
       email = u.email;
+      if (u.role === 'admin') {
+        await loadTeamUsers();
+      }
     } catch (e: any) {
       if (e.message === 'UNAUTHORIZED' || e.message?.includes('expired')) {
         goto('/login');
@@ -375,156 +539,279 @@
       </form>
     </div>
 
-    <!-- Workspaces & Client Management Card -->
-    <div class="shopify-card">
-      <div class="workspace-settings-header mb-4">
-        <div>
-          <h2 class="text-base font-semibold m-0 mb-1">Workspaces & Client Projects</h2>
-          <p class="text-xs text-muted m-0">
-            Manage isolated client websites or project environments on your single Cloudflare deployment.
-          </p>
+    {#if user.role === 'admin'}
+      <!-- Workspaces & Client Management Card -->
+      <div class="shopify-card col-span-2">
+        <div class="workspace-settings-header mb-4">
+          <div>
+            <h2 class="text-base font-semibold m-0 mb-1">Workspaces & Client Projects</h2>
+            <p class="text-xs text-muted m-0">
+              Manage isolated client websites or project environments on your single Cloudflare deployment.
+            </p>
+          </div>
+
+          {#if workspacesStore.enabled}
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              onclick={() => (showCreateWsModal = true)}
+            >
+              <Icon name="plus" size={12} />
+              <span>New Client Workspace</span>
+            </button>
+          {/if}
         </div>
 
-        {#if workspacesStore.enabled}
+        <!-- Feature Toggle Banner -->
+        <div class="workspace-mode-banner mb-4">
+          <div class="workspace-mode-info">
+            <div class="flex items-center gap-2">
+              <span class="workspace-mode-title">Multi-Client Agency Mode</span>
+              {#if workspacesStore.enabled}
+                <span class="pill-tag-mint">Enabled</span>
+              {:else}
+                <span class="pill-tag-gray">Disabled</span>
+              {/if}
+            </div>
+            <p class="workspace-mode-desc">
+              {workspacesStore.enabled 
+                ? 'Multi-tenant isolation active. Client workspace quick-switcher is active in your top navigation.' 
+                : 'Single personal project mode. All collections and content are managed under your primary workspace with zero overhead.'}
+            </p>
+          </div>
+
+          <div class="workspace-toggle-wrapper">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={workspacesStore.enabled}
+              class="workspace-toggle-track {workspacesStore.enabled ? 'active' : ''}"
+              onclick={() => workspacesStore.toggleMultiTenant()}
+              title={workspacesStore.enabled ? 'Disable Multi-Client Mode' : 'Enable Multi-Client Mode'}
+            >
+              <span class="workspace-toggle-thumb"></span>
+            </button>
+          </div>
+        </div>
+
+        {#if !workspacesStore.enabled}
+          <div class="workspace-solo-callout">
+            <div class="flex items-center gap-2 text-sm font-medium text-dark mb-1">
+              <Icon name="workspace" size={14} />
+              <span>Single Project Mode (Multi-Client Disabled)</span>
+            </div>
+            <p class="text-xs text-muted m-0">
+              Multi-client mode is currently disabled. All collections and content are managed under your primary workspace, and the top navigation switcher is hidden. Toggle the switch above anytime to activate multi-client isolation.
+            </p>
+          </div>
+        {:else}
+          {#if workspacesStore.list.length <= 1}
+            <div class="workspace-solo-callout mb-4">
+              <div class="flex items-center gap-2 text-sm font-medium text-dark mb-1">
+                <Icon name="workspace" size={14} />
+                <span>Only 1 Workspace Present</span>
+              </div>
+              <p class="text-xs text-muted m-0">
+                You currently only have the primary workspace. Click "New Client Workspace" above to add your first client project. The top navigation switcher will appear once 2 or more workspaces exist.
+              </p>
+            </div>
+          {/if}
+
+          <div class="shopify-table-container">
+            <table class="shopify-table">
+              <thead>
+                <tr>
+                  <th>Workspace</th>
+                  <th>Slug / API Path</th>
+                  <th>Status</th>
+                  <th class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each workspacesStore.list as ws (ws.id)}
+                  <tr>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="workspace-trigger-icon">
+                          <Icon name="workspace" size={12} />
+                        </div>
+                        <div>
+                          <div class="font-medium text-sm text-dark">{ws.name}</div>
+                          {#if ws.id === 'ws_default'}
+                            <div class="text-xs text-muted">Primary Root Workspace</div>
+                          {/if}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <code class="font-mono text-xs">/{ws.slug}</code>
+                    </td>
+                    <td>
+                      {#if workspacesStore.activeSlug === ws.slug}
+                        <span class="pill-tag-mint">Active</span>
+                      {:else}
+                        <button
+                          type="button"
+                          class="btn btn-secondary btn-sm"
+                          onclick={() => workspacesStore.switchWorkspace(ws.slug)}
+                        >
+                          Switch
+                        </button>
+                      {/if}
+                    </td>
+                    <td class="text-right">
+                      <div class="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          class="btn btn-secondary btn-sm"
+                          title="Rename Workspace"
+                          onclick={() => openEditWsModal(ws)}
+                        >
+                          <Icon name="edit" size={12} />
+                          <span>Rename</span>
+                        </button>
+
+                        {#if ws.id !== 'ws_default' && ws.slug !== 'default'}
+                          <button
+                            type="button"
+                            class="btn btn-secondary btn-sm text-danger"
+                            title="Delete Workspace"
+                            onclick={() => handleDeleteWs(ws)}
+                          >
+                            <Icon name="trash" size={12} />
+                          </button>
+                        {/if}
+                      </div>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {/if}
+      </div>
+
+      <!-- Team & Client Portal Users Card (RBAC) -->
+      <div class="shopify-card col-span-2">
+        <div class="workspace-settings-header mb-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <h2 class="text-base font-semibold m-0">Team & Client Portal Users (RBAC)</h2>
+              <span class="pill-tag-mint">{teamUsers.length} Users</span>
+            </div>
+            <p class="text-xs text-muted m-0">
+              Create isolated client logins restricted to their own project workspace, or manage administrative team members.
+            </p>
+          </div>
+
           <button
             type="button"
             class="btn btn-secondary btn-sm"
-            onclick={() => (showCreateWsModal = true)}
+            onclick={openCreateUserModal}
           >
             <Icon name="plus" size={12} />
-            <span>New Client Workspace</span>
-          </button>
-        {/if}
-      </div>
-
-      <!-- Feature Toggle Banner -->
-      <div class="workspace-mode-banner mb-4">
-        <div class="workspace-mode-info">
-          <div class="flex items-center gap-2">
-            <span class="workspace-mode-title">Multi-Client Agency Mode</span>
-            {#if workspacesStore.enabled}
-              <span class="pill-tag-mint">Enabled</span>
-            {:else}
-              <span class="pill-tag-gray">Disabled</span>
-            {/if}
-          </div>
-          <p class="workspace-mode-desc">
-            {workspacesStore.enabled 
-              ? 'Multi-tenant isolation active. Client workspace quick-switcher is active in your top navigation.' 
-              : 'Single personal project mode. All collections and content are managed under your primary workspace with zero overhead.'}
-          </p>
-        </div>
-
-        <div class="workspace-toggle-wrapper">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={workspacesStore.enabled}
-            class="workspace-toggle-track {workspacesStore.enabled ? 'active' : ''}"
-            onclick={() => workspacesStore.toggleMultiTenant()}
-            title={workspacesStore.enabled ? 'Disable Multi-Client Mode' : 'Enable Multi-Client Mode'}
-          >
-            <span class="workspace-toggle-thumb"></span>
+            <span>New Client User</span>
           </button>
         </div>
-      </div>
 
-      {#if !workspacesStore.enabled}
-        <div class="workspace-solo-callout">
-          <div class="flex items-center gap-2 text-sm font-medium text-dark mb-1">
-            <Icon name="workspace" size={14} />
-            <span>Single Project Mode (Multi-Client Disabled)</span>
+        {#if loadingUsers}
+          <div class="text-center py-6 text-xs text-muted">
+            Loading team members...
           </div>
-          <p class="text-xs text-muted m-0">
-            Multi-client mode is currently disabled. All collections and content are managed under your primary workspace, and the top navigation switcher is hidden. Toggle the switch above anytime to activate multi-client isolation.
-          </p>
-        </div>
-      {:else}
-        {#if workspacesStore.list.length <= 1}
-          <div class="workspace-solo-callout mb-4">
-            <div class="flex items-center gap-2 text-sm font-medium text-dark mb-1">
-              <Icon name="workspace" size={14} />
-              <span>Only 1 Workspace Present</span>
-            </div>
+        {:else if teamUsers.length === 0}
+          <div class="workspace-solo-callout">
             <p class="text-xs text-muted m-0">
-              You currently only have the primary workspace. Click "New Client Workspace" above to add your first client project. The top navigation switcher will appear once 2 or more workspaces exist.
+              No additional users yet. Click "+ New Client User" to create an isolated login for a client.
             </p>
           </div>
-        {/if}
-
-        <div class="shopify-table-container">
-          <table class="shopify-table">
-            <thead>
-              <tr>
-                <th>Workspace</th>
-                <th>Slug / API Path</th>
-                <th>Status</th>
-                <th class="col-actions">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each workspacesStore.list as ws (ws.id)}
+        {:else}
+          <div class="shopify-table-container">
+            <table class="shopify-table">
+              <thead>
                 <tr>
-                  <td>
-                    <div class="flex items-center gap-2">
-                      <div class="workspace-trigger-icon">
-                        <Icon name="workspace" size={12} />
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Assigned Workspace</th>
+                  <th>Created</th>
+                  <th class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each teamUsers as member (member.id)}
+                  <tr>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="user-avatar-circle">
+                          {member.name.slice(0, 1).toUpperCase()}
+                        </div>
+                        <div>
+                          <div class="font-medium text-sm text-dark flex items-center gap-1.5">
+                            <span>{member.name}</span>
+                            {#if member.id === user.id}
+                              <span class="pill-tag-gray text-2xs">You</span>
+                            {/if}
+                          </div>
+                          <div class="text-xs text-muted font-mono">{member.email}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div class="font-medium text-sm text-dark">{ws.name}</div>
-                        {#if ws.id === 'ws_default'}
-                          <div class="text-xs text-muted">Primary Root Workspace</div>
-                        {/if}
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <code class="font-mono text-xs">/{ws.slug}</code>
-                  </td>
-                  <td>
-                    {#if workspacesStore.activeSlug === ws.slug}
-                      <span class="pill-tag-mint">Active</span>
-                    {:else}
-                      <button
-                        type="button"
-                        class="btn btn-secondary btn-sm"
-                        onclick={() => workspacesStore.switchWorkspace(ws.slug)}
-                      >
-                        Switch
-                      </button>
-                    {/if}
-                  </td>
-                  <td class="text-right">
-                    <div class="flex items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        class="btn btn-secondary btn-sm"
-                        title="Rename Workspace"
-                        onclick={() => openEditWsModal(ws)}
-                      >
-                        <Icon name="edit" size={12} />
-                        <span>Rename</span>
-                      </button>
-
-                      {#if ws.id !== 'ws_default' && ws.slug !== 'default'}
+                    </td>
+                    <td>
+                      {#if member.role === 'admin'}
+                        <span class="pill-tag-mint">SUPER ADMIN</span>
+                      {:else if member.role === 'client_editor'}
+                        <span class="pill-tag-blue">CLIENT EDITOR</span>
+                      {:else}
+                        <span class="pill-tag-gray">{member.role.toUpperCase()}</span>
+                      {/if}
+                    </td>
+                    <td>
+                      {#if member.role === 'admin'}
+                        <span class="text-xs text-muted font-medium">All Workspaces (Full Access)</span>
+                      {:else if member.workspace_name || member.workspace_id}
+                        <div class="flex items-center gap-1 text-xs font-semibold text-dark">
+                          <Icon name="workspace" size={11} />
+                          <span>{member.workspace_name || member.workspace_id}</span>
+                          <span class="pill-tag-gray text-2xs">Locked</span>
+                        </div>
+                      {:else}
+                        <span class="text-xs text-faint">Unassigned</span>
+                      {/if}
+                    </td>
+                    <td class="text-xs text-muted font-mono whitespace-nowrap">
+                      {new Date(member.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td class="text-right whitespace-nowrap">
+                      <div class="flex items-center justify-end gap-1">
                         <button
                           type="button"
-                          class="btn btn-secondary btn-sm text-danger"
-                          title="Delete Workspace"
-                          onclick={() => handleDeleteWs(ws)}
+                          class="btn btn-secondary btn-sm"
+                          title="Edit User & Credentials"
+                          onclick={() => openEditUserModal(member)}
                         >
-                          <Icon name="trash" size={12} />
+                          <Icon name="edit" size={12} />
+                          <span>Edit</span>
                         </button>
-                      {/if}
-                    </div>
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      {/if}
-    </div>
+
+                        {#if member.id !== user.id}
+                          <button
+                            type="button"
+                            class="btn btn-secondary btn-sm text-danger"
+                            title="Delete User"
+                            onclick={() => handleDeleteUser(member)}
+                          >
+                            <Icon name="trash" size={12} />
+                          </button>
+                        {/if}
+                      </div>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {/if}
+      </div>
+    {/if}
 
   </div>
 {/if}
@@ -640,6 +927,196 @@
           disabled={isUpdatingWs}
         >
           {isUpdatingWs ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+    </form>
+  </Modal>
+{/if}
+
+<!-- Modal: Create User -->
+{#if showCreateUserModal}
+  <Modal open={showCreateUserModal} title="Create Client / Team User" onclose={() => (showCreateUserModal = false)}>
+    <form onsubmit={handleCreateUser}>
+      {#if createUserError}
+        <div class="error-banner mb-3">{createUserError}</div>
+      {/if}
+
+      <div class="form-group">
+        <label for="new-user-name" class="form-label">Full Name *</label>
+        <input
+          id="new-user-name"
+          type="text"
+          class="shopify-input"
+          placeholder="e.g. John Doe, Marketing Manager"
+          bind:value={newUserName}
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="new-user-email" class="form-label">Email Address (Login ID) *</label>
+        <input
+          id="new-user-email"
+          type="email"
+          class="shopify-input"
+          placeholder="e.g. client@brand.com"
+          bind:value={newUserEmail}
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="new-user-pass" class="form-label">Initial Password (min 6 chars) *</label>
+        <input
+          id="new-user-pass"
+          type="password"
+          class="shopify-input"
+          placeholder="••••••••••••"
+          bind:value={newUserPassword}
+          required
+          minlength="6"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="new-user-role" class="form-label">Account Role *</label>
+        <select
+          id="new-user-role"
+          class="shopify-input"
+          bind:value={newUserRole}
+        >
+          <option value="client_editor">Client Editor (Locked strictly to one workspace)</option>
+          <option value="admin">Administrator (Full Access to all workspaces & settings)</option>
+        </select>
+      </div>
+
+      {#if newUserRole === 'client_editor'}
+        <div class="form-group">
+          <label for="new-user-ws" class="form-label">Assigned Client Workspace *</label>
+          <select
+            id="new-user-ws"
+            class="shopify-input"
+            bind:value={newUserWorkspaceId}
+            required
+          >
+            <option value="">-- Choose Assigned Workspace --</option>
+            {#each workspacesStore.list as ws (ws.id)}
+              <option value={ws.id}>{ws.name} (/{ws.slug})</option>
+            {/each}
+          </select>
+          <div class="field-hint">
+            This client user will only be able to view and manage content within this workspace. All other client projects remain strictly isolated and hidden.
+          </div>
+        </div>
+      {/if}
+
+      <div class="shopify-actions-bar">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={() => (showCreateUserModal = false)}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          disabled={isCreatingUser}
+        >
+          {isCreatingUser ? 'Creating User...' : 'Create User'}
+        </button>
+      </div>
+    </form>
+  </Modal>
+{/if}
+
+<!-- Modal: Edit User -->
+{#if showEditUserModal && editingUser}
+  <Modal open={showEditUserModal} title="Edit User Account" onclose={() => { showEditUserModal = false; editingUser = null; }}>
+    <form onsubmit={handleUpdateUser}>
+      {#if editUserError}
+        <div class="error-banner mb-3">{editUserError}</div>
+      {/if}
+
+      <div class="form-group">
+        <label for="edit-user-name" class="form-label">Full Name *</label>
+        <input
+          id="edit-user-name"
+          type="text"
+          class="shopify-input"
+          bind:value={editUserName}
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="edit-user-email" class="form-label">Email Address *</label>
+        <input
+          id="edit-user-email"
+          type="email"
+          class="shopify-input"
+          bind:value={editUserEmail}
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="edit-user-pass" class="form-label">Reset Password (leave empty to keep unchanged)</label>
+        <input
+          id="edit-user-pass"
+          type="password"
+          class="shopify-input"
+          placeholder="New password (optional)"
+          bind:value={editUserPassword}
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="edit-user-role" class="form-label">Account Role *</label>
+        <select
+          id="edit-user-role"
+          class="shopify-input"
+          bind:value={editUserRole}
+          disabled={editingUser.id === user?.id}
+        >
+          <option value="client_editor">Client Editor (Locked strictly to one workspace)</option>
+          <option value="admin">Administrator (Full Access)</option>
+        </select>
+        {#if editingUser.id === user?.id}
+          <div class="field-hint">You cannot demote your own administrator account.</div>
+        {/if}
+      </div>
+
+      {#if editUserRole === 'client_editor'}
+        <div class="form-group">
+          <label for="edit-user-ws" class="form-label">Assigned Client Workspace *</label>
+          <select
+            id="edit-user-ws"
+            class="shopify-input"
+            bind:value={editUserWorkspaceId}
+            required
+          >
+            {#each workspacesStore.list as ws (ws.id)}
+              <option value={ws.id}>{ws.name} (/{ws.slug})</option>
+            {/each}
+          </select>
+        </div>
+      {/if}
+
+      <div class="shopify-actions-bar">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick={() => { showEditUserModal = false; editingUser = null; }}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          disabled={isUpdatingUser}
+        >
+          {isUpdatingUser ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
     </form>

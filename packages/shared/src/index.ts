@@ -1,13 +1,31 @@
 export type PostStatus = 'draft' | 'published';
-export type UserRole = 'admin' | 'editor' | 'author';
+export type UserRole = 'admin' | 'editor' | 'client_editor' | 'author';
 
 export interface User {
   id: string;
   email: string;
   name: string;
   role: UserRole;
+  workspace_id?: string | null;
+  workspace_name?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CreateUserInput {
+  email: string;
+  name: string;
+  password: string;
+  role: UserRole;
+  workspace_id?: string | null;
+}
+
+export interface UpdateUserInput {
+  email?: string;
+  name?: string;
+  password?: string;
+  role?: UserRole;
+  workspace_id?: string | null;
 }
 
 export interface Post {

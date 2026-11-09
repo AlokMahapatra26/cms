@@ -21,7 +21,9 @@ import type {
   PaginatedResponse,
   Workspace,
   CreateWorkspaceInput,
-  UpdateWorkspaceInput
+  UpdateWorkspaceInput,
+  CreateUserInput,
+  UpdateUserInput
 } from '@cms/shared';
 import { cmsConfig } from '@cms/shared';
 import {
@@ -148,7 +150,8 @@ app.post('/api/auth/login', async (c) => {
       password_hash: string;
       salt: string;
       name: string;
-      role: 'admin' | 'editor' | 'author';
+      role: 'admin' | 'editor' | 'client_editor' | 'author';
+      workspace_id?: string | null;
       created_at: string;
       updated_at: string;
     }
@@ -181,11 +184,19 @@ app.post('/api/auth/login', async (c) => {
       .bind(sessionId, userRecord.id, token, expiresAt, now)
       .run();
 
+    let workspaceName: string | null = null;
+    if (userRecord.workspace_id) {
+      const wsRow = await c.env.DB.prepare(`SELECT name FROM workspaces WHERE id = ?`).bind(userRecord.workspace_id).first<{ name: string }>();
+      workspaceName = wsRow?.name || null;
+    }
+
     const user: User = {
       id: userRecord.id,
       email: userRecord.email,
       name: userRecord.name,
       role: userRecord.role,
+      workspace_id: userRecord.workspace_id || null,
+      workspace_name: workspaceName,
       created_at: userRecord.created_at,
       updated_at: userRecord.updated_at
     };
@@ -217,9 +228,11 @@ app.get('/api/auth/me', async (c) => {
   const now = new Date().toISOString();
 
   const user = await c.env.DB.prepare(
-    `SELECT u.id, u.email, u.name, u.role, u.created_at, u.updated_at
+    `SELECT u.id, u.email, u.name, u.role, u.workspace_id, u.created_at, u.updated_at,
+            w.name as workspace_name
      FROM sessions s
      JOIN users u ON s.user_id = u.id
+     LEFT JOIN workspaces w ON u.workspace_id = w.id
      WHERE s.token = ? AND s.expires_at > ?`
   )
     .bind(token, now)
@@ -442,9 +455,11 @@ app.use('/api/admin/*', async (c, next) => {
   const now = new Date().toISOString();
 
   const user = await c.env.DB.prepare(
-    `SELECT u.id, u.email, u.name, u.role, u.created_at, u.updated_at
+    `SELECT u.id, u.email, u.name, u.role, u.workspace_id, u.created_at, u.updated_at,
+            w.name as workspace_name
      FROM sessions s
      JOIN users u ON s.user_id = u.id
+     LEFT JOIN workspaces w ON u.workspace_id = w.id
      WHERE s.token = ? AND s.expires_at > ?`
   )
     .bind(token, now)
@@ -882,6 +897,15 @@ app.get('/api/media/*', async (c) => {
 
 // Helper to resolve workspace from query, header, or route
 async function resolveWorkspace(c: AppContext): Promise<{ id: string; name: string; slug: string } | null> {
+  // If user is client_editor, strictly lock them to their assigned workspace
+  const currentUser = c.get('user');
+  if (currentUser && currentUser.role === 'client_editor' && currentUser.workspace_id) {
+    const userWs = await c.env.DB.prepare(
+      `SELECT id, name, slug FROM workspaces WHERE id = ? OR slug = ? LIMIT 1`
+    ).bind(currentUser.workspace_id, currentUser.workspace_id).first<{ id: string; name: string; slug: string }>();
+    if (userWs) return userWs;
+  }
+
   const paramSlug = c.req.param('workspaceSlug') || c.req.param('workspace');
   const headerVal = c.req.header('x-workspace') || c.req.header('x-workspace-id');
   const queryVal = c.req.query('workspace');
@@ -907,6 +931,14 @@ async function resolveWorkspace(c: AppContext): Promise<{ id: string; name: stri
 // List all workspaces
 app.get('/api/admin/workspaces', async (c) => {
   try {
+    const currentUser = c.get('user');
+    if (currentUser && currentUser.role === 'client_editor' && currentUser.workspace_id) {
+      const rows = await c.env.DB.prepare(
+        `SELECT * FROM workspaces WHERE id = ? OR slug = ?`
+      ).bind(currentUser.workspace_id, currentUser.workspace_id).all<Workspace>();
+      return c.json(rows.results);
+    }
+
     const rows = await c.env.DB.prepare(
       `SELECT * FROM workspaces ORDER BY created_at ASC`
     ).all<Workspace>();
@@ -920,6 +952,11 @@ app.get('/api/admin/workspaces', async (c) => {
 // Create workspace (e.g. for a new client)
 app.post('/api/admin/workspaces', async (c) => {
   try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can create workspaces' }, 403);
+    }
+
     const body = await c.req.json<CreateWorkspaceInput>();
     const name = body.name?.trim();
     let slug = body.slug?.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-');
@@ -955,6 +992,11 @@ app.post('/api/admin/workspaces', async (c) => {
 // Update workspace
 app.put('/api/admin/workspaces/:id', async (c) => {
   try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can update workspaces' }, 403);
+    }
+
     const id = c.req.param('id');
     const body = await c.req.json<UpdateWorkspaceInput>();
 
@@ -992,6 +1034,11 @@ app.put('/api/admin/workspaces/:id', async (c) => {
 // Delete workspace
 app.delete('/api/admin/workspaces/:id', async (c) => {
   try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can delete workspaces' }, 403);
+    }
+
     const id = c.req.param('id');
 
     const ws = await c.env.DB.prepare(
@@ -1014,6 +1061,184 @@ app.delete('/api/admin/workspaces/:id', async (c) => {
     return c.json({ success: true, deletedId: id });
   } catch (err: any) {
     return c.json({ error: err.message || 'Failed to delete workspace' }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// TEAM & CLIENT USERS MANAGEMENT (RBAC)
+// -------------------------------------------------------------
+
+// List all users (Admins see all; includes workspace info)
+app.get('/api/admin/users', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can view team members' }, 403);
+    }
+
+    const rows = await c.env.DB.prepare(
+      `SELECT u.id, u.email, u.name, u.role, u.workspace_id, u.created_at, u.updated_at,
+              w.name as workspace_name, w.slug as workspace_slug
+       FROM users u
+       LEFT JOIN workspaces w ON u.workspace_id = w.id
+       ORDER BY u.created_at DESC`
+    ).all<any>();
+
+    return c.json(rows.results);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to list users' }, 500);
+  }
+});
+
+// Create new user (Admin, Editor, or Client Editor locked to workspace)
+app.post('/api/admin/users', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can create users' }, 403);
+    }
+
+    const body = await c.req.json<CreateUserInput>();
+    const email = body.email?.trim().toLowerCase();
+    const name = body.name?.trim();
+    const password = body.password;
+    const role = body.role || 'client_editor';
+    const workspaceId = body.workspace_id || null;
+
+    if (!email || !name || !password) {
+      return c.json({ error: 'Name, email, and password are required' }, 400);
+    }
+
+    if (password.length < 6) {
+      return c.json({ error: 'Password must be at least 6 characters' }, 400);
+    }
+
+    if (role === 'client_editor' && !workspaceId) {
+      return c.json({ error: 'Client Editor users must be assigned to a specific workspace' }, 400);
+    }
+
+    const existing = await c.env.DB.prepare(`SELECT id FROM users WHERE email = ?`).bind(email).first();
+    if (existing) {
+      return c.json({ error: `User with email "${email}" already exists` }, 400);
+    }
+
+    const salt = generateSalt();
+    const passwordHash = await hashPassword(password, salt);
+    const userId = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await c.env.DB.prepare(
+      `INSERT INTO users (id, email, password_hash, salt, name, role, workspace_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(userId, email, passwordHash, salt, name, role, workspaceId, now, now).run();
+
+    let workspaceName: string | null = null;
+    if (workspaceId) {
+      const wsRow = await c.env.DB.prepare(`SELECT name FROM workspaces WHERE id = ?`).bind(workspaceId).first<{ name: string }>();
+      workspaceName = wsRow?.name || null;
+    }
+
+    const createdUser: User = {
+      id: userId,
+      email,
+      name,
+      role,
+      workspace_id: workspaceId,
+      workspace_name: workspaceName,
+      created_at: now,
+      updated_at: now
+    };
+
+    return c.json(createdUser, 201);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to create user' }, 500);
+  }
+});
+
+// Update user
+app.put('/api/admin/users/:id', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can update user accounts' }, 403);
+    }
+
+    const targetId = c.req.param('id');
+    const body = await c.req.json<UpdateUserInput>();
+
+    const userRow = await c.env.DB.prepare(`SELECT * FROM users WHERE id = ?`).bind(targetId).first<any>();
+    if (!userRow) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    const name = body.name?.trim() || userRow.name;
+    const email = body.email ? body.email.trim().toLowerCase() : userRow.email;
+    const role = body.role || userRow.role;
+    const workspaceId = body.workspace_id !== undefined ? (body.workspace_id || null) : userRow.workspace_id;
+    const now = new Date().toISOString();
+
+    if (body.email && body.email.trim().toLowerCase() !== userRow.email) {
+      const existing = await c.env.DB.prepare(`SELECT id FROM users WHERE email = ? AND id != ?`).bind(email, targetId).first();
+      if (existing) {
+        return c.json({ error: `Email "${email}" is already used by another user` }, 400);
+      }
+    }
+
+    if (body.password && body.password.trim()) {
+      if (body.password.length < 6) {
+        return c.json({ error: 'Password must be at least 6 characters' }, 400);
+      }
+      const salt = generateSalt();
+      const passwordHash = await hashPassword(body.password, salt);
+      await c.env.DB.prepare(
+        `UPDATE users SET name = ?, email = ?, role = ?, workspace_id = ?, password_hash = ?, salt = ?, updated_at = ? WHERE id = ?`
+      ).bind(name, email, role, workspaceId, passwordHash, salt, now, targetId).run();
+    } else {
+      await c.env.DB.prepare(
+        `UPDATE users SET name = ?, email = ?, role = ?, workspace_id = ?, updated_at = ? WHERE id = ?`
+      ).bind(name, email, role, workspaceId, now, targetId).run();
+    }
+
+    let workspaceName: string | null = null;
+    if (workspaceId) {
+      const wsRow = await c.env.DB.prepare(`SELECT name FROM workspaces WHERE id = ?`).bind(workspaceId).first<{ name: string }>();
+      workspaceName = wsRow?.name || null;
+    }
+
+    return c.json({
+      id: targetId,
+      name,
+      email,
+      role,
+      workspace_id: workspaceId,
+      workspace_name: workspaceName,
+      created_at: userRow.created_at,
+      updated_at: now
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to update user' }, 500);
+  }
+});
+
+// Delete user
+app.delete('/api/admin/users/:id', async (c) => {
+  try {
+    const currentUser = c.get('user');
+    if (currentUser?.role !== 'admin') {
+      return c.json({ error: 'Forbidden: Only Administrators can delete user accounts' }, 403);
+    }
+
+    const targetId = c.req.param('id');
+    if (currentUser.id === targetId) {
+      return c.json({ error: 'Cannot delete your own active administrator account' }, 400);
+    }
+
+    await c.env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(targetId).run();
+    await c.env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(targetId).run();
+
+    return c.json({ success: true, id: targetId });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to delete user' }, 500);
   }
 });
 

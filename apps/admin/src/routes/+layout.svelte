@@ -50,11 +50,16 @@
       const user = await getMe();
       currentUser = user;
       await workspacesStore.load();
-      collectionsStore.load();
+      await collectionsStore.load();
 
-      // If authenticated and visiting /login or /setup, redirect to schemas
+      // If authenticated and visiting /login or /setup, redirect appropriately
       if (isAuthPage) {
-        goto('/schemas');
+        if (user.role === 'admin') {
+          goto('/schemas');
+        } else {
+          const firstCol = collectionsStore.list[0]?.slug;
+          goto(firstCol ? `/content/${firstCol}` : '/media');
+        }
       }
     } catch (e) {
       if (!isAuthPage) {
@@ -107,7 +112,14 @@
         </a>
 
         {#if currentUser}
-          <WorkspaceSwitcher />
+          {#if currentUser.role === 'client_editor'}
+            <div class="workspace-badge-pill">
+              <Icon name="workspace" size={12} />
+              <span>{currentUser.workspace_name || 'Client Project'}</span>
+            </div>
+          {:else}
+            <WorkspaceSwitcher />
+          {/if}
         {/if}
       </div>
 
@@ -183,12 +195,14 @@
           <!-- Section 2: Schema Modeler & Media -->
           <div class="shopify-sidebar-section">
             <h3 class="shopify-sidebar-heading">Studio</h3>
-            <a href="/schemas" class="shopify-sidebar-link {page.url.pathname === '/schemas' ? 'active' : ''}">
-              <div class="shopify-sidebar-link-content">
-                <Icon name="schema" size={14} />
-                <span>Schemas</span>
-              </div>
-            </a>
+            {#if currentUser.role === 'admin'}
+              <a href="/schemas" class="shopify-sidebar-link {page.url.pathname === '/schemas' ? 'active' : ''}">
+                <div class="shopify-sidebar-link-content">
+                  <Icon name="schema" size={14} />
+                  <span>Schemas</span>
+                </div>
+              </a>
+            {/if}
 
             <a href="/media" class="shopify-sidebar-link {page.url.pathname === '/media' ? 'active' : ''}">
               <div class="shopify-sidebar-link-content">
