@@ -25,3 +25,4 @@ DROP TABLE collections;
 ALTER TABLE collections_new RENAME TO collections;
 
 CREATE INDEX IF NOT EXISTS idx_collections_ws_slug ON collections(workspace_id, slug);
+

@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import type {
   Post,
@@ -39,6 +39,8 @@ type Bindings = {
 type Variables = {
   user?: User;
 };
+
+type AppContext = Context<{ Bindings: Bindings; Variables: Variables }>;
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -879,7 +881,7 @@ app.get('/api/media/*', async (c) => {
 // -------------------------------------------------------------
 
 // Helper to resolve workspace from query, header, or route
-async function resolveWorkspace(c: any): Promise<{ id: string; name: string; slug: string } | null> {
+async function resolveWorkspace(c: AppContext): Promise<{ id: string; name: string; slug: string } | null> {
   const paramSlug = c.req.param('workspaceSlug') || c.req.param('workspace');
   const headerVal = c.req.header('x-workspace') || c.req.header('x-workspace-id');
   const queryVal = c.req.query('workspace');
@@ -1446,7 +1448,7 @@ app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
 // PUBLIC DYNAMIC CONTENT API (Multi-Tenant & Backward Compatible)
 // -------------------------------------------------------------
 
-async function handleGetContentItems(c: any, explicitWsSlug?: string) {
+async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
   try {
     const slug = c.req.param('collectionSlug');
     const ws = explicitWsSlug
@@ -1540,7 +1542,7 @@ async function handleGetContentItems(c: any, explicitWsSlug?: string) {
   }
 }
 
-async function handleGetSingleContentItem(c: any, explicitWsSlug?: string) {
+async function handleGetSingleContentItem(c: AppContext, explicitWsSlug?: string) {
   try {
     const { collectionSlug, id } = c.req.param();
     const ws = explicitWsSlug

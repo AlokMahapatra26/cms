@@ -29,3 +29,4 @@ ALTER TABLE content_items ADD COLUMN workspace_id TEXT DEFAULT 'ws_default';
 
 CREATE INDEX IF NOT EXISTS idx_collections_workspace ON collections(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_content_workspace ON content_items(workspace_id);
+
