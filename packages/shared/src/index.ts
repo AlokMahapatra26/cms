@@ -239,6 +239,7 @@ export interface PaginatedResponse<T> {
 // Code-First Schema Builder API
 export * from './builder';
 export * from './config';
+export * from './client';
 
 
 

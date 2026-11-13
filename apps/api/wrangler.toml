@@ -16,3 +16,13 @@ migrations_dir = "migrations"
 binding = "MEDIA_BUCKET"
 bucket_name = "cms-media"
 
+[vars]
+# Layer 1: Global master read API key fallback
+CMS_READ_API_KEY = "cf_live_default_key"
+# Layer 3: CORS Allowed Origins (comma-separated, or * for open during dev)
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4321,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:4321,http://127.0.0.1:3000"
+# Layer 4: Worker rate limiting defaults (60 requests per 60 seconds per IP)
+RATE_LIMIT_WINDOW_SECS = "60"
+RATE_LIMIT_MAX_REQUESTS = "60"
+
+

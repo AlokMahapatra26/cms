@@ -36,18 +36,190 @@ import {
 type Bindings = {
   DB: D1Database;
   MEDIA_BUCKET: R2Bucket;
+  CMS_READ_API_KEY?: string;
+  CMS_API_SECRET_KEY?: string;
+  ALLOWED_ORIGINS?: string;
+  RATE_LIMIT_WINDOW_SECS?: string;
+  RATE_LIMIT_MAX_REQUESTS?: string;
 };
 
 type Variables = {
   user?: User;
+  workspace?: { id: string; name: string; slug: string; api_key?: string };
 };
 
 type AppContext = Context<{ Bindings: Bindings; Variables: Variables }>;
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// Enable CORS for frontend consumers (SvelteKit admin & Astro)
-app.use('/*', cors());
+// -------------------------------------------------------------
+// LAYER 3: CORS RESTRICTION (ORIGIN WHITELIST)
+// -------------------------------------------------------------
+function isOriginAllowed(origin: string | undefined, env: Bindings): boolean {
+  if (!origin) return true; // Server-to-server / BFF / curl requests have no Origin header
+
+  // Wildcard allowed if explicitly configured in environment
+  if (env.ALLOWED_ORIGINS === '*') return true;
+
+  // Check against comma-separated whitelist (e.g. "https://example.com,http://localhost:5173")
+  if (env.ALLOWED_ORIGINS) {
+    const list = env.ALLOWED_ORIGINS.split(',').map((o) => o.trim().toLowerCase());
+    if (list.includes(origin.toLowerCase())) {
+      return true;
+    }
+  }
+
+  // Safe defaults for local development and Cloudflare deployments
+  try {
+    const parsed = new URL(origin);
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+      return true;
+    }
+    if (!env.ALLOWED_ORIGINS && (host.endsWith('.pages.dev') || host.endsWith('.workers.dev'))) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
+app.use('/*', async (c, next) => {
+  const origin = c.req.header('Origin');
+
+  // Handle preflight OPTIONS requests
+  if (c.req.method === 'OPTIONS') {
+    if (origin && !isOriginAllowed(origin, c.env)) {
+      return new Response(null, {
+        status: 403,
+        statusText: 'CORS Origin Denied (Layer 3: CORS Restriction)'
+      });
+    }
+
+    const allowOrigin = origin && isOriginAllowed(origin, c.env) ? origin : '*';
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': allowOrigin,
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key, x-workspace, x-workspace-id, x-edgecms-cli',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '86400',
+        'Vary': 'Origin'
+      }
+    });
+  }
+
+  // If request has Origin header, validate against whitelist
+  if (origin && !isOriginAllowed(origin, c.env)) {
+    return c.json(
+      {
+        error: 'CORS Origin Denied',
+        message: `The origin '${origin}' is not authorized by CORS policy.`,
+        layer: 'Layer 3: CORS Restriction (Origin Whitelist)'
+      },
+      403
+    );
+  }
+
+  await next();
+
+  // Attach CORS headers if origin is present and allowed
+  if (origin && isOriginAllowed(origin, c.env)) {
+    c.res.headers.set('Access-Control-Allow-Origin', origin);
+    c.res.headers.set('Access-Control-Allow-Credentials', 'true');
+    c.res.headers.set('Vary', 'Origin');
+    c.res.headers.set(
+      'Access-Control-Expose-Headers',
+      'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After'
+    );
+  }
+});
+
+// -------------------------------------------------------------
+// LAYER 4: RATE LIMITING & ANTI-SCRAPING ENGINE
+// -------------------------------------------------------------
+interface RateLimitRecord {
+  count: number;
+  resetAt: number; // Unix timestamp in seconds
+}
+
+// In-memory sliding window cache per Cloudflare Worker isolate
+const rateLimitCache = new Map<string, RateLimitRecord>();
+
+function pruneExpiredRateLimits(nowSec: number) {
+  if (rateLimitCache.size > 2000) {
+    for (const [key, record] of rateLimitCache.entries()) {
+      if (record.resetAt <= nowSec) {
+        rateLimitCache.delete(key);
+      }
+    }
+  }
+}
+
+async function rateLimitMiddleware(c: AppContext, next: () => Promise<void>) {
+  const path = c.req.path;
+
+  // Whitelist health checks and local CLI sync
+  if (path === '/health') return await next();
+  const isLocalCLI =
+    path === '/api/admin/collections/sync' &&
+    c.req.header('x-edgecms-cli') === 'true' &&
+    (c.req.header('host')?.startsWith('localhost') || c.req.header('host')?.startsWith('127.0.0.1'));
+  if (isLocalCLI) return await next();
+
+  // Extract client IP address from Cloudflare or forward headers
+  const clientIP =
+    c.req.header('cf-connecting-ip') ||
+    c.req.header('x-real-ip') ||
+    c.req.header('x-forwarded-for')?.split(',')[0].trim() ||
+    '127.0.0.1';
+
+  // Configurable: Default 60 requests per 1 minute window (60s)
+  const windowSecs = parseInt(c.env?.RATE_LIMIT_WINDOW_SECS || '60', 10) || 60;
+  const maxRequests = parseInt(c.env?.RATE_LIMIT_MAX_REQUESTS || '60', 10) || 60;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  pruneExpiredRateLimits(nowSec);
+
+  let record = rateLimitCache.get(clientIP);
+  if (!record || record.resetAt <= nowSec) {
+    record = { count: 1, resetAt: nowSec + windowSecs };
+    rateLimitCache.set(clientIP, record);
+  } else {
+    record.count++;
+  }
+
+  const remaining = Math.max(0, maxRequests - record.count);
+  const resetSeconds = Math.max(0, record.resetAt - nowSec);
+
+  // Set RFC-standard rate limit headers on response
+  c.header('X-RateLimit-Limit', maxRequests.toString());
+  c.header('X-RateLimit-Remaining', remaining.toString());
+  c.header('X-RateLimit-Reset', record.resetAt.toString());
+
+  // Throttled: HTTP 429 Too Many Requests
+  if (record.count > maxRequests) {
+    c.header('Retry-After', resetSeconds.toString());
+    return c.json(
+      {
+        error: 'Too Many Requests',
+        message: `Anti-scraping shield: Rate limit exceeded (${maxRequests} requests per ${windowSecs}s). Please slow down or try again later.`,
+        limit: maxRequests,
+        windowSeconds: windowSecs,
+        retryAfter: resetSeconds,
+        layer: 'Layer 4: Rate Limiting (Anti-Scraping)'
+      },
+      429
+    );
+  }
+
+  await next();
+}
+
+app.use('/api/*', rateLimitMiddleware);
 
 // -------------------------------------------------------------
 // CODE-FIRST SCHEMA AUTO-SYNC (cms.config.ts -> D1)
@@ -298,6 +470,107 @@ app.get('/api/auth/me', async (c) => {
 
   return c.json({ user });
 });
+
+// -------------------------------------------------------------
+// LAYER 1: READ-ONLY API KEY ENFORCEMENT
+// -------------------------------------------------------------
+async function requireContentApiKey(c: AppContext, next: () => Promise<void>) {
+  // 1. Extract API key from headers or query parameters
+  const headerApiKey = c.req.header('x-api-key') || c.req.header('X-API-Key');
+  const authHeader = c.req.header('Authorization');
+  let bearerKey: string | null = null;
+  if (authHeader) {
+    if (authHeader.startsWith('Bearer ')) {
+      bearerKey = authHeader.substring(7).trim();
+    } else if (authHeader.startsWith('ApiKey ')) {
+      bearerKey = authHeader.substring(7).trim();
+    }
+  }
+  const queryApiKey = c.req.query('apiKey') || c.req.query('api_key');
+  const providedKey = headerApiKey || bearerKey || queryApiKey;
+
+  // 2. Allow active Admin Session Token (for SvelteKit Admin Studio & Live Previews)
+  if (bearerKey && bearerKey.startsWith('session_')) {
+    const now = new Date().toISOString();
+    const sessionUser = await c.env.DB.prepare(
+      `SELECT u.id, u.email, u.name, u.role, u.workspace_id
+       FROM sessions s
+       JOIN users u ON s.user_id = u.id
+       WHERE s.token = ? AND s.expires_at > ?`
+    ).bind(bearerKey, now).first<User>();
+
+    if (sessionUser) {
+      c.set('user', sessionUser);
+      return await next();
+    }
+  }
+
+  // 3. Reject if no API key or token was provided
+  if (!providedKey) {
+    return c.json(
+      {
+        error: 'Unauthorized: Read API key required',
+        message: "Access to Content Delivery API requires a valid API key. Pass it via 'X-API-Key' header, 'Authorization: Bearer <key>', or '?apiKey=<key>'.",
+        layer: 'Layer 1: Read-Only API Key'
+      },
+      401
+    );
+  }
+
+  // 4. Validate against global Master Secret Key in environment bindings (if configured)
+  const masterKey = c.env.CMS_API_SECRET_KEY || c.env.CMS_READ_API_KEY;
+  if (masterKey && providedKey === masterKey) {
+    return await next();
+  }
+
+  // 5. Validate against Workspace API keys in Cloudflare D1
+  const explicitWsSlug = c.req.param('workspaceSlug');
+  if (explicitWsSlug) {
+    const ws = await c.env.DB.prepare(
+      `SELECT id, name, slug, api_key FROM workspaces WHERE (slug = ? OR id = ?) AND api_key = ? LIMIT 1`
+    ).bind(explicitWsSlug, explicitWsSlug, providedKey).first<{ id: string; name: string; slug: string; api_key: string }>();
+
+    if (!ws) {
+      return c.json(
+        {
+          error: 'Forbidden: Invalid API key for this workspace',
+          message: `The provided API key does not have access to workspace '${explicitWsSlug}'.`,
+          layer: 'Layer 1: Read-Only API Key'
+        },
+        403
+      );
+    }
+    c.set('workspace', ws);
+    return await next();
+  }
+
+  // Generic content routes (/api/content/*, /api/posts*)
+  const ws = await c.env.DB.prepare(
+    `SELECT id, name, slug, api_key FROM workspaces WHERE api_key = ? LIMIT 1`
+  ).bind(providedKey).first<{ id: string; name: string; slug: string; api_key: string }>();
+
+  if (!ws) {
+    return c.json(
+      {
+        error: 'Unauthorized: Invalid API key',
+        message: 'The provided API key is invalid or has been revoked.',
+        layer: 'Layer 1: Read-Only API Key'
+      },
+      401
+    );
+  }
+
+  c.set('workspace', ws);
+  return await next();
+}
+
+// Enforce Layer 1 Read-Only API Key across all content delivery endpoints
+app.use('/api/content', requireContentApiKey);
+app.use('/api/content/*', requireContentApiKey);
+app.use('/api/v1/*/content', requireContentApiKey);
+app.use('/api/v1/*/content/*', requireContentApiKey);
+app.use('/api/posts', requireContentApiKey);
+app.use('/api/posts/*', requireContentApiKey);
 
 // -------------------------------------------------------------
 // PUBLIC CONTENT DELIVERY API (Astro / Public Frontends)
@@ -974,6 +1247,10 @@ async function resolveWorkspace(c: AppContext): Promise<{ id: string; name: stri
     ).bind(currentUser.workspace_id, currentUser.workspace_id).first<{ id: string; name: string; slug: string }>();
     if (userWs) return userWs;
   }
+
+  // If workspace was pre-resolved by API Key authentication (Layer 1)
+  const keyWs = c.get('workspace');
+  if (keyWs) return keyWs;
 
   const paramSlug = c.req.param('workspaceSlug') || c.req.param('workspace');
   const headerVal = c.req.header('x-workspace') || c.req.header('x-workspace-id');
