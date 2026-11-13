@@ -4,8 +4,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "migrate:local": "CI=true wrangler d1 migrations apply cms-d1 --local",
-    "migrate:remote": "CI=true wrangler d1 migrations apply cms-d1 --remote"
+    "migrate:local": "wrangler d1 migrations apply cms-d1 --local",
+    "migrate:remote": "wrangler d1 migrations apply cms-d1 --remote"
   },
   "dependencies": {
     "@cms/shared": "workspace:*",
