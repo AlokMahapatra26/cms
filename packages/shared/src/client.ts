@@ -167,3 +167,4 @@ export class EdgeCMSClient {
 export function createEdgeCMSClient(config?: EdgeCMSClientConfig): EdgeCMSClient {
   return new EdgeCMSClient(config);
 }
+

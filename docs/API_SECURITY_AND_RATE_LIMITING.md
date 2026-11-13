@@ -261,3 +261,4 @@ In addition to Cloudflare WAF, EdgeCMS includes built-in sliding window rate lim
 | **Unauthorized Origin** | Browser `fetch` with `Origin: https://evil.com` | `403 Forbidden` | ❌ Blocked by Layer 3 |
 | **Next.js Server Component** | Server-side `fetch` with `process.env.CMS_API_SECRET_KEY` | `200 OK` | ✅ Concealed (Layer 2) |
 | **> 60 Requests in 1 Min** | Automated bot loop | `429 Too Many Requests` | ❌ Throttled by Layer 4 |
+
