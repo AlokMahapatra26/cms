@@ -36,6 +36,24 @@ import {
 export const cmsConfig = defineConfig({
   collections: [
     defineCollection({
+      slug: 'blog',
+      name: 'Blog',
+      description: 'Publish articles, tutorials, and announcements',
+      icon: 'file-text',
+      fields: [
+        text('title', { label: 'Article Title', required: true, placeholder: 'e.g. Getting Started with EdgeCMS' }),
+        text('slug', { label: 'URL Slug', required: true, placeholder: 'e.g. getting-started-with-edgecms' }),
+        longtext('excerpt', { label: 'Excerpt / Summary', placeholder: 'A short summary for previews and SEO' }),
+        richtext('content', { label: 'Article Content (Markdown / Rich Text)', required: true }),
+        media('cover_image', { label: 'Cover Image' }),
+        text('author', { label: 'Author Name', placeholder: 'e.g. Aakash' }),
+        select('category', { label: 'Category', options: ['Engineering', 'Product', 'Tutorial', 'Announcements', 'Design'] }),
+        text('tags', { label: 'Tags', placeholder: 'e.g. cloudflare, serverless, svelte' }),
+        number('read_time', { label: 'Reading Time (minutes)', placeholder: '5' }),
+        boolean('featured', { label: 'Featured Article' })
+      ]
+    }),
+    defineCollection({
       slug: 'testimonials',
       name: 'Testimonials',
       description: 'Client reviews and social proof',
