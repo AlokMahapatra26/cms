@@ -25,4 +25,8 @@ ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4321,http://localhost:
 RATE_LIMIT_WINDOW_SECS = "60"
 RATE_LIMIT_MAX_REQUESTS = "60"
 
+[triggers]
+crons = ["* * * * *"]
+
+
 

@@ -20,7 +20,10 @@ import type {
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
   CreateUserInput,
-  UpdateUserInput
+  UpdateUserInput,
+  ContentVersion,
+  AuditLog,
+  MediaMetadata
 } from '@cms/shared';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8787';
@@ -730,5 +733,112 @@ export async function deleteUser(id: string): Promise<void> {
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error || 'Failed to delete user');
+  }
+}
+
+// -------------------------------------------------------------
+// VERSION HISTORY & ROLLBACK
+// -------------------------------------------------------------
+
+export async function fetchContentVersions(collectionSlug: string, id: string): Promise<ContentVersion[]> {
+  const res = await fetch(`${API_BASE}/api/admin/content/${collectionSlug}/${id}/versions`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to fetch version history');
+  }
+
+  return data;
+}
+
+export async function rollbackContentVersion(
+  collectionSlug: string,
+  id: string,
+  versionId: string
+): Promise<{ success: boolean; restoredVersion: number; currentVersion: number; status: string; data: Record<string, any> }> {
+  const res = await fetch(`${API_BASE}/api/admin/content/${collectionSlug}/${id}/rollback/${versionId}`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' })
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to rollback version');
+  }
+
+  return data;
+}
+
+// -------------------------------------------------------------
+// AUDIT LOGS
+// -------------------------------------------------------------
+
+export async function fetchAuditLogs(limit: number = 50): Promise<AuditLog[]> {
+  const res = await fetch(`${API_BASE}/api/admin/audit-logs?limit=${limit}`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to fetch audit logs');
+  }
+
+  return data;
+}
+
+// -------------------------------------------------------------
+// MEDIA METADATA
+// -------------------------------------------------------------
+
+export async function fetchMediaMetadata(key: string): Promise<MediaMetadata> {
+  const res = await fetch(`${API_BASE}/api/admin/media/metadata/${encodeURIComponent(key)}`, {
+    headers: getAuthHeaders()
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to fetch media metadata');
+  }
+
+  return data;
+}
+
+export async function updateMediaMetadata(key: string, metadata: Partial<MediaMetadata>): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/admin/media/metadata/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(metadata)
+  });
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error('UNAUTHORIZED');
+  }
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update media metadata');
   }
 }

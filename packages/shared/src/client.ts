@@ -40,6 +40,8 @@ export interface CMSFetchOptions {
   sort?: string;
   order?: 'asc' | 'desc';
   populate?: boolean;
+  preview?: boolean; // Enables fetching draft and scheduled content in preview/staging mode
+  locale?: string; // Language/locale code (e.g. 'en', 'fr', 'es')
   revalidate?: number | false; // Next.js ISR revalidation in seconds
   tags?: string[]; // Next.js cache tags
 }
@@ -75,6 +77,8 @@ export class EdgeCMSClient {
   ): Promise<Array<{ id: string; collection_slug: string; data: T; created_at: string; updated_at: string }>> {
     const params = new URLSearchParams();
     params.set('status', 'published');
+    if (options.preview) params.set('preview', 'true');
+    if (options.locale) params.set('locale', options.locale);
     if (options.populate) params.set('populate', 'true');
     if (options.page) params.set('page', options.page.toString());
     if (options.limit) params.set('limit', options.limit.toString());
@@ -124,9 +128,11 @@ export class EdgeCMSClient {
   async getContentItem<T = Record<string, any>>(
     collectionSlug: string,
     id: string,
-    options: { populate?: boolean; revalidate?: number | false; tags?: string[] } = {}
+    options: { populate?: boolean; preview?: boolean; locale?: string; revalidate?: number | false; tags?: string[] } = {}
   ): Promise<{ id: string; collection_slug: string; data: T; created_at: string; updated_at: string } | null> {
     const params = new URLSearchParams();
+    if (options.preview) params.set('preview', 'true');
+    if (options.locale) params.set('locale', options.locale);
     if (options.populate) params.set('populate', 'true');
 
     const path =
