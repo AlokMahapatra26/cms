@@ -131,6 +131,7 @@ export type ${recordName} = CmsRecord<${typeName}>;`;
     const base = cleanApiBase;
     const wsSlug = workspacesStore.active.slug;
     const wsName = workspacesStore.active.name;
+    const apiKey = workspacesStore.active.api_key || 'cf_live_default_key';
 
     const endpointsList = cols.length === 0
       ? isMultiTenant
@@ -147,9 +148,11 @@ export type ${recordName} = CmsRecord<${typeName}>;`;
           return `### ${col.name} (\`${col.slug}\`)
 - **List All**: \`GET ${listUrl}\`
   - Query parameters: \`?page\`, \`?limit\`, \`?sort\`, \`?order\`, \`?search\`, \`?populate=true\`
+  - Headers: \`X-API-Key: ${apiKey}\`
   - Returns: \`${pascal}Record[]\`
 - **Single Record**: \`GET ${singleUrl}\`
   - Query parameters: \`?populate=true\` (expands referenced collection data)
+  - Headers: \`X-API-Key: ${apiKey}\`
   - Returns: \`${pascal}Record\``;
         }).join('\n\n');
 
@@ -159,11 +162,15 @@ export type ${recordName} = CmsRecord<${typeName}>;`;
 
     return `# CFEdge-CMS Headless API Integration Spec for AI Agent
 
-## 1. System Overview
+## 1. System Overview & Security Layers
 You are tasked with connecting our frontend application (Next.js / Astro / React / SvelteKit / Nuxt) to our CFEdge-CMS Headless API.
-- **Base API URL**: \`${base}\` (configured via environment variable \`PUBLIC_API_URL\` or \`NEXT_PUBLIC_API_URL\`)
-${isMultiTenant ? `- **Active Workspace**: \`${wsName}\` (Slug: \`${wsSlug}\`)\n` : ''}- **Backend Architecture**: Cloudflare Workers + Cloudflare D1 (SQL) + Cloudflare R2 (Media Storage)
-- **Delivery**: All public content endpoints are edge-cached globally and return standard JSON.
+- **Base API URL**: \`${base}\`
+${isMultiTenant ? `- **Active Workspace**: \`${wsName}\` (Slug: \`${wsSlug}\`)\n` : ''}- **API Read Key**: \`${apiKey}\`
+- **Security & Rate Limiting Architecture**:
+  1. **Layer 1: Read-Only API Key**: Every content request must include header \`X-API-Key: ${apiKey}\` (or \`Authorization: Bearer ${apiKey}\`).
+  2. **Layer 2: Server-Side Concealment (BFF Pattern)**: In Next.js Server Components / Astro, store key in \`CMS_API_SECRET_KEY\` without \`NEXT_PUBLIC_\` prefix so it is NEVER exposed to the browser F12 DevTools network tab.
+  3. **Layer 3: CORS Restriction**: Only whitelisted origins can fetch from the browser; server-to-server requests bypass CORS cleanly.
+  4. **Layer 4: Anti-Scraping Rate Limiting**: 60 requests per minute per IP. Returns 429 Too Many Requests if exceeded.
 
 ---
 
@@ -176,7 +183,7 @@ ${generatedTypes}
 
 ---
 
-## 3. Active Collections & Public Delivery Endpoints
+## 3. Active Collections & Delivery Endpoints
 
 ${endpointsList}
 
@@ -189,10 +196,11 @@ ${endpointsList}
 ## 4. Implementation Steps for AI Agent
 1. **Environment Setup**: In your frontend project root, configure \`.env.local\` (or \`.env\`):
    \`\`\`env
-   PUBLIC_API_URL=${base}
-${isMultiTenant ? `   WORKSPACE_SLUG=${wsSlug}\n` : ''}   \`\`\`
-   (Use \`NEXT_PUBLIC_API_URL=${base}\` if using Next.js).
-2. **CMS Client**: Create a data fetching helper using \`PUBLIC_API_URL\` targeting \`${isMultiTenant ? `/api/v1/${wsSlug}/content/:slug` : `/api/content/:slug`}\` with typed returns.
+   CMS_API_URL=${base}
+   CMS_API_SECRET_KEY=${apiKey}
+${isMultiTenant ? `   CMS_WORKSPACE_SLUG=${wsSlug}\n` : ''}   \`\`\`
+   *(Do NOT add NEXT_PUBLIC_ prefix to CMS_API_SECRET_KEY; keep it server-only for zero browser exposure).*
+2. **CMS Client**: Create a server-side data fetching helper passing header \`'X-API-Key': process.env.CMS_API_SECRET_KEY\` targeting \`${isMultiTenant ? `/api/v1/${wsSlug}/content/:slug` : `/api/content/:slug`}\`.
 3. **Collection Pages**:
 ${collectionInstructions}
 4. **Rich Text / HTML**: If a collection has rich text HTML, render it safely with semantic prose styles.
@@ -257,12 +265,41 @@ ${collectionInstructions}
   <pre class="prompt-code-block"><code>{agentPrompt}</code></pre>
 </div>
 
+<!-- API Security Credentials -->
+<div class="shopify-card mb-6 p-4">
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <div class="flex items-center gap-2">
+        <h3 class="text-sm font-semibold text-dark m-0">Read-Only API Key (Layer 1)</h3>
+        <span class="badge badge-success text-xs">Required</span>
+        <span class="text-xs text-muted">| Anti-Scraping 60 req/min (Layer 4)</span>
+      </div>
+      <p class="text-xs text-muted mt-1 mb-0">
+        Required header: <code>X-API-Key</code>. In Next.js (BFF Pattern), keep in <code>CMS_API_SECRET_KEY</code> without <code>NEXT_PUBLIC_</code> for zero DevTools exposure.
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <code class="font-mono text-xs bg-slate-100 px-3 py-1.5 rounded border border-slate-200 select-all">
+        {workspacesStore.active.api_key || 'cf_live_default_key'}
+      </code>
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        onclick={() => copyToClipboard(workspacesStore.active.api_key || 'cf_live_default_key', 'api-key')}
+      >
+        <Icon name={copied === 'api-key' ? 'check' : 'copy'} size={12} />
+        <span>{copied === 'api-key' ? 'Copied' : 'Copy Key'}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Essential Public Delivery Endpoints -->
 <div class="mb-6">
   <div class="flex items-center justify-between mb-3">
     <div>
       <h2 class="text-base font-semibold text-dark m-0">Public Delivery Endpoints</h2>
-      <p class="text-xs text-muted m-0">Zero-authentication endpoints for high-speed edge delivery from Cloudflare D1 & R2.</p>
+      <p class="text-xs text-muted m-0">Edge-cached delivery endpoints protected by API Key authentication & Rate Limiting.</p>
     </div>
     {#if isMultiTenant}
       <div class="workspace-badge-pill">

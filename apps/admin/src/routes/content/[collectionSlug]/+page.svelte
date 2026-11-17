@@ -14,7 +14,7 @@
   let error = $state<string | null>(null);
 
   // Filters, Search, Sort & Pagination State
-  let filter = $state<'all' | 'published' | 'draft'>('all');
+  let filter = $state<'all' | 'published' | 'draft' | 'scheduled'>('all');
   let searchQuery = $state('');
   let sortColumn = $state<string>('created_at');
   let sortDirection = $state<'asc' | 'desc'>('desc');
@@ -164,6 +164,7 @@
 
   const publishedCount = $derived(items.filter((i) => i.status === 'published').length);
   const draftCount = $derived(items.filter((i) => i.status === 'draft').length);
+  const scheduledCount = $derived(items.filter((i) => i.status === 'scheduled').length);
 
   const tableColumns = $derived.by(() => {
     if (!collection?.fields || collection.fields.length === 0) {
@@ -260,6 +261,12 @@
         onclick={() => (filter = 'draft')}
       >
         Drafts ({draftCount})
+      </button>
+      <button
+        class="shopify-segment-btn {filter === 'scheduled' ? 'active' : ''}"
+        onclick={() => (filter = 'scheduled')}
+      >
+        Scheduled ({scheduledCount})
       </button>
     </div>
 
@@ -440,6 +447,8 @@
                 >
                   {#if item.status === 'published'}
                     <span class="badge-published">PUBLISHED</span>
+                  {:else if item.status === 'scheduled'}
+                    <span class="badge" style="background: rgba(245, 166, 35, 0.15); color: #f5a623; border: 1px solid rgba(245, 166, 35, 0.3);">SCHEDULED</span>
                   {:else}
                     <span class="badge-draft">DRAFT</span>
                   {/if}

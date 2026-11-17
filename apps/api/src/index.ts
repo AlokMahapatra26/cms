@@ -23,7 +23,11 @@ import type {
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
   CreateUserInput,
-  UpdateUserInput
+  UpdateUserInput,
+  ContentStatus,
+  ContentVersion,
+  AuditLog,
+  MediaMetadata
 } from '@cms/shared';
 import { cmsConfig } from '@cms/shared';
 import {
@@ -36,18 +40,223 @@ import {
 type Bindings = {
   DB: D1Database;
   MEDIA_BUCKET: R2Bucket;
+  CMS_READ_API_KEY?: string;
+  CMS_API_SECRET_KEY?: string;
+  ALLOWED_ORIGINS?: string;
+  RATE_LIMIT_WINDOW_SECS?: string;
+  RATE_LIMIT_MAX_REQUESTS?: string;
 };
 
 type Variables = {
   user?: User;
+  workspace?: { id: string; name: string; slug: string; api_key?: string };
 };
 
 type AppContext = Context<{ Bindings: Bindings; Variables: Variables }>;
 
+async function logAuditEvent(
+  c: AppContext,
+  params: {
+    workspaceId: string;
+    action: string;
+    resourceType: string;
+    resourceId?: string | null;
+    details?: string | null;
+  }
+) {
+  try {
+    const user = c.get('user');
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await c.env.DB.prepare(
+      `INSERT INTO audit_logs (id, workspace_id, user_id, user_name, action, resource_type, resource_id, details, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      id,
+      params.workspaceId || 'ws_default',
+      user?.id || null,
+      user?.name || user?.email || 'System',
+      params.action,
+      params.resourceType,
+      params.resourceId || null,
+      params.details || null,
+      now
+    ).run();
+  } catch (err) {
+    console.error('[Audit Log] Error writing audit log:', err);
+  }
+}
+
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// Enable CORS for frontend consumers (SvelteKit admin & Astro)
-app.use('/*', cors());
+// -------------------------------------------------------------
+// LAYER 3: CORS RESTRICTION (ORIGIN WHITELIST)
+// -------------------------------------------------------------
+function isOriginAllowed(origin: string | undefined, env: Bindings): boolean {
+  if (!origin) return true; // Server-to-server / BFF / curl requests have no Origin header
+
+  // Wildcard allowed if explicitly configured in environment
+  if (env.ALLOWED_ORIGINS === '*') return true;
+
+  // Check against comma-separated whitelist (e.g. "https://example.com,http://localhost:5173")
+  if (env.ALLOWED_ORIGINS) {
+    const list = env.ALLOWED_ORIGINS.split(',').map((o) => o.trim().toLowerCase());
+    if (list.includes(origin.toLowerCase())) {
+      return true;
+    }
+  }
+
+  // Safe defaults for local development and Cloudflare deployments
+  try {
+    const parsed = new URL(origin);
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+      return true;
+    }
+    if (!env.ALLOWED_ORIGINS && (host.endsWith('.pages.dev') || host.endsWith('.workers.dev'))) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
+app.use('/*', async (c, next) => {
+  const origin = c.req.header('Origin');
+
+  // Handle preflight OPTIONS requests
+  if (c.req.method === 'OPTIONS') {
+    if (origin && !isOriginAllowed(origin, c.env)) {
+      return new Response(null, {
+        status: 403,
+        statusText: 'CORS Origin Denied (Layer 3: CORS Restriction)'
+      });
+    }
+
+    const allowOrigin = origin && isOriginAllowed(origin, c.env) ? origin : '*';
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': allowOrigin,
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key, x-workspace, x-workspace-id, x-edgecms-cli',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Max-Age': '86400',
+        'Vary': 'Origin'
+      }
+    });
+  }
+
+  // If request has Origin header, validate against whitelist
+  if (origin && !isOriginAllowed(origin, c.env)) {
+    return c.json(
+      {
+        error: 'CORS Origin Denied',
+        message: `The origin '${origin}' is not authorized by CORS policy.`,
+        layer: 'Layer 3: CORS Restriction (Origin Whitelist)'
+      },
+      403
+    );
+  }
+
+  await next();
+
+  // Attach CORS headers if origin is present and allowed
+  if (origin && isOriginAllowed(origin, c.env)) {
+    c.res.headers.set('Access-Control-Allow-Origin', origin);
+    c.res.headers.set('Access-Control-Allow-Credentials', 'true');
+    c.res.headers.set('Vary', 'Origin');
+    c.res.headers.set(
+      'Access-Control-Expose-Headers',
+      'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After'
+    );
+  }
+});
+
+// -------------------------------------------------------------
+// LAYER 4: RATE LIMITING & ANTI-SCRAPING ENGINE
+// -------------------------------------------------------------
+interface RateLimitRecord {
+  count: number;
+  resetAt: number; // Unix timestamp in seconds
+}
+
+// In-memory sliding window cache per Cloudflare Worker isolate
+const rateLimitCache = new Map<string, RateLimitRecord>();
+
+function pruneExpiredRateLimits(nowSec: number) {
+  if (rateLimitCache.size > 2000) {
+    for (const [key, record] of rateLimitCache.entries()) {
+      if (record.resetAt <= nowSec) {
+        rateLimitCache.delete(key);
+      }
+    }
+  }
+}
+
+async function rateLimitMiddleware(c: AppContext, next: () => Promise<void>) {
+  const path = c.req.path;
+
+  // Whitelist health checks and local CLI sync
+  if (path === '/health') return await next();
+  const isLocalCLI =
+    path === '/api/admin/collections/sync' &&
+    c.req.header('x-edgecms-cli') === 'true' &&
+    (c.req.header('host')?.startsWith('localhost') || c.req.header('host')?.startsWith('127.0.0.1'));
+  if (isLocalCLI) return await next();
+
+  // Extract client IP address from Cloudflare or forward headers
+  const clientIP =
+    c.req.header('cf-connecting-ip') ||
+    c.req.header('x-real-ip') ||
+    c.req.header('x-forwarded-for')?.split(',')[0].trim() ||
+    '127.0.0.1';
+
+  // Configurable: Default 60 requests per 1 minute window (60s)
+  const windowSecs = parseInt(c.env?.RATE_LIMIT_WINDOW_SECS || '60', 10) || 60;
+  const maxRequests = parseInt(c.env?.RATE_LIMIT_MAX_REQUESTS || '60', 10) || 60;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  pruneExpiredRateLimits(nowSec);
+
+  let record = rateLimitCache.get(clientIP);
+  if (!record || record.resetAt <= nowSec) {
+    record = { count: 1, resetAt: nowSec + windowSecs };
+    rateLimitCache.set(clientIP, record);
+  } else {
+    record.count++;
+  }
+
+  const remaining = Math.max(0, maxRequests - record.count);
+  const resetSeconds = Math.max(0, record.resetAt - nowSec);
+
+  // Set RFC-standard rate limit headers on response
+  c.header('X-RateLimit-Limit', maxRequests.toString());
+  c.header('X-RateLimit-Remaining', remaining.toString());
+  c.header('X-RateLimit-Reset', record.resetAt.toString());
+
+  // Throttled: HTTP 429 Too Many Requests
+  if (record.count > maxRequests) {
+    c.header('Retry-After', resetSeconds.toString());
+    return c.json(
+      {
+        error: 'Too Many Requests',
+        message: `Anti-scraping shield: Rate limit exceeded (${maxRequests} requests per ${windowSecs}s). Please slow down or try again later.`,
+        limit: maxRequests,
+        windowSeconds: windowSecs,
+        retryAfter: resetSeconds,
+        layer: 'Layer 4: Rate Limiting (Anti-Scraping)'
+      },
+      429
+    );
+  }
+
+  await next();
+}
+
+app.use('/api/*', rateLimitMiddleware);
 
 // -------------------------------------------------------------
 // CODE-FIRST SCHEMA AUTO-SYNC (cms.config.ts -> D1)
@@ -298,6 +507,107 @@ app.get('/api/auth/me', async (c) => {
 
   return c.json({ user });
 });
+
+// -------------------------------------------------------------
+// LAYER 1: READ-ONLY API KEY ENFORCEMENT
+// -------------------------------------------------------------
+async function requireContentApiKey(c: AppContext, next: () => Promise<void>) {
+  // 1. Extract API key from headers or query parameters
+  const headerApiKey = c.req.header('x-api-key') || c.req.header('X-API-Key');
+  const authHeader = c.req.header('Authorization');
+  let bearerKey: string | null = null;
+  if (authHeader) {
+    if (authHeader.startsWith('Bearer ')) {
+      bearerKey = authHeader.substring(7).trim();
+    } else if (authHeader.startsWith('ApiKey ')) {
+      bearerKey = authHeader.substring(7).trim();
+    }
+  }
+  const queryApiKey = c.req.query('apiKey') || c.req.query('api_key');
+  const providedKey = headerApiKey || bearerKey || queryApiKey;
+
+  // 2. Allow active Admin Session Token (for SvelteKit Admin Studio & Live Previews)
+  if (bearerKey && bearerKey.startsWith('session_')) {
+    const now = new Date().toISOString();
+    const sessionUser = await c.env.DB.prepare(
+      `SELECT u.id, u.email, u.name, u.role, u.workspace_id
+       FROM sessions s
+       JOIN users u ON s.user_id = u.id
+       WHERE s.token = ? AND s.expires_at > ?`
+    ).bind(bearerKey, now).first<User>();
+
+    if (sessionUser) {
+      c.set('user', sessionUser);
+      return await next();
+    }
+  }
+
+  // 3. Reject if no API key or token was provided
+  if (!providedKey) {
+    return c.json(
+      {
+        error: 'Unauthorized: Read API key required',
+        message: "Access to Content Delivery API requires a valid API key. Pass it via 'X-API-Key' header, 'Authorization: Bearer <key>', or '?apiKey=<key>'.",
+        layer: 'Layer 1: Read-Only API Key'
+      },
+      401
+    );
+  }
+
+  // 4. Validate against global Master Secret Key in environment bindings (if configured)
+  const masterKey = c.env.CMS_API_SECRET_KEY || c.env.CMS_READ_API_KEY;
+  if (masterKey && providedKey === masterKey) {
+    return await next();
+  }
+
+  // 5. Validate against Workspace API keys in Cloudflare D1
+  const explicitWsSlug = c.req.param('workspaceSlug');
+  if (explicitWsSlug) {
+    const ws = await c.env.DB.prepare(
+      `SELECT id, name, slug, api_key FROM workspaces WHERE (slug = ? OR id = ?) AND api_key = ? LIMIT 1`
+    ).bind(explicitWsSlug, explicitWsSlug, providedKey).first<{ id: string; name: string; slug: string; api_key: string }>();
+
+    if (!ws) {
+      return c.json(
+        {
+          error: 'Forbidden: Invalid API key for this workspace',
+          message: `The provided API key does not have access to workspace '${explicitWsSlug}'.`,
+          layer: 'Layer 1: Read-Only API Key'
+        },
+        403
+      );
+    }
+    c.set('workspace', ws);
+    return await next();
+  }
+
+  // Generic content routes (/api/content/*, /api/posts*)
+  const ws = await c.env.DB.prepare(
+    `SELECT id, name, slug, api_key FROM workspaces WHERE api_key = ? LIMIT 1`
+  ).bind(providedKey).first<{ id: string; name: string; slug: string; api_key: string }>();
+
+  if (!ws) {
+    return c.json(
+      {
+        error: 'Unauthorized: Invalid API key',
+        message: 'The provided API key is invalid or has been revoked.',
+        layer: 'Layer 1: Read-Only API Key'
+      },
+      401
+    );
+  }
+
+  c.set('workspace', ws);
+  return await next();
+}
+
+// Enforce Layer 1 Read-Only API Key across all content delivery endpoints
+app.use('/api/content', requireContentApiKey);
+app.use('/api/content/*', requireContentApiKey);
+app.use('/api/v1/*/content', requireContentApiKey);
+app.use('/api/v1/*/content/*', requireContentApiKey);
+app.use('/api/posts', requireContentApiKey);
+app.use('/api/posts/*', requireContentApiKey);
 
 // -------------------------------------------------------------
 // PUBLIC CONTENT DELIVERY API (Astro / Public Frontends)
@@ -974,6 +1284,10 @@ async function resolveWorkspace(c: AppContext): Promise<{ id: string; name: stri
     ).bind(currentUser.workspace_id, currentUser.workspace_id).first<{ id: string; name: string; slug: string }>();
     if (userWs) return userWs;
   }
+
+  // If workspace was pre-resolved by API Key authentication (Layer 1)
+  const keyWs = c.get('workspace');
+  if (keyWs) return keyWs;
 
   const paramSlug = c.req.param('workspaceSlug') || c.req.param('workspace');
   const headerVal = c.req.header('x-workspace') || c.req.header('x-workspace-id');
@@ -1892,12 +2206,45 @@ app.post('/api/admin/content/:collectionSlug', async (c) => {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const status = body.status || 'draft';
+    const scheduledAt = body.scheduled_at || null;
+    const locale = body.locale || 'en';
     const data = JSON.stringify(body.data || {});
 
     await c.env.DB.prepare(
-      `INSERT INTO content_items (id, workspace_id, collection_slug, status, data, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).bind(id, wsId, slug, status, data, now, now).run();
+      `INSERT INTO content_items (id, workspace_id, collection_slug, status, scheduled_at, locale, data, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, wsId, slug, status, scheduledAt, locale, data, now, now).run();
+
+    // 1. Record Version 1 in content_versions
+    const versionId = crypto.randomUUID();
+    const currentUser = c.get('user');
+    await c.env.DB.prepare(
+      `INSERT INTO content_versions (id, content_item_id, collection_slug, workspace_id, version_number, status, scheduled_at, locale, data, author_id, author_name, change_summary, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      versionId,
+      id,
+      slug,
+      wsId,
+      1,
+      status,
+      scheduledAt,
+      locale,
+      data,
+      currentUser?.id || null,
+      currentUser?.name || 'Admin',
+      `Initial creation (${status})`,
+      now
+    ).run();
+
+    // 2. Audit log
+    await logAuditEvent(c, {
+      workspaceId: wsId,
+      action: 'content.create',
+      resourceType: 'content_item',
+      resourceId: id,
+      details: JSON.stringify({ collection: slug, status, locale, scheduled_at: scheduledAt })
+    });
 
     if (status === 'published') {
       dispatchDeployWebhook(c, wsId, 'content.published', { collection: slug, itemId: id });
@@ -1908,6 +2255,8 @@ app.post('/api/admin/content/:collectionSlug', async (c) => {
       workspace_id: wsId,
       collection_slug: slug,
       status,
+      scheduled_at: scheduledAt,
+      locale,
       data: body.data || {},
       created_at: now,
       updated_at: now
@@ -1935,12 +2284,51 @@ app.put('/api/admin/content/:collectionSlug/:id', async (c) => {
     const body = await c.req.json<UpdateContentItemInput>();
     const now = new Date().toISOString();
     const status = body.status ?? existing.status;
+    const scheduledAt = body.scheduled_at !== undefined ? body.scheduled_at : existing.scheduled_at;
+    const locale = body.locale ?? existing.locale ?? 'en';
     const existingData = JSON.parse(existing.data || '{}');
     const updatedData = body.data !== undefined ? { ...existingData, ...body.data } : existingData;
+    const serializedData = JSON.stringify(updatedData);
 
     await c.env.DB.prepare(
-      `UPDATE content_items SET status = ?, data = ?, updated_at = ? WHERE id = ?`
-    ).bind(status, JSON.stringify(updatedData), now, id).run();
+      `UPDATE content_items SET status = ?, scheduled_at = ?, locale = ?, data = ?, updated_at = ? WHERE id = ?`
+    ).bind(status, scheduledAt, locale, serializedData, now, id).run();
+
+    // Record next version in content_versions
+    const verCount = await c.env.DB.prepare(
+      `SELECT count(*) as count FROM content_versions WHERE content_item_id = ?`
+    ).bind(id).first<{ count: number }>();
+    const nextVer = (verCount?.count || 0) + 1;
+    const versionId = crypto.randomUUID();
+    const currentUser = c.get('user');
+
+    await c.env.DB.prepare(
+      `INSERT INTO content_versions (id, content_item_id, collection_slug, workspace_id, version_number, status, scheduled_at, locale, data, author_id, author_name, change_summary, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      versionId,
+      id,
+      collectionSlug,
+      existing.workspace_id || wsId,
+      nextVer,
+      status,
+      scheduledAt,
+      locale,
+      serializedData,
+      currentUser?.id || null,
+      currentUser?.name || 'Admin',
+      `Updated to ${status} (v${nextVer})`,
+      now
+    ).run();
+
+    // Audit log
+    await logAuditEvent(c, {
+      workspaceId: existing.workspace_id || wsId,
+      action: 'content.update',
+      resourceType: 'content_item',
+      resourceId: id,
+      details: JSON.stringify({ collection: collectionSlug, status, version: nextVer, scheduled_at: scheduledAt })
+    });
 
     if (status === 'published' || existing.status === 'published') {
       dispatchDeployWebhook(c, existing.workspace_id || wsId, status === 'published' ? 'content.published' : 'content.unpublished', {
@@ -1955,6 +2343,8 @@ app.put('/api/admin/content/:collectionSlug/:id', async (c) => {
       workspace_id: existing.workspace_id,
       collection_slug: collectionSlug,
       status,
+      scheduled_at: scheduledAt,
+      locale,
       data: updatedData,
       created_at: existing.created_at,
       updated_at: now
@@ -1979,6 +2369,14 @@ app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
       await c.env.DB.prepare(`DELETE FROM posts WHERE id = ?`).bind(id).run();
     }
 
+    await logAuditEvent(c, {
+      workspaceId: wsId,
+      action: 'content.delete',
+      resourceType: 'content_item',
+      resourceId: id,
+      details: JSON.stringify({ collection: collectionSlug })
+    });
+
     dispatchDeployWebhook(c, wsId, 'content.deleted', { collection: collectionSlug, itemId: id });
 
     return c.json({ success: true, id });
@@ -1988,7 +2386,190 @@ app.delete('/api/admin/content/:collectionSlug/:id', async (c) => {
 });
 
 // -------------------------------------------------------------
-// PUBLIC DYNAMIC CONTENT API (Multi-Tenant & Backward Compatible)
+// CONTENT VERSION HISTORY & 1-CLICK ROLLBACK API
+// -------------------------------------------------------------
+
+// Get all revision snapshots for a content item
+app.get('/api/admin/content/:collectionSlug/:id/versions', async (c) => {
+  try {
+    const { id } = c.req.param();
+    const rows = await c.env.DB.prepare(
+      `SELECT * FROM content_versions WHERE content_item_id = ? ORDER BY version_number DESC`
+    ).bind(id).all<any>();
+
+    const versions = rows.results.map((r: any) => ({
+      id: r.id,
+      content_item_id: r.content_item_id,
+      collection_slug: r.collection_slug,
+      workspace_id: r.workspace_id,
+      version_number: r.version_number,
+      status: r.status,
+      scheduled_at: r.scheduled_at,
+      locale: r.locale,
+      data: JSON.parse(r.data || '{}'),
+      author_id: r.author_id,
+      author_name: r.author_name,
+      change_summary: r.change_summary,
+      created_at: r.created_at
+    }));
+
+    return c.json(versions);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to fetch version history' }, 500);
+  }
+});
+
+// Rollback content item to a specific historical version
+app.post('/api/admin/content/:collectionSlug/:id/rollback/:versionId', async (c) => {
+  try {
+    const { collectionSlug, id, versionId } = c.req.param();
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
+
+    const targetVersion = await c.env.DB.prepare(
+      `SELECT * FROM content_versions WHERE id = ? AND content_item_id = ?`
+    ).bind(versionId, id).first<any>();
+
+    if (!targetVersion) {
+      return c.json({ error: 'Target version snapshot not found' }, 404);
+    }
+
+    const now = new Date().toISOString();
+    const targetData = targetVersion.data;
+    const targetStatus = targetVersion.status;
+    const scheduledAt = targetVersion.scheduled_at;
+    const locale = targetVersion.locale || 'en';
+
+    await c.env.DB.prepare(
+      `UPDATE content_items SET status = ?, scheduled_at = ?, locale = ?, data = ?, updated_at = ? WHERE id = ?`
+    ).bind(targetStatus, scheduledAt, locale, targetData, now, id).run();
+
+    // Create a new version entry documenting this rollback
+    const verCount = await c.env.DB.prepare(
+      `SELECT count(*) as count FROM content_versions WHERE content_item_id = ?`
+    ).bind(id).first<{ count: number }>();
+    const nextVer = (verCount?.count || 0) + 1;
+    const newVersionId = crypto.randomUUID();
+    const currentUser = c.get('user');
+
+    await c.env.DB.prepare(
+      `INSERT INTO content_versions (id, content_item_id, collection_slug, workspace_id, version_number, status, scheduled_at, locale, data, author_id, author_name, change_summary, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      newVersionId,
+      id,
+      collectionSlug,
+      wsId,
+      nextVer,
+      targetStatus,
+      scheduledAt,
+      locale,
+      targetData,
+      currentUser?.id || null,
+      currentUser?.name || 'Admin',
+      `Restored snapshot v${targetVersion.version_number}`,
+      now
+    ).run();
+
+    await logAuditEvent(c, {
+      workspaceId: wsId,
+      action: 'content.rollback',
+      resourceType: 'content_item',
+      resourceId: id,
+      details: JSON.stringify({ restoredVersion: targetVersion.version_number, newVersion: nextVer })
+    });
+
+    if (targetStatus === 'published') {
+      dispatchDeployWebhook(c, wsId, 'content.published', { collection: collectionSlug, itemId: id, reason: 'rollback' });
+    }
+
+    return c.json({
+      success: true,
+      restoredVersion: targetVersion.version_number,
+      currentVersion: nextVer,
+      status: targetStatus,
+      data: JSON.parse(targetData || '{}'),
+      updated_at: now
+    });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to rollback version' }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// ENTERPRISE AUDIT LOGS API
+// -------------------------------------------------------------
+
+app.get('/api/admin/audit-logs', async (c) => {
+  try {
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
+    const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '50', 10)));
+
+    const rows = await c.env.DB.prepare(
+      `SELECT * FROM audit_logs WHERE workspace_id = ? OR workspace_id = 'ws_default' OR workspace_id IS NULL ORDER BY created_at DESC LIMIT ?`
+    ).bind(wsId, limit).all<AuditLog>();
+
+    return c.json(rows.results);
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to fetch audit logs' }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// MEDIA METADATA & ACCESSIBILITY API (Alt text, Captions, Tags)
+// -------------------------------------------------------------
+
+app.get('/api/admin/media/metadata/:key', async (c) => {
+  try {
+    const key = c.req.param('key');
+    const row = await c.env.DB.prepare(
+      `SELECT * FROM media_metadata WHERE key = ? LIMIT 1`
+    ).bind(key).first<any>();
+
+    return c.json(row || { key, alt_text: '', caption: '', tags: '[]' });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to fetch media metadata' }, 500);
+  }
+});
+
+app.put('/api/admin/media/metadata/:key', async (c) => {
+  try {
+    const key = c.req.param('key');
+    const ws = await resolveWorkspace(c);
+    const wsId = ws?.id || 'ws_default';
+    const body = await c.req.json<{ alt_text?: string; caption?: string; tags?: string[]; width?: number; height?: number }>();
+    const now = new Date().toISOString();
+
+    await c.env.DB.prepare(
+      `INSERT INTO media_metadata (key, workspace_id, alt_text, caption, tags, width, height, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(key) DO UPDATE SET
+         alt_text = excluded.alt_text,
+         caption = excluded.caption,
+         tags = excluded.tags,
+         width = excluded.width,
+         height = excluded.height,
+         updated_at = excluded.updated_at`
+    ).bind(
+      key,
+      wsId,
+      body.alt_text || null,
+      body.caption || null,
+      body.tags ? JSON.stringify(body.tags) : '[]',
+      body.width || null,
+      body.height || null,
+      now
+    ).run();
+
+    return c.json({ success: true, key });
+  } catch (err: any) {
+    return c.json({ error: err.message || 'Failed to update media metadata' }, 500);
+  }
+});
+
+// -------------------------------------------------------------
+// PUBLIC DYNAMIC CONTENT API (Multi-Tenant, Preview Mode, i18n & Scheduled)
 // -------------------------------------------------------------
 
 async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
@@ -2012,12 +2593,16 @@ async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
     const search = c.req.query('search')?.trim() || '';
     const sort = c.req.query('sort')?.trim() || 'created_at';
     const order = c.req.query('order')?.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    const isPreview = c.req.query('preview') === 'true' || c.req.header('X-CMS-Preview') === 'true';
+    const locale = c.req.query('locale')?.trim() || '';
 
-    const conditions: string[] = [
-      'collection_slug = ?',
-      "status = 'published'"
-    ];
+    const conditions: string[] = ['collection_slug = ?'];
     const params: any[] = [slug];
+
+    // Live vs Preview filtering: in live mode, only return published items or scheduled items that have reached their target time
+    if (!isPreview) {
+      conditions.push("(status = 'published' OR (status = 'scheduled' AND scheduled_at IS NOT NULL AND datetime(scheduled_at) <= datetime('now')))");
+    }
 
     if (wsId && wsId !== 'ws_default') {
       conditions.push('(workspace_id = ? OR workspace_id IS NULL)');
@@ -2032,9 +2617,14 @@ async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
       params.push(`%${search}%`, `%${search}%`);
     }
 
+    if (locale) {
+      conditions.push("(locale = ? OR locale IS NULL OR json_extract(data, '$.locale') = ? OR json_extract(data, '$._locale') = ?)");
+      params.push(locale, locale, locale);
+    }
+
     const whereClause = conditions.join(' AND ');
 
-    // 1. Total Count of matching published items
+    // 1. Total Count of matching items
     const countRow = await c.env.DB.prepare(
       `SELECT count(*) as count FROM content_items WHERE ${whereClause}`
     ).bind(...params).first<{ count: number }>();
@@ -2059,14 +2649,29 @@ async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
 
     const rows = await c.env.DB.prepare(sql).bind(...queryParams).all();
 
-    const items = rows.results.map((r: any) => ({
-      id: r.id,
-      collection_slug: r.collection_slug,
-      workspace_id: r.workspace_id,
-      data: JSON.parse(r.data || '{}'),
-      created_at: r.created_at,
-      updated_at: r.updated_at
-    }));
+    const items = rows.results.map((r: any) => {
+      let itemData = JSON.parse(r.data || '{}');
+      // Localized field resolution if locale is specified (e.g. data.title_fr overrides data.title when locale=fr)
+      if (locale) {
+        for (const key of Object.keys(itemData)) {
+          const localizedKey = `${key}_${locale}`;
+          if (itemData[localizedKey] !== undefined && itemData[localizedKey] !== null && itemData[localizedKey] !== '') {
+            itemData[key] = itemData[localizedKey];
+          }
+        }
+      }
+      return {
+        id: r.id,
+        collection_slug: r.collection_slug,
+        workspace_id: r.workspace_id,
+        status: r.status,
+        scheduled_at: r.scheduled_at,
+        locale: r.locale,
+        data: itemData,
+        created_at: r.created_at,
+        updated_at: r.updated_at
+      };
+    });
 
     if (c.req.query('populate') === 'true' || c.req.query('depth') === '1') {
       await populateContentRelations(c.env.DB, items, slug, wsId);
@@ -2075,6 +2680,9 @@ async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
     c.header('X-Total-Count', String(total));
     c.header('X-Total-Pages', String(totalPages));
     c.header('X-Current-Page', String(page));
+    if (isPreview) {
+      c.header('X-CMS-Preview-Mode', 'true');
+    }
 
     if (isPaginated) {
       return c.json<PaginatedResponse<any>>({
@@ -2092,7 +2700,7 @@ async function handleGetContentItems(c: AppContext, explicitWsSlug?: string) {
 
     return c.json(items);
   } catch (err: any) {
-    return c.json({ error: err.message || 'Failed to fetch published content' }, 500);
+    return c.json({ error: err.message || 'Failed to fetch content items' }, 500);
   }
 }
 
@@ -2100,31 +2708,56 @@ async function handleGetSingleContentItem(c: AppContext, explicitWsSlug?: string
   try {
     const collectionSlug = c.req.param('collectionSlug') || '';
     const id = c.req.param('id') || '';
+    const isPreview = c.req.query('preview') === 'true' || c.req.header('X-CMS-Preview') === 'true';
+    const locale = c.req.query('locale')?.trim() || '';
+
     const ws = explicitWsSlug
       ? await c.env.DB.prepare(`SELECT id, slug FROM workspaces WHERE slug = ? OR id = ? LIMIT 1`).bind(explicitWsSlug, explicitWsSlug).first<{ id: string; slug: string }>()
       : await resolveWorkspace(c);
 
     const wsId = ws?.id || 'ws_default';
 
+    let statusCondition = "AND (status = 'published' OR (status = 'scheduled' AND scheduled_at IS NOT NULL AND datetime(scheduled_at) <= datetime('now')))";
+    if (isPreview) {
+      statusCondition = "";
+    }
+
     const row = await c.env.DB.prepare(
-      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ? AND status = 'published' AND (workspace_id = ? OR workspace_id = 'ws_default' OR workspace_id IS NULL)`
+      `SELECT * FROM content_items WHERE collection_slug = ? AND id = ? ${statusCondition} AND (workspace_id = ? OR workspace_id = 'ws_default' OR workspace_id IS NULL)`
     ).bind(collectionSlug, id, wsId).first<any>();
 
     if (!row) {
       return c.json({ error: 'Content item not found' }, 404);
     }
 
+    let itemData = JSON.parse(row.data || '{}');
+    if (locale) {
+      for (const key of Object.keys(itemData)) {
+        const localizedKey = `${key}_${locale}`;
+        if (itemData[localizedKey] !== undefined && itemData[localizedKey] !== null && itemData[localizedKey] !== '') {
+          itemData[key] = itemData[localizedKey];
+        }
+      }
+    }
+
     const item = {
       id: row.id,
       collection_slug: row.collection_slug,
       workspace_id: row.workspace_id,
-      data: JSON.parse(row.data || '{}'),
+      status: row.status,
+      scheduled_at: row.scheduled_at,
+      locale: row.locale,
+      data: itemData,
       created_at: row.created_at,
       updated_at: row.updated_at
     };
 
     if (c.req.query('populate') === 'true' || c.req.query('depth') === '1') {
       await populateContentRelations(c.env.DB, [item], collectionSlug, wsId);
+    }
+
+    if (isPreview) {
+      c.header('X-CMS-Preview-Mode', 'true');
     }
 
     return c.json(item);
@@ -2141,4 +2774,31 @@ app.get('/api/v1/:workspaceSlug/content/:collectionSlug/:id', (c) => handleGetSi
 app.get('/api/content/:collectionSlug', (c) => handleGetContentItems(c));
 app.get('/api/content/:collectionSlug/:id', (c) => handleGetSingleContentItem(c));
 
-export default app;
+// Cloudflare Workers fetch handler and Scheduled Cron trigger for automated publishing
+export default {
+  fetch: app.fetch,
+  async scheduled(event: any, env: Bindings, ctx: any) {
+    try {
+      const now = new Date().toISOString();
+      const scheduledItems = await env.DB.prepare(
+        `SELECT id, workspace_id, collection_slug FROM content_items WHERE status = 'scheduled' AND scheduled_at IS NOT NULL AND datetime(scheduled_at) <= datetime(?)`
+      ).bind(now).all<any>();
+
+      if (scheduledItems.results && scheduledItems.results.length > 0) {
+        await env.DB.prepare(
+          `UPDATE content_items SET status = 'published', updated_at = ? WHERE status = 'scheduled' AND scheduled_at IS NOT NULL AND datetime(scheduled_at) <= datetime(?)`
+        ).bind(now, now).run();
+
+        for (const item of scheduledItems.results) {
+          triggerWorkspaceDeployWebhook(env.DB, item.workspace_id || 'ws_default', 'content.published', {
+            collection: item.collection_slug,
+            itemId: item.id,
+            reason: 'scheduled_publish'
+          }).catch(console.error);
+        }
+      }
+    } catch (err) {
+      console.error('[Scheduled Cron] Error promoting scheduled content:', err);
+    }
+  }
+};

@@ -8,14 +8,15 @@
     fetchUsers,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    fetchAuditLogs
   } from '$lib/api';
   import { Icon } from '$lib/components';
   import { workspacesStore } from '$lib/workspaces.svelte';
   import { frontendStore } from '$lib/frontendStore.svelte';
   import { modal } from '$lib/modal.svelte';
   import Modal from '$lib/components/Modal.svelte';
-  import type { User, Workspace } from '@cms/shared';
+  import type { User, Workspace, AuditLog } from '@cms/shared';
 
   let user = $state<User | null>(null);
   let loadingUser = $state(true);
@@ -366,7 +367,22 @@
   onMount(() => {
     loadUser();
     workspacesStore.load();
+    loadAuditLogs();
   });
+
+  let auditLogs = $state<AuditLog[]>([]);
+  let loadingAuditLogs = $state(false);
+
+  async function loadAuditLogs() {
+    loadingAuditLogs = true;
+    try {
+      auditLogs = await fetchAuditLogs(30);
+    } catch {
+      auditLogs = [];
+    } finally {
+      loadingAuditLogs = false;
+    }
+  }
 
   async function handleProfileSubmit(e: SubmitEvent) {
     e.preventDefault();
@@ -964,6 +980,45 @@
         </div>
       </div>
     {/if}
+
+    <!-- Enterprise Audit Trail Card -->
+    <div class="shopify-card col-span-2">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-base font-semibold m-0 mb-1 flex items-center gap-2">
+            <Icon name="clock" size={15} />
+            <span>Activity & Audit Trail</span>
+          </h2>
+          <p class="text-xs text-muted m-0">Recent administrative actions, content publishing, and historical events.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick={loadAuditLogs}>
+          Refresh Logs
+        </button>
+      </div>
+
+      {#if loadingAuditLogs}
+        <div class="p-8 text-center text-xs text-muted">Loading audit logs...</div>
+      {:else if auditLogs.length === 0}
+        <div class="p-8 text-center text-xs text-muted">No audit activity recorded yet.</div>
+      {:else}
+        <div class="flex flex-col gap-2 max-h-72 overflow-y-auto">
+          {#each auditLogs as log (log.id)}
+            <div class="p-2.5 bg-canvas-subtle border border-subtle rounded-md flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span class="badge font-mono text-[10px] uppercase font-bold">{log.action}</span>
+                <span class="text-primary font-medium">{log.user_name || 'System'}</span>
+                {#if log.details}
+                  <span class="text-muted text-[11px] font-mono truncate max-w-xs">{log.details}</span>
+                {/if}
+              </div>
+              <span class="text-muted font-mono text-[11px] whitespace-nowrap">
+                {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(log.created_at).toLocaleDateString()}
+              </span>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
 
   </div>
 {/if}

@@ -1,4 +1,4 @@
-export type PostStatus = 'draft' | 'published';
+export type PostStatus = 'draft' | 'published' | 'scheduled';
 export type UserRole = 'admin' | 'editor' | 'client_editor' | 'author';
 
 export interface User {
@@ -201,11 +201,15 @@ export interface UpdateCollectionInput {
   fields?: FieldDefinition[];
 }
 
+export type ContentStatus = 'draft' | 'published' | 'scheduled';
+
 export interface ContentItem {
   id: string;
   workspace_id?: string;
   collection_slug: string;
-  status: 'draft' | 'published';
+  status: ContentStatus;
+  scheduled_at?: string | null;
+  locale?: string | null;
   data: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -213,13 +217,56 @@ export interface ContentItem {
 
 export interface CreateContentItemInput {
   workspace_id?: string;
-  status?: 'draft' | 'published';
+  status?: ContentStatus;
+  scheduled_at?: string | null;
+  locale?: string | null;
   data: Record<string, any>;
 }
 
 export interface UpdateContentItemInput {
-  status?: 'draft' | 'published';
+  status?: ContentStatus;
+  scheduled_at?: string | null;
+  locale?: string | null;
   data?: Record<string, any>;
+}
+
+export interface ContentVersion {
+  id: string;
+  content_item_id: string;
+  collection_slug: string;
+  workspace_id?: string;
+  version_number: number;
+  status: ContentStatus;
+  scheduled_at?: string | null;
+  locale?: string | null;
+  data: Record<string, any>;
+  author_id?: string | null;
+  author_name?: string | null;
+  change_summary?: string | null;
+  created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  workspace_id?: string;
+  user_id?: string | null;
+  user_name?: string | null;
+  action: string;
+  resource_type: string;
+  resource_id?: string | null;
+  details?: string | null;
+  created_at: string;
+}
+
+export interface MediaMetadata {
+  key: string;
+  workspace_id?: string;
+  alt_text?: string | null;
+  caption?: string | null;
+  tags?: string[] | null;
+  width?: number | null;
+  height?: number | null;
+  updated_at: string;
 }
 
 export interface PaginationInfo {
@@ -239,6 +286,7 @@ export interface PaginatedResponse<T> {
 // Code-First Schema Builder API
 export * from './builder';
 export * from './config';
+export * from './client';
 
 
 

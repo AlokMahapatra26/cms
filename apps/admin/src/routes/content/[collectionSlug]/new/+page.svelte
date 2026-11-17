@@ -5,13 +5,15 @@
   import { fetchCollection, createContentItem } from '$lib/api';
   import { Icon } from '$lib/components';
   import DynamicFieldInput from '$lib/DynamicFieldInput.svelte';
-  import type { Collection } from '@cms/shared';
+  import type { Collection, ContentStatus } from '@cms/shared';
 
   const collectionSlug = $derived(page.params.collectionSlug);
 
   let collection = $state<Collection | null>(null);
   let formData = $state<Record<string, any>>({});
-  let status = $state<'draft' | 'published'>('draft');
+  let status = $state<ContentStatus>('draft');
+  let scheduledAt = $state<string>('');
+  let locale = $state<string>('en');
   let slugTouched = $state(false);
   let loading = $state(true);
   let submitting = $state(false);
@@ -60,6 +62,8 @@
     try {
       await createContentItem(collectionSlug, {
         status,
+        scheduled_at: status === 'scheduled' && scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        locale,
         data: formData
       });
       goto(`/content/${collectionSlug}`);
@@ -106,25 +110,64 @@
 {:else if collection}
   <div class="shopify-card">
     <form onsubmit={handleSubmit} class="flex flex-col gap-4">
-      <!-- Visibility / Status Toggle -->
-      <div>
-        <div class="form-label">Status</div>
-        <div class="shopify-segmented">
-          <button
-            type="button"
-            class="shopify-segment-btn {status === 'draft' ? 'active' : ''}"
-            onclick={() => (status = 'draft')}
-          >
-            Draft
-          </button>
-          <button
-            type="button"
-            class="shopify-segment-btn {status === 'published' ? 'active' : ''}"
-            onclick={() => (status = 'published')}
-          >
-            Published
-          </button>
+      <!-- Visibility & Scheduling Section -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-subtle">
+        <div>
+          <div class="form-label">Publishing Status</div>
+          <div class="shopify-segmented">
+            <button
+              type="button"
+              class="shopify-segment-btn {status === 'draft' ? 'active' : ''}"
+              onclick={() => (status = 'draft')}
+            >
+              Draft
+            </button>
+            <button
+              type="button"
+              class="shopify-segment-btn {status === 'published' ? 'active' : ''}"
+              onclick={() => (status = 'published')}
+            >
+              Published
+            </button>
+            <button
+              type="button"
+              class="shopify-segment-btn {status === 'scheduled' ? 'active' : ''}"
+              onclick={() => (status = 'scheduled')}
+            >
+              Scheduled
+            </button>
+          </div>
         </div>
+
+        <div>
+          <label for="new-record-locale" class="form-label">Language / Locale</label>
+          <select id="new-record-locale" bind:value={locale} class="input">
+            <option value="en">English (en)</option>
+            <option value="es">Spanish (es)</option>
+            <option value="fr">French (fr)</option>
+            <option value="de">German (de)</option>
+            <option value="ja">Japanese (ja)</option>
+          </select>
+        </div>
+
+        {#if status === 'scheduled'}
+          <div class="md:col-span-2 bg-canvas-subtle p-3 rounded-lg border border-subtle flex flex-col gap-1.5">
+            <label for="new-schedule-datetime" class="text-xs font-semibold text-primary flex items-center gap-1.5">
+              <Icon name="clock" size={13} />
+              <span>Target Publish Date & Time (UTC)</span>
+            </label>
+            <input
+              id="new-schedule-datetime"
+              type="datetime-local"
+              bind:value={scheduledAt}
+              class="input max-w-sm"
+              required
+            />
+            <p class="text-[11px] text-muted">
+              Item will automatically become visible via public endpoints once this time is reached.
+            </p>
+          </div>
+        {/if}
       </div>
 
       <!-- Dynamically Generated Fields -->
